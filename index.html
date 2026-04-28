@@ -379,8 +379,8 @@ async function calculate(){
 }
 
 // ── 결과 표시 ─────────────────────────────────────────────
-function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,toll,totalFare,nightMult,veh}){
-  const nightLabel = hr>=23&&hr<2||hr<2&&hr>=0 ? '심야할증 40%' : (hr>=22||hr<4)&&nightMult>1 ? '야간할증 20%' : '';
+function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,toll,totalFare,nightMult,veh,hr}){
+  const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
     <div class="result-box"><div class="ri">
       <div class="el">ESTIMATE · ${depName.split(' ').slice(0,3).join(' ')}</div>
