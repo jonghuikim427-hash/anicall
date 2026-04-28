@@ -414,24 +414,51 @@ async function calculate() {
   const arrName = currentTab==='출국' ? ap.name : selectedAddr.display;
 
   try {
-    // OSRM 실제 도로 경로
-    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${dep.lng},${dep.lat};${arr.lng},${arr.lat}?overview=full&geometries=geojson`;
-    const osrmRes = await fetch(osrmUrl);
-    const osrmData = await osrmRes.json();
+    // T-map 택시요금 API 호출
+    const TMAP_KEY = 'EPMc1DKBPk7bejPe51Vlm8t9PeCjuAmO78LMKmIl';
+    const tmapUrl = 'https://apis.openapi.sk.com/tmap/routes/taxi?version=1&format=json';
+    const tmapRes = await fetch(tmapUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'appKey': TMAP_KEY,
+      },
+      body: JSON.stringify({
+        startX: String(dep.lng),
+        startY: String(dep.lat),
+        endX: String(arr.lng),
+        endY: String(arr.lat),
+        reqCoordType: 'WGS84GEO',
+        resCoordType: 'WGS84GEO',
+        startName: '출발지',
+        endName: '도착지',
+      })
+    });
+    const tmapData = await tmapRes.json();
 
-    if (!osrmData.routes || !osrmData.routes.length) throw new Error('경로 없음');
+    if (!tmapData.features || !tmapData.features.length) throw new Error('T-map 경로 없음');
 
-    const route = osrmData.routes[0];
-    const distKm = route.distance / 1000; // m → km
-    const durMin = Math.round(route.duration / 60); // 초 → 분
-    const coords = route.geometry.coordinates.map(c=>[c[1],c[0]]);
+    // T-map 결과 파싱
+    const summary = tmapData.features[0].properties;
+    const distKm = summary.totalDistance / 1000;
+    const durMin = Math.round(summary.totalTime / 60);
+    const toll = summary.totalFare ? summary.tollFare : estimateToll([], apId);
 
-    // 통행료 계산
-    const toll = estimateToll(coords, apId);
+    // T-map이 택시요금 직접 제공하는 경우
+    let totalFare, meterFare;
+    if (summary.taxiFare && summary.taxiFare > 0) {
+      totalFare = summary.taxiFare;
+      meterFare = totalFare - toll;
+    } else {
+      // 미터기 공식으로 계산
+      meterFare = calcFare(distKm, veh, nightMult, 0);
+      totalFare = meterFare + toll;
+    }
 
-    // 요금 계산
-    const meterFare = calcFare(distKm, veh, nightMult, 0);
-    const totalFare = meterFare + toll;
+    // 경로 좌표 추출 (지도용)
+    const coords = tmapData.features
+      .filter(f => f.geometry.type === 'LineString')
+      .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
 
     const m = METER[veh];
     const baseFare = m.base;
