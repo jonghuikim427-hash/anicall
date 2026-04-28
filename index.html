@@ -353,7 +353,7 @@ async function calculate(){
     const durMin  = Math.round(summary.totalTime / 60);
     const toll    = summary.totalFare || 0;
 
-    // 미터기 공식으로 계산 (T-map taxiFare 사용 안 함)
+    // 미터기 공식으로 계산 (T-map  함)
     let totalFare = calcFare(distKm, veh, nightMult, baseFare) + toll;
 
     // 미터기 분해 (표시용)
