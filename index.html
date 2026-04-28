@@ -277,38 +277,35 @@ function switchTab(t) {
   clearResult();
 }
 
-// ── 주소 자동완성 (다중 전략 지오코딩) ────────────────────
+// ── 카카오 로컬 API 주소 검색 ──────────────────────────────
+const KAKAO_KEY = '93776115e617987923eef38b75a59f42';
+
 function onAddrInput() {
   selectedAddr = null;
   clearResult();
   const q = document.getElementById('inp-addr').value.trim();
   if (q.length < 2) { hideAcList(); return; }
   clearTimeout(acTimer);
-  acTimer = setTimeout(() => searchAddr(q), 450);
+  acTimer = setTimeout(() => searchAddr(q), 350);
 }
 
-// 한국 주소 다중 전략 검색
 async function geocodeKR(q) {
-  // 번지/호수 제거하며 단계적으로 시도
-  const candidates = [
-    q,
-    q.replace(/\s+\d+[-]\d+$/, ''),
-    q.replace(/\s+\d+번지?$/, ''),
-    q.replace(/\s+\d+[-]?\d*$/, ''),
-    q.split(' ').slice(0, 4).join(' '),
-    q.split(' ').slice(0, 3).join(' '),
-    q.split(' ').slice(0, 2).join(' '),
-  ].filter((v, i, a) => v.trim().length > 1 && a.indexOf(v) === i);
-
-  for (const sq of candidates) {
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(sq)}&format=json&limit=5&countrycodes=kr&accept-language=ko`;
-      const res = await fetch(url, {headers: {'Accept-Language': 'ko'}});
-      const data = await res.json();
-      if (data.length) return data;
-    } catch(e) {}
-    await new Promise(r => setTimeout(r, 120));
-  }
+  try {
+    const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(q)}&size=5`;
+    const res = await fetch(url, {headers: {'Authorization': `KakaoAK ${KAKAO_KEY}`}});
+    const data = await res.json();
+    if (data.documents && data.documents.length) {
+      return data.documents.map(d => ({display: d.address_name, lat: parseFloat(d.y), lng: parseFloat(d.x)}));
+    }
+  } catch(e) {}
+  try {
+    const url2 = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&size=5`;
+    const res2 = await fetch(url2, {headers: {'Authorization': `KakaoAK ${KAKAO_KEY}`}});
+    const data2 = await res2.json();
+    if (data2.documents && data2.documents.length) {
+      return data2.documents.map(d => ({display: d.address_name || d.place_name, lat: parseFloat(d.y), lng: parseFloat(d.x)}));
+    }
+  } catch(e) {}
   return [];
 }
 
@@ -316,27 +313,18 @@ async function searchAddr(q) {
   const acList = document.getElementById('ac-list');
   acList.innerHTML = '<div class="searching">🔍 검색 중...</div>';
   acList.classList.add('show');
-
-  const data = await geocodeKR(q);
-
-  if (!data.length) {
-    acList.innerHTML = '<div class="searching">주소를 찾을 수 없어요<br><small>예: 서울 강남구 테헤란로</small></div>';
+  const results = await geocodeKR(q);
+  if (!results.length) {
+    acList.innerHTML = '<div class="searching">주소를 찾을 수 없어요</div>';
     return;
   }
-
   acList.innerHTML = '';
-  data.forEach(item => {
-    const parts = item.display_name.split(',');
-    const sub = parts.slice(1, 4).join(', ').trim();
+  results.forEach(item => {
     const div = document.createElement('div');
     div.className = 'ac-item';
-    div.innerHTML = `<div class="ac-main">${q}</div>${sub ? `<div class="ac-sub">${sub}</div>` : ''}`;
-    div.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      selectAddr({display: q, lat: parseFloat(item.lat), lng: parseFloat(item.lon)});
-    });
+    div.innerHTML = `<div class="ac-main">${item.display}</div>`;
+    div.addEventListener('mousedown', (e) => { e.preventDefault(); selectAddr(item); });
     acList.appendChild(div);
-    // 첫 결과만 보여주면 충분
   });
 }
 
@@ -381,12 +369,12 @@ async function calculate() {
     btn.textContent = '🔍 주소 검색 중...';
     const geoData = await geocodeKR(q);
     if (!geoData.length) {
-      errMsg.textContent = '주소를 찾을 수 없어요. 시/구/동 단위로 입력해보세요. (예: 서울 마포구 망원동)';
+      errMsg.textContent = '주소를 찾을 수 없어요. 더 자세히 입력해 주세요.';
       errMsg.classList.add('show');
       btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
       return;
     }
-    selectedAddr = {display: q, lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon)};
+    selectedAddr = {display: geoData[0].display, lat: geoData[0].lat, lng: geoData[0].lng};
   }
 
   btn.disabled = true;
@@ -414,49 +402,53 @@ async function calculate() {
   const arrName = currentTab==='출국' ? ap.name : selectedAddr.display;
 
   try {
-    // T-map 자동차 경로 API (실시간 교통 반영)
+    // T-map API 시도 → 실패 시 OSRM 자동 전환
     const TMAP_KEY = 'EPMc1DKBPk7bejPe51Vlm8t9PeCjuAmO78LMKmIl';
-    const tmapUrl = 'https://apis.openapi.sk.com/tmap/routes?version=1&format=json';
-    const tmapRes = await fetch(tmapUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'appKey': TMAP_KEY,
-      },
-      body: JSON.stringify({
-        startX: String(dep.lng),
-        startY: String(dep.lat),
-        endX: String(arr.lng),
-        endY: String(arr.lat),
-        reqCoordType: 'WGS84GEO',
-        resCoordType: 'WGS84GEO',
-        startName: '출발지',
-        endName: '도착지',
-        trafficInfo: 'Y',
-        tollgateFareOption: 16,
-      })
-    });
-    const tmapData = await tmapRes.json();
+    let distKm, durMin, toll, coords, usedTmap = false;
 
-    if (!tmapData.features || !tmapData.features.length) throw new Error('T-map 경로 없음');
+    try {
+      const tmapUrl = `https://apis.openapi.sk.com/tmap/routes?version=1&format=json&appKey=${TMAP_KEY}`;
+      const tmapRes = await fetch(tmapUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'appKey': TMAP_KEY},
+        body: JSON.stringify({
+          startX: String(dep.lng), startY: String(dep.lat),
+          endX: String(arr.lng),   endY: String(arr.lat),
+          reqCoordType: 'WGS84GEO', resCoordType: 'WGS84GEO',
+          startName: '출발지', endName: '도착지',
+          trafficInfo: 'Y', tollgateFareOption: 16,
+        })
+      });
+      const tmapData = await tmapRes.json();
+      if (tmapData.features && tmapData.features.length) {
+        const summary = tmapData.features[0].properties;
+        distKm = summary.totalDistance / 1000;
+        durMin = Math.round(summary.totalTime / 60);
+        toll   = (summary.totalFare && summary.totalFare > 0)
+                   ? summary.totalFare : estimateToll([], apId);
+        coords = tmapData.features
+          .filter(f => f.geometry && f.geometry.type === 'LineString')
+          .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
+        usedTmap = true;
+      }
+    } catch(e) { /* T-map 실패 → OSRM으로 fallback */ }
 
-    // T-map 결과 파싱
-    const summary = tmapData.features[0].properties;
-    const distKm = summary.totalDistance / 1000;
-    const durMin = Math.round(summary.totalTime / 60);
-    // 통행료: T-map이 제공하는 실제 통행료 사용
-    const toll = (summary.totalFare && summary.totalFare > 0)
-      ? summary.totalFare
-      : estimateToll([], apId);
+    if (!usedTmap) {
+      // OSRM fallback
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${dep.lng},${dep.lat};${arr.lng},${arr.lat}?overview=full&geometries=geojson`;
+      const osrmRes = await fetch(osrmUrl);
+      const osrmData = await osrmRes.json();
+      if (!osrmData.routes || !osrmData.routes.length) throw new Error('경로 없음');
+      const route = osrmData.routes[0];
+      distKm = route.distance / 1000;
+      durMin = Math.round(route.duration / 60);
+      coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+      toll   = estimateToll(coords, apId);
+    }
 
     // 서울 미터기 공식으로 요금 계산
     const meterFare = calcFare(distKm, veh, nightMult, 0);
     const totalFare = meterFare + toll;
-
-    // 경로 좌표 추출 (지도용)
-    const coords = tmapData.features
-      .filter(f => f.geometry && f.geometry.type === 'LineString')
-      .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
 
     const m = METER[veh];
     const baseFare = m.base;
