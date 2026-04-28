@@ -414,9 +414,9 @@ async function calculate() {
   const arrName = currentTab==='출국' ? ap.name : selectedAddr.display;
 
   try {
-    // T-map 택시요금 API 호출
+    // T-map 자동차 경로 API (실시간 교통 반영)
     const TMAP_KEY = 'EPMc1DKBPk7bejPe51Vlm8t9PeCjuAmO78LMKmIl';
-    const tmapUrl = 'https://apis.openapi.sk.com/tmap/routes/taxi?version=1&format=json';
+    const tmapUrl = 'https://apis.openapi.sk.com/tmap/routes?version=1&format=json';
     const tmapRes = await fetch(tmapUrl, {
       method: 'POST',
       headers: {
@@ -432,6 +432,8 @@ async function calculate() {
         resCoordType: 'WGS84GEO',
         startName: '출발지',
         endName: '도착지',
+        trafficInfo: 'Y',
+        tollgateFareOption: 16,
       })
     });
     const tmapData = await tmapRes.json();
@@ -442,22 +444,18 @@ async function calculate() {
     const summary = tmapData.features[0].properties;
     const distKm = summary.totalDistance / 1000;
     const durMin = Math.round(summary.totalTime / 60);
-    const toll = summary.totalFare ? summary.tollFare : estimateToll([], apId);
+    // 통행료: T-map이 제공하는 실제 통행료 사용
+    const toll = (summary.totalFare && summary.totalFare > 0)
+      ? summary.totalFare
+      : estimateToll([], apId);
 
-    // T-map이 택시요금 직접 제공하는 경우
-    let totalFare, meterFare;
-    if (summary.taxiFare && summary.taxiFare > 0) {
-      totalFare = summary.taxiFare;
-      meterFare = totalFare - toll;
-    } else {
-      // 미터기 공식으로 계산
-      meterFare = calcFare(distKm, veh, nightMult, 0);
-      totalFare = meterFare + toll;
-    }
+    // 서울 미터기 공식으로 요금 계산
+    const meterFare = calcFare(distKm, veh, nightMult, 0);
+    const totalFare = meterFare + toll;
 
     // 경로 좌표 추출 (지도용)
     const coords = tmapData.features
-      .filter(f => f.geometry.type === 'LineString')
+      .filter(f => f.geometry && f.geometry.type === 'LineString')
       .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
 
     const m = METER[veh];
