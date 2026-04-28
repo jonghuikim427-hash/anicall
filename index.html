@@ -6,7 +6,7 @@
 <title>애니콜택시 - 예상요금 확인하기</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=93776115e617987923eef38b75a59f42&libraries=services"></script>
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#091729 0%,#0f2540 60%,#132e4e 100%);min-height:100vh;display:flex;justify-content:center;}
@@ -159,15 +159,8 @@ let currentTab = '출국';
 let selectedAddr = null; // {display, lat, lng}
 let leafMap = null;
 let acTimer = null;
-let ps = null; // 카카오 장소검색 서비스
 
-// ── 카카오 SDK 초기화 ────────────────────────────────────
-function initKakao() {
-  try { ps = new kakao.maps.services.Places(); } catch(e) {
-    setTimeout(initKakao, 300);
-  }
-}
-window.addEventListener('load', () => setTimeout(initKakao, 500));
+// ── Vercel API 기반 검색 (CORS 없음) ────────────────────
 
 // ── 날짜 초기화 ─────────────────────────────────────────
 (()=>{
@@ -199,40 +192,24 @@ function onAddrInput(){
   acTimer = setTimeout(()=>searchAddr(q), 300);
 }
 
-function searchAddr(q){
-  if(!ps){ 
-    showAcMsg('🔍 검색 준비 중... 잠시만요');
-    setTimeout(()=>{ initKakao(); setTimeout(()=>searchAddr(q), 600); }, 100);
-    return; 
-  }
+async function searchAddr(q){
   showAcMsg('🔍 검색 중...');
-
-  // 카카오 키워드 검색
-  ps.keywordSearch(q, (data, status) => {
-    if(status === kakao.maps.services.Status.OK && data.length){
-      renderAc(data.map(d=>({
-        display: d.address_name || d.road_address_name,
-        place: d.place_name,
+  try {
+    const res = await fetch(`/api/route?type=address&query=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if(data.documents && data.documents.length){
+      renderAc(data.documents.map(d=>({
+        display: d.address_name || d.road_address_name || d.place_name,
+        place: d.place_name || '',
         lat: parseFloat(d.y),
         lng: parseFloat(d.x),
       })));
     } else {
-      // 주소 검색으로 fallback
-      const geocoder = new kakao.maps.services.Geocoder();
-      geocoder.addressSearch(q, (result, status2) => {
-        if(status2 === kakao.maps.services.Status.OK && result.length){
-          renderAc(result.map(r=>({
-            display: r.address_name,
-            place: '',
-            lat: parseFloat(r.y),
-            lng: parseFloat(r.x),
-          })));
-        } else {
-          showAcMsg('주소를 찾을 수 없어요');
-        }
-      });
+      showAcMsg('주소를 찾을 수 없어요');
     }
-  }, {size:5});
+  } catch(e) {
+    showAcMsg('검색 오류 — 다시 시도해주세요');
+  }
 }
 
 function renderAc(items){
@@ -328,21 +305,13 @@ async function calculate(){
     }
     // 카카오 지오코딩
     btn.disabled=true; btn.textContent='🔍 주소 검색 중...';
-    const found = await new Promise(resolve=>{
-      const geocoder = new kakao.maps.services.Geocoder();
-      geocoder.addressSearch(q, (result, status)=>{
-        if(status===kakao.maps.services.Status.OK && result.length){
-          resolve({display:result[0].address_name, lat:parseFloat(result[0].y), lng:parseFloat(result[0].x)});
-        } else {
-          if(ps) ps.keywordSearch(q, (data, s)=>{
-            if(s===kakao.maps.services.Status.OK && data.length){
-              resolve({display:data[0].address_name||data[0].road_address_name, lat:parseFloat(data[0].y), lng:parseFloat(data[0].x)});
-            } else resolve(null);
-          },{size:1});
-          else resolve(null);
-        }
-      });
-    });
+    const geoRes = await fetch(`/api/route?type=address&query=${encodeURIComponent(q)}`);
+    const geoData = await geoRes.json();
+    const found = geoData.documents && geoData.documents.length
+      ? {display: geoData.documents[0].address_name || geoData.documents[0].road_address_name || q,
+         lat: parseFloat(geoData.documents[0].y),
+         lng: parseFloat(geoData.documents[0].x)}
+      : null;
     if(!found){
       errEl.textContent = '주소를 찾을 수 없어요. 더 자세히 입력해 주세요.';
       errEl.classList.add('show');
