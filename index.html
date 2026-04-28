@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>애니콜택시 - 예상요금 확인하기</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#091729 0%,#0f2540 60%,#132e4e 100%);min-height:100vh;display:flex;justify-content:center;}
+.wrap{width:100%;max-width:420px;padding-bottom:30px}
+.hdr{background:linear-gradient(90deg,#c8880a,#f5b800);padding:11px 16px;display:flex;align-items:center;gap:10px}
+.hdr-icon{font-size:22px;line-height:1}
+.hdr-sub{font-size:8px;font-weight:700;color:rgba(0,0,0,0.4);letter-spacing:.15em}
+.hdr-title{font-size:17px;font-weight:900;color:#0b1e3d}
+.body{padding:12px 13px 0}
+.tabs{display:flex;background:rgba(255,255,255,0.06);border-radius:9px;padding:3px;margin-bottom:11px;border:1px solid rgba(255,255,255,0.08)}
+.tab{flex:1;padding:8px 4px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700;transition:all .18s;color:rgba(255,255,255,0.38);background:transparent}
+.tab.on{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
+.field{margin-bottom:8px}
+.lbl{display:block;font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:.08em;margin-bottom:3px}
+.inp,.sel{width:100%;padding:9px 11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:white;font-size:13px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none}
+.inp::placeholder{color:rgba(255,255,255,0.3)}
+.sel.ph{color:rgba(255,255,255,0.3)}
+.sel option{background:#1a3354;color:white}
+.row2{display:flex;gap:8px}
+.row2 .field{flex:1}
+.row2 .field.w3{flex:3}
+.calc-btn{width:100%;margin-top:11px;padding:13px;background:linear-gradient(135deg,#c8880a,#f5b800);border:none;border-radius:9px;font-size:14px;font-weight:700;color:#0b1e3d;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.02em}
+.calc-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.result-box{margin-top:11px;border-radius:11px;border:1px solid rgba(245,184,0,0.28);background:rgba(255,255,255,0.04);overflow:hidden;animation:sli .25s ease}
+@keyframes sli{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ri{padding:13px}
+.el{font-size:9px;font-weight:700;color:#f5b800;letter-spacing:.13em;margin-bottom:3px}
+.ep{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.ep .pr{font-size:28px;font-weight:900;color:white}
+.nb{background:#ff6b35;border-radius:4px;padding:2px 6px;font-size:9px;color:white;font-weight:700}
+.em{color:rgba(255,255,255,0.4);font-size:11px;margin-bottom:9px}
+.bd{border-top:1px solid rgba(255,255,255,0.07);padding-top:8px;display:flex;flex-direction:column;gap:4px}
+.br{display:flex;justify-content:space-between;font-size:12px}
+.br .k{color:rgba(255,255,255,0.4)}
+.br .v{color:rgba(255,255,255,0.8)}
+.nt{margin-top:8px;font-size:10px;color:rgba(255,255,255,0.28);line-height:1.6}
+.kbtn{width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,#c8880a,#f5b800);border:none;border-radius:8px;font-size:13px;font-weight:700;color:#0b1e3d;cursor:pointer;font-family:inherit;transition:all .15s}
+.kbtn:hover{filter:brightness(1.08)}
+.map-wrap{margin-top:10px;border-radius:11px;overflow:hidden;border:1px solid rgba(245,184,0,0.2);animation:sli .3s ease}
+.map-hdr{background:rgba(245,184,0,0.1);padding:8px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(245,184,0,0.12)}
+.map-hdr span{font-size:11px;font-weight:700;color:rgba(255,255,255,0.7)}
+#map{height:230px;width:100%}
+.map-load{height:230px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(255,255,255,0.4);font-size:12px;background:rgba(255,255,255,0.02)}
+.spinner{width:24px;height:24px;border:2px solid rgba(245,184,0,0.2);border-top-color:#f5b800;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.shake{animation:shake .4s ease}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-icon">✈️</div>
+    <div>
+      <div class="hdr-sub">ANICALL TAXI · 애니콜택시</div>
+      <div class="hdr-title">예상요금 확인하기</div>
+    </div>
+  </div>
+  <div class="body">
+    <div class="tabs">
+      <button class="tab on" id="tab-out" onclick="switchTab('출국')">🛫 출국 (출발지→공항)</button>
+      <button class="tab" id="tab-in" onclick="switchTab('입국')">🛬 입국 (공항→목적지)</button>
+    </div>
+    <div class="field">
+      <label class="lbl" id="lbl-dep">출발지</label>
+      <select class="sel ph" id="sel-dep" onchange="onDepChange()">
+        <option value="">지역을 선택하세요</option>
+        <option value="서울 강남구">서울 강남구</option>
+        <option value="서울 강서구">서울 강서구</option>
+        <option value="서울 종로구">서울 종로구</option>
+        <option value="서울 마포구">서울 마포구</option>
+        <option value="서울 송파구">서울 송파구</option>
+        <option value="서울 노원구">서울 노원구</option>
+        <option value="서울 은평구">서울 은평구</option>
+        <option value="서울 강북구">서울 강북구</option>
+        <option value="경기 성남시">경기 성남시</option>
+        <option value="경기 수원시">경기 수원시</option>
+        <option value="경기 고양시">경기 고양시</option>
+        <option value="경기 용인시">경기 용인시</option>
+        <option value="경기 남양주시">경기 남양주시</option>
+        <option value="경기 양주시">경기 양주시</option>
+        <option value="경기 의정부시">경기 의정부시</option>
+        <option value="경기 부천시">경기 부천시</option>
+        <option value="경기 안양시">경기 안양시</option>
+        <option value="경기 동탄/화성시">경기 동탄/화성시</option>
+        <option value="경기 시흥시">경기 시흥시</option>
+        <option value="경기 김포시">경기 김포시</option>
+        <option value="__custom__">직접 입력 (기타 지역)</option>
+      </select>
+    </div>
+    <div class="field" id="field-custom" style="display:none">
+      <label class="lbl">주소 직접 입력</label>
+      <input class="inp" id="inp-custom" placeholder="예: 경기 하남시 미사대로 520">
+    </div>
+    <div class="field">
+      <label class="lbl" id="lbl-arr">도착지 (공항)</label>
+      <select class="sel" id="sel-airport">
+        <option value="0">인천공항 T1</option>
+        <option value="1">인천공항 T2</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field w3">
+        <label class="lbl">탑승 일시</label>
+        <input class="inp" type="datetime-local" id="inp-date" style="font-size:12px">
+      </div>
+      <div class="field">
+        <label class="lbl">인원</label>
+        <input class="inp" type="number" id="inp-pax" min="1" max="9" value="1">
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl">차량 종류</label>
+      <select class="sel" id="sel-veh">
+        <option value="0">중형택시 (4인승, 짐 4개)</option>
+        <option value="1">대형택시 (6인승, 짐 6개)</option>
+        <option value="2">콜밴 (9인승, 짐 다수)</option>
+      </select>
+    </div>
+    <button class="calc-btn" onclick="calculate()">🔍 예상 요금 계산하기</button>
+    <div id="result-wrap"></div>
+    <div id="map-container"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const AIRPORTS=[{name:"인천공항 T1",lat:37.4491,lng:126.4509},{name:"인천공항 T2",lat:37.4727,lng:126.4493}];
+const REGIONS={"서울 강남구":{km:65,toll:13800,lat:37.5172,lng:127.0473},"서울 강서구":{km:38,toll:7400,lat:37.5509,lng:126.8496},"서울 종로구":{km:60,toll:12400,lat:37.5735,lng:126.9788},"서울 마포구":{km:55,toll:11600,lat:37.5638,lng:126.9085},"서울 송파구":{km:72,toll:14200,lat:37.5145,lng:127.1059},"서울 노원구":{km:75,toll:14800,lat:37.6542,lng:127.0568},"서울 은평구":{km:48,toll:9600,lat:37.6027,lng:126.9291},"서울 강북구":{km:68,toll:13200,lat:37.6396,lng:127.0257},"경기 성남시":{km:75,toll:14200,lat:37.4196,lng:127.1267},"경기 수원시":{km:80,toll:15600,lat:37.2636,lng:127.0286},"경기 고양시":{km:35,toll:6800,lat:37.6584,lng:126.8320},"경기 용인시":{km:88,toll:16400,lat:37.2411,lng:127.1775},"경기 남양주시":{km:82,toll:15800,lat:37.6360,lng:127.2165},"경기 양주시":{km:68,toll:13200,lat:37.7854,lng:127.0456},"경기 의정부시":{km:70,toll:13600,lat:37.7382,lng:127.0339},"경기 부천시":{km:28,toll:5600,lat:37.5034,lng:126.7660},"경기 안양시":{km:58,toll:11200,lat:37.3942,lng:126.9568},"경기 동탄/화성시":{km:84,toll:16000,lat:37.2012,lng:127.0724},"경기 시흥시":{km:44,toll:8800,lat:37.3799,lng:126.8028},"경기 김포시":{km:30,toll:5800,lat:37.6153,lng:126.7156}};
+const VEHICLES=[{base:4800,perKm:738},{base:6500,perKm:950},{base:9000,perKm:1100}];
+const AVOID=["고양","광명","부천","김포","인천"];
+let tab="출국",leafMap=null;
+(()=>{const n=new Date();n.setMinutes(n.getMinutes()-n.getTimezoneOffset());document.getElementById('inp-date').value=n.toISOString().slice(0,16);})();
+function switchTab(t){tab=t;document.getElementById('tab-out').className='tab'+(t==='출국'?' on':'');document.getElementById('tab-in').className='tab'+(t==='입국'?' on':'');document.getElementById('lbl-dep').textContent=t==='출국'?'출발지':'출발지 (공항)';document.getElementById('lbl-arr').textContent=t==='출국'?'도착지 (공항)':'도착지';document.getElementById('sel-dep').value='';document.getElementById('sel-dep').className='sel ph';document.getElementById('field-custom').style.display='none';clear();}
+function onDepChange(){const v=document.getElementById('sel-dep').value;document.getElementById('sel-dep').className=v?'sel':'sel ph';document.getElementById('field-custom').style.display=(v==='__custom__')?'block':'none';clear();}
+function clear(){document.getElementById('result-wrap').innerHTML='';document.getElementById('map-container').innerHTML='';if(leafMap){leafMap.remove();leafMap=null;}}
+function calculate(){const depVal=document.getElementById('sel-dep').value;if(!depVal){const el=document.getElementById('sel-dep');el.style.borderColor='rgba(255,80,80,0.6)';el.classList.add('shake');setTimeout(()=>{el.style.borderColor='';el.classList.remove('shake');},600);return;}const airIdx=parseInt(document.getElementById('sel-airport').value);const vehIdx=parseInt(document.getElementById('sel-veh').value);const dateV=document.getElementById('inp-date').value;const ap=AIRPORTS[airIdx];if(depVal==='__custom__'){showInquiry('INQUIRY','카카오톡으로 요금 문의','직접 입력 지역은 카카오톡 채널을 통해 정확한 요금을 안내드립니다.');return;}if(AVOID.some(z=>depVal.includes(z))){showInquiry(`INQUIRY · ${depVal}`,'사전 상담 후 요금 안내','해당 지역은 카카오톡 채널로 문의 주시면 정확한 예상 요금을 안내드립니다.');return;}const r=REGIONS[depVal];const v=VEHICLES[vehIdx];const hr=dateV?new Date(dateV).getHours():new Date().getHours();const night=hr>=22||hr<4;const dFare=Math.round((r.km*v.perKm)/100)*100;const sub=v.base+dFare+r.toll;const total=night?Math.round((sub*1.2)/100)*100:sub;showFare({reg:depVal,dist:r.km,toll:r.toll,base:v.base,dFare,total,night});const depCoord=tab==='출국'?{lat:r.lat,lng:r.lng}:{lat:ap.lat,lng:ap.lng};const arrCoord=tab==='출국'?{lat:ap.lat,lng:ap.lng}:{lat:r.lat,lng:r.lng};const depName=tab==='출국'?depVal:ap.name;const arrName=tab==='출국'?ap.name:depVal;showMap(depCoord,arrCoord,depName,arrName);}
+function showFare({reg,dist,toll,base,dFare,total,night}){document.getElementById('result-wrap').innerHTML=`<div class="result-box"><div class="ri"><div class="el">ESTIMATE · ${reg}</div><div class="ep"><span class="pr">${total.toLocaleString()}원</span>${night?'<span class="nb">야간할증</span>':''}</div><div class="em">거리 약 ${dist}km · 예상 ${Math.round(dist*1.2)}분</div><div class="bd"><div class="br"><span class="k">기본요금</span><span class="v">${base.toLocaleString()}원</span></div><div class="br"><span class="k">거리요금 (${dist}km)</span><span class="v">${dFare.toLocaleString()}원</span></div><div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div></div><div class="nt">※ 실제 요금은 미터기+통행료로 정산되며 교통상황·할증시간(22:00~04:00)에 따라 달라질 수 있습니다.</div><button class="kbtn" onclick="openKakao()">💬 카카오톡으로 예약하기 →</button></div></div>`;}
+function showInquiry(title,head,body){document.getElementById('result-wrap').innerHTML=`<div class="result-box"><div class="ri"><div class="el">${title}</div><div class="ep"><span class="pr" style="font-size:18px">${head}</span></div><div class="em" style="margin-top:4px;color:rgba(255,255,255,0.55);font-size:12px;line-height:1.6">${body}</div><button class="kbtn" onclick="openKakao()">💬 카카오톡으로 문의하기 →</button></div></div>`;document.getElementById('map-container').innerHTML='';}
+function openKakao(){window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');}
+function showMap(dep,arr,depName,arrName){if(leafMap){leafMap.remove();leafMap=null;}document.getElementById('map-container').innerHTML=`<div class="map-wrap"><div class="map-hdr"><span>🗺️</span><span>${depName} → ${arrName}</span></div><div id="map-load" class="map-load"><div class="spinner"></div><span>경로를 불러오는 중...</span></div><div id="map" style="display:none"></div></div>`;fetch(`https://router.project-osrm.org/route/v1/driving/${dep.lng},${dep.lat};${arr.lng},${arr.lat}?overview=full&geometries=geojson`).then(r=>r.json()).then(data=>{initMap();const coords=data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);const line=L.polyline(coords,{color:'#22c55e',weight:5,opacity:.9}).addTo(leafMap);addMarker(dep.lat,dep.lng,'출','#3b82f6',depName);addMarker(arr.lat,arr.lng,'착','#ef4444',arrName);leafMap.fitBounds(line.getBounds(),{padding:[16,16]});}).catch(()=>{initMap();const line=L.polyline([[dep.lat,dep.lng],[arr.lat,arr.lng]],{color:'#22c55e',weight:4,dashArray:'8,5'}).addTo(leafMap);addMarker(dep.lat,dep.lng,'출','#3b82f6',depName);addMarker(arr.lat,arr.lng,'착','#ef4444',arrName);leafMap.fitBounds(line.getBounds(),{padding:[20,20]});});}
+function initMap(){document.getElementById('map-load').style.display='none';document.getElementById('map').style.display='block';leafMap=L.map('map',{zoomControl:true,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(leafMap);}
+function addMarker(lat,lng,label,color,name){const icon=L.divIcon({html:`<div style="background:${color};color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)">${label}</div>`,iconSize:[30,30],iconAnchor:[15,15],className:''});L.marker([lat,lng],{icon}).bindPopup(`<b>${label==='출'?'출발':'도착'}</b><br>${name}`,{closeButton:false}).addTo(leafMap);}
+</script>
+</body>
+</html>
