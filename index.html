@@ -141,39 +141,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       </select>
     </div>
 
-    <div class="divider"></div>
-    <div class="sec-title">📋 예약자 정보 (선택 — 예약 시 활용)</div>
 
-    <div class="row2">
-      <div class="field">
-        <label class="lbl">이름</label>
-        <input class="inp" id="inp-name" placeholder="홍길동">
-      </div>
-      <div class="field">
-        <label class="lbl">연락처</label>
-        <input class="inp" type="tel" id="inp-phone" placeholder="010-0000-0000">
-      </div>
-    </div>
-
-    <div class="row3">
-      <div class="field">
-        <label class="lbl">기내용</label>
-        <input class="inp" type="number" id="inp-carry" min="0" value="0">
-      </div>
-      <div class="field">
-        <label class="lbl">화물용</label>
-        <input class="inp" type="number" id="inp-cargo" min="0" value="0">
-      </div>
-      <div class="field">
-        <label class="lbl">골프/기타</label>
-        <input class="inp" type="number" id="inp-golf" min="0" value="0">
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="lbl">요청사항 (선택)</label>
-      <input class="inp" id="inp-memo" placeholder="카시트, 픽업 피켓, 경유지 등">
-    </div>
 
     <div class="err-msg" id="err-msg">주소를 찾을 수 없어요. 더 자세히 입력해 주세요.</div>
 
@@ -219,53 +187,69 @@ const METER = {
 // 경로별로 OSRM 결과에서 판단
 
 function estimateToll(routeCoords, airportId) {
-  // 인천대교 중간 좌표 (경도 기준)
-  // 인천대교: 대략 lng 126.57 부근 통과
-  // 영종대교: 대략 lng 126.52 부근 통과
-  // 인천공항고속도로: 대부분 경로 통과 (서울/경기 → 공항)
+  // 인천국제공항고속도로 실제 통행료 (2024년 현금 기준)
+  // 진입 IC에 따라 구간 요금이 다름 (티맵/실측 데이터 기반)
 
   let toll = 0;
+  const startLat = routeCoords[0][0];
+  const startLng = routeCoords[0][1];
 
-  // 경로 좌표 분석
-  const lngs = routeCoords.map(c => c[1]);
-  const lats = routeCoords.map(c => c[0]);
-  const startLng = lngs[0];
-  const startLat = lats[0];
-
-  // 인천대교 통과 여부: 경로가 lng 126.50~126.60, lat 37.35~37.42 구간 통과
+  // 인천대교 경유 여부 (경기 남부 → 영종도 직행)
   const passesIncheonBridge = routeCoords.some(c =>
-    c[0] > 37.30 && c[0] < 37.45 && c[1] > 126.48 && c[1] < 126.62
-  );
-
-  // 영종대교 통과 여부
-  const passesYeongjong = routeCoords.some(c =>
-    c[0] > 37.45 && c[0] < 37.56 && c[1] > 126.50 && c[1] < 126.58
+    c[0] > 37.30 && c[0] < 37.42 && c[1] > 126.52 && c[1] < 126.65
   );
 
   if (passesIncheonBridge) {
-    toll += 6600; // 인천대교
-    toll += 2200; // 인천공항고속도로 일부
-  } else if (passesYeongjong) {
-    toll += 7900; // 영종대교 + 인천공항고속도로
+    // 인천대교(4,400) + 공항진입로(2,200) = 6,600
+    toll = 6600;
   } else {
-    // 기본: 인천공항고속도로 본선
-    toll += 7900;
+    // 인천국제공항고속도로 진입 IC별 실제 통행료
+    //
+    // 가양IC 진입권 (마포/강서/강남/영등포/양천/구로/고양 등):
+    //   가양IC → 공항입구JC: 3,200원
+    //
+    // 서울TG 진입권 (서울 동부/북부, 경기 동부/남부):
+    //   서울TG → 공항입구JC: 6,600원
+    //
+    // 가양IC 사용 지역: 경도 126.75~127.00, 위도 37.45~37.65 (서울 서/남/북서, 경기 서부)
+    // 서울TG 사용 지역: 그 외 서울 동부/강남/노원, 경기 동/남부
+
+    const usesGayangIC = (
+      // 마포, 강서, 양천, 구로, 영등포, 금천, 관악, 동작
+      (startLat > 37.44 && startLat < 37.60 && startLng > 126.82 && startLng < 127.00) ||
+      // 고양, 파주, 김포 (경기 서부)
+      (startLat > 37.55 && startLng < 126.92) ||
+      // 부천, 광명, 시흥 (경기 서남부)
+      (startLat > 37.34 && startLat < 37.53 && startLng > 126.72 && startLng < 126.88)
+    );
+
+    if (usesGayangIC) {
+      toll = 3200; // 가양IC → 공항입구JC
+    } else if (startLat < 37.38) {
+      // 수원, 용인, 안양, 안산 등 경기 남부 → 수원신갈JC or 시흥 경유
+      toll = 5500;
+    } else if (startLat > 37.63) {
+      // 의정부, 양주 등 경기 북부
+      toll = 5500;
+    } else {
+      // 서울 강남/송파/강동/강북/노원, 경기 성남/남양주 등
+      toll = 6600; // 서울TG → 공항입구JC
+    }
   }
 
-  // T2 추가 요금
+  // T2 추가 (내부연결도로 통행료)
   if (airportId === 'T2') toll += 900;
 
   return toll;
 }
 
 // ── 요금 계산 함수 ──────────────────────────────────────
-function calcFare(distKm, vehType, isNight, toll) {
+function calcFare(distKm, vehType, nightMult, toll) {
   const m = METER[vehType];
   let fare = m.base;
   const extraKm = Math.max(0, distKm - m.baseKm);
   fare += Math.round(extraKm * m.perKm / 100) * 100;
-  if (isNight) fare = Math.round(fare * m.nightMult / 100) * 100;
-  // 최솟값 보정
+  if (nightMult > 1.0) fare = Math.round(fare * nightMult / 100) * 100;
   fare = Math.max(fare, m.base);
   return fare + toll;
 }
@@ -413,7 +397,10 @@ async function calculate() {
   const veh   = document.getElementById('sel-veh').value;
   const dateV = document.getElementById('inp-date').value;
   const hr    = dateV ? new Date(dateV).getHours() : new Date().getHours();
+  // 야간할증 구간별 차등 적용
+  // 22:00~23:00 → 20%, 23:00~02:00 → 40%, 02:00~04:00 → 20%
   const isNight = hr>=22||hr<4;
+  const nightMult = (hr>=23||hr<2) ? 1.4 : (hr>=22||hr<4) ? 1.2 : 1.0;
 
   // 출국: dep=selectedAddr, arr=airport
   // 입국: dep=airport, arr=selectedAddr
@@ -443,7 +430,7 @@ async function calculate() {
     const toll = estimateToll(coords, apId);
 
     // 요금 계산
-    const meterFare = calcFare(distKm, veh, isNight, 0);
+    const meterFare = calcFare(distKm, veh, nightMult, 0);
     const totalFare = meterFare + toll;
 
     const m = METER[veh];
@@ -451,13 +438,13 @@ async function calculate() {
     const extraKm = Math.max(0, distKm - m.baseKm);
     let distFare = Math.round(extraKm * m.perKm / 100) * 100;
     let nightAdd = 0;
-    if (isNight) {
+    if (nightMult > 1.0) {
       const beforeNight = baseFare + distFare;
-      const afterNight  = Math.round(beforeNight * m.nightMult / 100) * 100;
+      const afterNight  = Math.round(beforeNight * nightMult / 100) * 100;
       nightAdd = afterNight - beforeNight;
     }
 
-    showResult({depName, arrName, distKm, durMin, baseFare, distFare, nightAdd, toll, totalFare, isNight, veh, apId});
+    showResult({depName, arrName, distKm, durMin, baseFare, distFare, nightAdd, toll, totalFare, isNight, nightMult, veh, apId});
     showMap(coords, dep, arr, depName, arrName, distKm);
 
   } catch(e) {
@@ -480,17 +467,17 @@ function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,to
         <div class="el">ESTIMATE · ${depName}</div>
         <div class="ep">
           <span class="pr">${totalFare.toLocaleString()}원</span>
-          ${isNight?'<span class="nb">야간할증</span>':''}
+          ${nightMult===1.4?'<span class="nb">심야할증 40%</span>':nightMult===1.2?'<span class="nb">야간할증 20%</span>':''}
         </div>
         <div class="em">실제 도로 ${distKm.toFixed(1)}km · 예상 ${durMin}분 · ${vehNames[veh]}</div>
         <div class="bd">
           <div class="br"><span class="k">기본요금</span><span class="v">${baseFare.toLocaleString()}원</span></div>
           <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${distFare.toLocaleString()}원</span></div>
-          ${isNight?`<div class="br"><span class="k">야간할증 (+20%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
+          ${nightMult>1.0?`<div class="br"><span class="k">야간할증 (+${Math.round((nightMult-1)*100)}%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
           <div class="br"><span class="k">통행료 (실제 경로)</span><span class="v">+${toll.toLocaleString()}원</span></div>
           <div class="br total-row"><span class="k">합계</span><span class="v">${totalFare.toLocaleString()}원</span></div>
         </div>
-        <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 교통상황에 따라 ±10~15% 차이가 날 수 있습니다.<br>야간할증: 22:00~04:00</div>
+        <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 교통상황에 따라 ±10~15% 차이가 날 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
         <div class="btn-row">
           <button class="kbtn outline" onclick="openKakaoChat('${escJs(f.card)}')">💬 채팅 문의</button>
           <button class="kbtn" onclick="openKakaoChat('${escJs(f.card)}')">📋 예약하기 →</button>
