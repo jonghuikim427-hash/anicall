@@ -162,9 +162,12 @@ let acTimer = null;
 let ps = null; // 카카오 장소검색 서비스
 
 // ── 카카오 SDK 초기화 ────────────────────────────────────
-window.addEventListener('load', () => {
-  try { ps = new kakao.maps.services.Places(); } catch(e) {}
-});
+function initKakao() {
+  try { ps = new kakao.maps.services.Places(); } catch(e) {
+    setTimeout(initKakao, 300);
+  }
+}
+window.addEventListener('load', () => setTimeout(initKakao, 500));
 
 // ── 날짜 초기화 ─────────────────────────────────────────
 (()=>{
@@ -197,7 +200,11 @@ function onAddrInput(){
 }
 
 function searchAddr(q){
-  if(!ps){ showAcMsg('검색 서비스 준비 중...'); return; }
+  if(!ps){ 
+    showAcMsg('🔍 검색 준비 중... 잠시만요');
+    setTimeout(()=>{ initKakao(); setTimeout(()=>searchAddr(q), 600); }, 100);
+    return; 
+  }
   showAcMsg('🔍 검색 중...');
 
   // 카카오 키워드 검색
