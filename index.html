@@ -252,10 +252,16 @@ function clearResult(){
   if(leafMap){ leafMap.remove(); leafMap=null; }
 }
 
-// ── 야간할증 계산 ─────────────────────────────────────────
+// ── 시간대별 기본요금 ────────────────────────────────────
+function getBaseFare(hr){
+  if(hr>=23||hr<2) return 6800;  // 23~02시 40%
+  if(hr>=22||hr<4) return 5700;  // 22~23시, 02~04시 20%
+  return 4800;                    // 평시
+}
+
 function getNightMult(hr){
-  if(hr>=23||hr<2) return 1.4;  // 23~02시 40%
-  if(hr>=22||hr<4) return 1.2;  // 22~23시, 02~04시 20%
+  if(hr>=23||hr<2) return 1.4;
+  if(hr>=22||hr<4) return 1.2;
   return 1.0;
 }
 
@@ -279,11 +285,10 @@ function estimateToll(depLat, depLng, apId){
 }
 
 // ── 요금 계산 ─────────────────────────────────────────────
-function calcFare(distKm, veh, nightMult){
+function calcFare(distKm, veh, nightMult, baseFare){
   const m = METER[veh];
-  // 기본거리 0 기준 전체 거리 × 757원 + 기본요금
-  let fare = m.base + Math.round(distKm * m.perKm / 100) * 100;
-  if(nightMult > 1) fare = Math.round(fare * nightMult / 100) * 100;
+  // 전체 거리 × 757원 + 시간대별 기본요금
+  let fare = baseFare + Math.round(distKm * m.perKm / 100) * 100;
   return fare;
 }
 
@@ -328,6 +333,7 @@ async function calculate(){
   const dateV = document.getElementById('inp-date').value;
   const hr    = dateV ? new Date(dateV).getHours() : new Date().getHours();
   const nightMult = getNightMult(hr);
+  const baseFare  = getBaseFare(hr);
 
   const dep = currentTab==='출국' ? {lat:selectedAddr.lat, lng:selectedAddr.lng} : {lat:ap.lat, lng:ap.lng};
   const arr = currentTab==='출국' ? {lat:ap.lat, lng:ap.lng} : {lat:selectedAddr.lat, lng:selectedAddr.lng};
@@ -348,25 +354,19 @@ async function calculate(){
     const toll    = summary.totalFare || 0;
 
     // 미터기 공식으로 계산 (T-map taxiFare 사용 안 함)
-    let totalFare = calcFare(distKm, veh, nightMult);
+    let totalFare = calcFare(distKm, veh, nightMult, baseFare) + toll;
 
     // 미터기 분해 (표시용)
     const m = METER[veh];
-    const baseFare = m.base;
     let distFare   = Math.round(distKm * m.perKm / 100) * 100;
     let nightAdd   = 0;
-    if(nightMult > 1){
-      const before = baseFare + distFare;
-      const after  = Math.round(before * nightMult / 100) * 100;
-      nightAdd = after - before;
-    }
 
     // 경로 좌표 (지도용)
     const coords = tmapData.features
       .filter(f => f.geometry && f.geometry.type === 'LineString')
       .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
 
-    showResult({depName, arrName, distKm, durMin, baseFare, distFare, nightAdd, toll, totalFare, nightMult, veh});
+    showResult({depName, arrName, distKm, durMin, baseFare, distFare, nightAdd, toll, totalFare, nightMult, veh, hr});
     showMap(coords, dep, arr, depName, arrName, distKm);
 
   } catch(e){
@@ -379,7 +379,7 @@ async function calculate(){
 
 // ── 결과 표시 ─────────────────────────────────────────────
 function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,toll,totalFare,nightMult,veh}){
-  const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
+  const nightLabel = hr>=23&&hr<2||hr<2&&hr>=0 ? '심야할증 40%' : (hr>=22||hr<4)&&nightMult>1 ? '야간할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
     <div class="result-box"><div class="ri">
       <div class="el">ESTIMATE · ${depName.split(' ').slice(0,3).join(' ')}</div>
