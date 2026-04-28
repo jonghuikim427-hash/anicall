@@ -281,11 +281,10 @@ function estimateToll(depLat, depLng, apId){
 // ── 요금 계산 ─────────────────────────────────────────────
 function calcFare(distKm, veh, nightMult){
   const m = METER[veh];
-  let fare = m.base;
-  const extra = Math.max(0, distKm - m.baseKm);
-  fare += Math.round(extra * m.perKm / 100) * 100;
+  // 기본거리 0 기준 전체 거리 × 757원 + 기본요금
+  let fare = m.base + Math.round(distKm * m.perKm / 100) * 100;
   if(nightMult > 1) fare = Math.round(fare * nightMult / 100) * 100;
-  return Math.max(fare, m.base);
+  return fare;
 }
 
 // ── 메인 계산 ─────────────────────────────────────────────
@@ -348,18 +347,13 @@ async function calculate(){
     const durMin  = Math.round(summary.totalTime / 60);
     const toll    = summary.totalFare || 0;
 
-    // T-map taxiFare에 야간할증 적용
-    let baseTaxiFare = summary.taxiFare || 0;
-    let totalFare = baseTaxiFare;
-    if(nightMult > 1 && baseTaxiFare > 0){
-      totalFare = Math.round(baseTaxiFare * nightMult / 100) * 100;
-    }
+    // 미터기 공식으로 계산 (T-map taxiFare 사용 안 함)
+    let totalFare = calcFare(distKm, veh, nightMult);
 
     // 미터기 분해 (표시용)
     const m = METER[veh];
     const baseFare = m.base;
-    const extraKm  = Math.max(0, distKm - m.baseKm);
-    let distFare   = Math.round(extraKm * m.perKm / 100) * 100;
+    let distFare   = Math.round(distKm * m.perKm / 100) * 100;
     let nightAdd   = 0;
     if(nightMult > 1){
       const before = baseFare + distFare;
@@ -395,8 +389,7 @@ function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,to
       </div>
       <div class="em">실제 도로 ${distKm.toFixed(1)}km · 예상 ${durMin}분 · ${VNAMES[veh]}</div>
       <div class="bd">
-        <div class="br"><span class="k">기본요금</span><span class="v">${baseFare.toLocaleString()}원</span></div>
-        <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${distFare.toLocaleString()}원</span></div>
+        <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${(baseFare + distFare).toLocaleString()}원</span></div>
         ${nightAdd?`<div class="br"><span class="k">야간할증 (+${Math.round((nightMult-1)*100)}%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
         <div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div>
         <div class="br tot"><span class="k">합계</span><span class="v">${totalFare.toLocaleString()}원</span></div>
