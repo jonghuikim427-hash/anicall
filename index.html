@@ -287,8 +287,14 @@ function estimateToll(depLat, depLng, apId){
 // ── 요금 계산 ─────────────────────────────────────────────
 function calcFare(distKm, veh, nightMult, baseFare){
   const m = METER[veh];
-  // 전체 거리 × 757원 + 시간대별 기본요금
-  let fare = baseFare + Math.round(distKm * m.perKm / 100) * 100;
+  // 전체 거리 × 757원 + 시간대별 기본요금, 야간할증은 전체에 적용
+  const distFare = Math.round(distKm * m.perKm / 100) * 100;
+  let fare = baseFare + distFare;
+  // 야간할증: 기본요금은 이미 반영됨, 거리요금에 추가 할증 적용
+  // 실제 미터기는 (기본+거리) 전체에 할증 적용
+  if(nightMult > 1){
+    fare = Math.round((baseFare + distFare) * nightMult / 100) * 100;
+  }
   return fare;
 }
 
