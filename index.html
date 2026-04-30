@@ -85,6 +85,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .err-msg.show{display:block}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .shake{animation:shake .4s ease}
+.modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#1a3354;border-radius:16px 16px 0 0;width:100%;max-width:440px;padding:20px 16px 32px;max-height:80vh;overflow-y:auto}
+.modal-title{font-size:14px;font-weight:700;color:#f5b800;margin-bottom:12px;text-align:center}
+.modal-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.8;white-space:pre-wrap;word-break:break-all;user-select:all;-webkit-user-select:all}
+.modal-btns{display:flex;gap:8px;margin-top:12px}
+.modal-btn{flex:1;padding:12px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.modal-btn.copy{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
+.modal-btn.close{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15)}
 </style>
 </head>
 <body>
@@ -831,34 +839,33 @@ function buildCallCard(){
   }
 }
 
-function copyToClipboard(text){
-  // 방법1: 최신 API
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    return navigator.clipboard.writeText(text);
-  }
-  // 방법2: execCommand 폴백 (구형 브라우저/인앱)
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-  document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  try { document.execCommand('copy'); } catch(e){}
-  document.body.removeChild(ta);
-  return Promise.resolve();
-}
-
 function openKakao(){
   const card = buildCallCard();
-  copyToClipboard(card).finally(()=>{
-    // 복사 안내
-    const btns = document.querySelectorAll('.kbtn');
-    btns.forEach(b=>{
-      const orig = b.innerHTML;
-      b.innerHTML = '📋 복사됨! 카톡창에 붙여넣기!';
-      setTimeout(()=>b.innerHTML=orig, 3000);
-    });
-    setTimeout(()=>window.open('https://pf.kakao.com/_gVxaAX/chat','_blank'), 500);
-  });
+  // 모달로 카드 표시
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">📋 아래 텍스트를 꾹 눌러 전체선택 → 복사 후 카톡에 붙여넣기!</div>
+      <div class="modal-card" id="card-text">${card}</div>
+      <div class="modal-btns">
+        <button class="modal-btn close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕ 닫기</button>
+        <button class="modal-btn copy" onclick="gotoKakao()">💬 카톡 채팅창 열기 →</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  // 자동 전체선택 시도
+  setTimeout(()=>{
+    const el = document.getElementById('card-text');
+    if(el){ const r=document.createRange(); r.selectNodeContents(el); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+    // 클립보드 복사 시도
+    try{ document.execCommand('copy'); } catch(e){}
+    if(navigator.clipboard) navigator.clipboard.writeText(card).catch(()=>{});
+  }, 200);
+}
+
+function gotoKakao(){
+  window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');
 }
 
 // ── 지도 ──────────────────────────────────────────────────
