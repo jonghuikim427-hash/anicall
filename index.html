@@ -746,8 +746,98 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
     </div></div>`;
 }
 
+function buildCallCard(){
+  const dateV = document.getElementById('inp-date').value;
+  const d = dateV ? new Date(dateV) : new Date();
+  const month = d.getMonth()+1, day = d.getDate();
+  const hours = d.getHours(), minutes = d.getMinutes();
+  const ampm = hours < 12 ? '오전' : '오후';
+  const h12 = hours % 12 || 12;
+  const timeStr = `${ampm} ${h12}시${minutes > 0 ? ` ${minutes}분` : ''}`;
+  const dateStr = `${month}월 ${day}일`;
+
+  const pax   = document.getElementById('inp-pax').textContent   || '1';
+  const cabin = document.getElementById('inp-cabin').textContent || '0';
+  const cargo = document.getElementById('inp-cargo').textContent || '0';
+  const golf  = document.getElementById('inp-golf').textContent  || '0';
+
+  if(currentTab === '출국'){
+    const from = document.getElementById('inp-addr').value || '';
+    const apId = document.getElementById('sel-airport').value;
+    const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
+    return `🚖출국택시 예약
+
+1️⃣출발일자 : ${dateStr}
+2️⃣택시탑승시간(오전/오후) : ${timeStr}
+3️⃣출발지주소 : ${from}
+4️⃣목적지(인천공항 t1,t2): ${apName}
+5️⃣탑승인원 : ${pax}
+6️⃣기내용 케리어(개수) : ${cabin}
+7️⃣화물용 케리어(개수) : ${cargo}
+8️⃣골프백 기타(개수) : ${golf}
+9️⃣연락처 :
+🔟이름 :
+💗추가사항(※필요시기재)
+🔹카시트대여 (콜밴,대형 1만원) :
+🔹외국인 피켓 픽업 서비스요청 :
+🔹카카오톡 ID :
+🔹요청사항 :
+🔹경유지:`;
+
+  } else if(currentTab === '입국'){
+    const to = document.getElementById('inp-addr').value || '';
+    const apId = document.getElementById('sel-airport').value;
+    const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
+    const flight = document.getElementById('inp-flight').value || '';
+    return `🚕입국택시 예약
+
+1️⃣입국일자 : ${dateStr}
+2️⃣비행기 도착시간(오전/오후) : ${timeStr}
+3️⃣도착공항 (인천공항 t1,t2) : ${apName}
+🌟비행기 편명 : ${flight}
+4️⃣목적지 주소 : ${to}
+5️⃣탑승인원 : ${pax}
+6️⃣기내용 케리어(개수) : ${cabin}
+7️⃣화물용 케리어(개수) : ${cargo}
+8️⃣골프백,기타(개수) : ${golf}
+9️⃣연락처 :
+🔟이름 :
+💗추가사항(※필요시기재)
+🔹카시트대여 (콜밴,대형 1만원) :
+🔹외국인 피켓 픽업 서비스요청 :
+🔹카카오톡 ID :
+🔹요청사항 :
+🔹경유지:`;
+
+  } else { // 장거리
+    const from = document.getElementById('inp-addr').value || '';
+    const to   = document.getElementById('inp-long').value || '';
+    return `🚗전국장거리 예약
+
+1️⃣출발일자 : ${dateStr}
+2️⃣택시탑승시간(오전/오후) : ${timeStr}
+3️⃣출발지주소 : ${from}
+4️⃣목적지 주소 : ${to}
+5️⃣탑승인원 : ${pax}
+6️⃣기내용 케리어(개수) : ${cabin}
+7️⃣화물용 케리어(개수) : ${cargo}
+8️⃣골프백 기타(개수) : ${golf}
+9️⃣연락처 :
+🔟이름 :
+💗추가사항(※필요시기재)
+🔹카시트대여 (콜밴,대형 1만원) :
+🔹요청사항 :
+🔹경유지:`;
+  }
+}
+
 function openKakao(){
-  window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');
+  const card = buildCallCard();
+  navigator.clipboard.writeText(card).catch(()=>{});
+  // 복사 안내 메시지 잠깐 표시
+  const btns = document.querySelectorAll('.kbtn');
+  btns.forEach(b => { const orig = b.textContent; b.textContent='📋 복사됨! 채팅창에 붙여넣기 하세요'; setTimeout(()=>b.textContent=orig, 2500); });
+  setTimeout(()=>window.open('https://pf.kakao.com/_gVxaAX/chat','_blank'), 300);
 }
 
 // ── 지도 ──────────────────────────────────────────────────
