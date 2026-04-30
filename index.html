@@ -15,7 +15,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .hdr-icon{font-size:24px}
 .hdr-sub{font-size:8px;font-weight:700;color:rgba(0,0,0,0.4);letter-spacing:.15em}
 .hdr-title{font-size:17px;font-weight:900;color:#0b1e3d}
-.body{padding:13px 13px 0}
+.body{padding:13px 13px 0;display:flex;flex-direction:column}
 .tabs{display:flex;gap:5px;margin-bottom:12px;}
 .tab{flex:1;padding:9px 4px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;font-family:inherit;font-size:9.5px;font-weight:700;transition:all .18s;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05)}
 .tab:hover{border-color:rgba(245,184,0,0.4);color:rgba(255,255,255,0.8)}
@@ -285,49 +285,51 @@ function switchTab(t){
   document.getElementById('tab-in').className   = 'tab'+(t==='입국'?' on':'');
   document.getElementById('tab-long').className = 'tab'+(t==='장거리'?' on':'');
 
-  const body   = document.querySelector('.body');
-  const fAddr  = document.getElementById('field-addr');
-  const fAp    = document.getElementById('field-airport');
-  const fLong  = document.getElementById('field-long');
-  const fFlight= document.getElementById('field-flight');
-  const fRow2  = document.querySelector('.row2');
-
   // 초기화
   document.getElementById('inp-addr').value = '';
   document.getElementById('inp-flight').value = '';
+  if(document.getElementById('inp-long')) document.getElementById('inp-long').value = '';
   selectedAddr = null; selectedLong = null;
 
+  // 요소 참조
+  const fAp    = document.getElementById('field-airport');
+  const fLong  = document.getElementById('field-long');
+  const fFlight= document.getElementById('field-flight');
+  const fAddr  = document.getElementById('field-addr');
+
+  // CSS order로 순서 제어 (DOM 이동 없음)
   if(t === '출국'){
-    // 공항선택 표시, 장거리 숨김, 항공편명 숨김
-    fAp.style.display = 'block';
-    fLong.style.display = 'none';
-    fFlight.style.display = 'none';
+    fAp.style.display    = 'block';
+    fLong.style.display  = 'none';
+    fFlight.style.display= 'none';
+    fAddr.style.order  = '1';
+    fAp.style.order    = '2';
+    fLong.style.order  = '3';
+    fFlight.style.order= '99';
     document.getElementById('lbl-addr').textContent = '출발지 주소';
     document.getElementById('lbl-ap').textContent   = '도착 공항';
-    document.querySelector('label[for="inp-date"], .row2 .lbl').textContent = '택시 탑승 시간';
-    // 순서: 주소 → 공항
-    body.insertBefore(fAddr, fAp);
 
   } else if(t === '입국'){
-    // 공항선택 표시, 장거리 숨김, 항공편명 표시
-    fAp.style.display = 'block';
-    fLong.style.display = 'none';
-    fFlight.style.display = 'block';
+    fAp.style.display    = 'block';
+    fLong.style.display  = 'none';
+    fFlight.style.display= 'block';
+    fAp.style.order    = '1';
+    fAddr.style.order  = '2';
+    fFlight.style.order= '3';
+    fLong.style.order  = '99';
     document.getElementById('lbl-addr').textContent = '도착지 주소';
     document.getElementById('lbl-ap').textContent   = '출발 공항';
-    // 순서: 공항 → 주소 → 항공편명 → 탑승일시...
-    body.insertBefore(fAp, fAddr);
-    body.insertBefore(fFlight, fRow2);
 
   } else { // 장거리
-    // 공항선택 숨김, 장거리 도착지 표시, 항공편명 숨김
-    fAp.style.display = 'none';
-    fLong.style.display = 'block';
-    fFlight.style.display = 'none';
+    fAp.style.display    = 'none';
+    fLong.style.display  = 'block';
+    fFlight.style.display= 'none';
+    fAddr.style.order  = '1';
+    fLong.style.order  = '2';
+    fAp.style.order    = '99';
+    fFlight.style.order= '99';
     document.getElementById('lbl-addr').textContent = '출발지 주소';
     document.getElementById('inp-long').placeholder = '도착지 주소 (예: 부산 해운대구 우동 1로)';
-    // 순서: 주소 → 도착지
-    body.insertBefore(fAddr, fLong);
   }
 
   // 탑승일시 라벨
@@ -636,10 +638,13 @@ async function calculate(){
   const nightMult = getNightMult(hhmm);
   const baseFare  = getBaseFare(hhmm);
 
-  const dep = currentTab==='출국' ? {lat:selectedAddr.lat, lng:selectedAddr.lng} : {lat:ap.lat, lng:ap.lng};
-  const arr = currentTab==='출국' ? {lat:ap.lat, lng:ap.lng} : {lat:selectedAddr.lat, lng:selectedAddr.lng};
-  const depName = currentTab==='출국' ? selectedAddr.display : ap.name;
-  const arrName = currentTab==='출국' ? ap.name : selectedAddr.display;
+  // 출국/장거리: selectedAddr → ap(목적지)
+  // 입국: ap(공항) → selectedAddr
+  const isDepFirst = currentTab==='출국' || currentTab==='장거리';
+  const dep = isDepFirst ? {lat:selectedAddr.lat, lng:selectedAddr.lng} : {lat:ap.lat, lng:ap.lng};
+  const arr = isDepFirst ? {lat:ap.lat, lng:ap.lng} : {lat:selectedAddr.lat, lng:selectedAddr.lng};
+  const depName = isDepFirst ? selectedAddr.display : ap.name;
+  const arrName = isDepFirst ? ap.name : selectedAddr.display;
 
   try {
     // T-map 경로 API (실제 통행료 + 택시요금)
