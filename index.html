@@ -154,6 +154,82 @@ const METER = {
 };
 const VNAMES = {medium:'중형택시', large:'대형택시', van:'콜밴'};
 
+// ── 공동사업구역 폴리곤 [lng, lat] ──────────────────────
+const SHARED_ZONES = {
+  서울: [
+    [126.7342,37.4133],[126.7644,37.4458],[126.8207,37.4479],[126.8344,37.4892],
+    [126.7891,37.5124],[126.7342,37.5682],[126.7709,37.6035],[126.8103,37.6418],
+    [126.8618,37.6539],[126.9197,37.7154],[126.9743,37.7154],[127.0289,37.6836],
+    [127.1108,37.6836],[127.1654,37.6418],[127.2200,37.6099],[127.2746,37.5682],
+    [127.2746,37.4974],[127.2200,37.4592],[127.1654,37.4133],[127.0562,37.4133],
+    [126.9743,37.4451],[126.8920,37.4133],[126.7342,37.4133]
+  ],
+  인천: [
+    [126.2010,37.2400],[126.4010,37.2400],[126.5500,37.3200],[126.6200,37.3800],
+    [126.7100,37.3900],[126.7950,37.4200],[126.7950,37.5500],[126.7100,37.5800],
+    [126.6500,37.6200],[126.5500,37.6400],[126.4500,37.6940],[126.3500,37.6940],
+    [126.2500,37.6500],[126.2010,37.5500],[126.2010,37.2400]
+  ],
+  고양: [
+    [126.7000,37.5930],[126.7600,37.5930],[126.8200,37.6100],[126.8700,37.6300],
+    [126.9200,37.6500],[126.9600,37.6800],[126.9600,37.7200],[126.9200,37.7600],
+    [126.8700,37.7850],[126.8000,37.7850],[126.7500,37.7500],[126.7000,37.7000],
+    [126.7000,37.5930]
+  ],
+  부천: [
+    [126.7120,37.4680],[126.7600,37.4680],[126.8000,37.4800],[126.8330,37.5000],
+    [126.8330,37.5400],[126.8000,37.5600],[126.7600,37.5600],[126.7120,37.5400],
+    [126.7120,37.4680]
+  ],
+  김포: [
+    [126.5300,37.5700],[126.6000,37.5700],[126.6800,37.5900],[126.7500,37.6200],
+    [126.7700,37.6700],[126.7500,37.7200],[126.7000,37.7400],[126.6200,37.7200],
+    [126.5500,37.6800],[126.5300,37.6200],[126.5300,37.5700]
+  ],
+  광명: [
+    [126.8400,37.4180],[126.8800,37.4180],[126.9200,37.4400],[126.9200,37.4980],
+    [126.8800,37.4980],[126.8400,37.4700],[126.8400,37.4180]
+  ]
+};
+
+// ── 포인트-인-폴리곤 (Ray Casting) ──────────────────────
+function pointInPolygon(lng, lat, polygon){
+  let inside = false;
+  for(let i=0, j=polygon.length-1; i<polygon.length; j=i++){
+    const xi=polygon[i][0], yi=polygon[i][1];
+    const xj=polygon[j][0], yj=polygon[j][1];
+    if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+function isInSharedZone(lat, lng){
+  return Object.values(SHARED_ZONES).some(poly => pointInPolygon(lng, lat, poly));
+}
+
+// ── 두 좌표간 거리 (km, Haversine) ──────────────────────
+function haversine(lat1, lng1, lat2, lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ── 경로 좌표에서 공동사업구역 이탈 지점 찾기 ───────────
+// coords: [[lat,lng],...] (T-map 순서)
+// 반환: {exitIdx, normalKm, surchargeKm}
+function findExitPoint(coords){
+  let normalKm = 0;
+  for(let i=0; i<coords.length-1; i++){
+    const [lat,lng] = coords[i];
+    if(!isInSharedZone(lat, lng)){
+      // 이탈 지점 발견
+      return { exitIdx: i, normalKm };
+    }
+    normalKm += haversine(coords[i][0],coords[i][1],coords[i+1][0],coords[i+1][1]);
+  }
+  return { exitIdx: -1, normalKm: 0 }; // 전 구간 공동사업구역
+}
+
 // ── 상태 ─────────────────────────────────────────────────
 let currentTab = '출국';
 let selectedAddr = null; // {display, lat, lng}
@@ -359,22 +435,39 @@ async function calculate(){
     const durMin  = Math.round(summary.totalTime / 60);
     const toll    = summary.totalFare || 0;
 
-    // 미터기 공식으로 계산 (T-map taxiFare 사용 안 함)
-    let totalFare = calcFare(distKm, veh, nightMult, baseFare) + toll;
-
-    // 미터기 분해 (표시용)
-    const m = METER[veh];
-    let distFare   = Math.round(distKm * m.perKm / 100) * 100;
-    if(nightMult > 1) distFare = Math.round(distFare * nightMult / 100) * 100;
-    let nightAdd   = 0;
-
-    // 경로 좌표 (지도용)
+    // 경로 좌표 (지도용 + 시계외할증 계산용)
     const coords = tmapData.features
       .filter(f => f.geometry && f.geometry.type === 'LineString')
       .flatMap(f => f.geometry.coordinates.map(c => [c[1], c[0]]));
 
-    showResult({depName, arrName, distKm, durMin, baseFare, distFare, nightAdd, toll, totalFare, nightMult, veh, hr});
-    showMap(coords, dep, arr, depName, arrName, distKm);
+    const m = METER[veh];
+    let totalFare, distFare, surchargeKm = 0, normalKm = distKm;
+    let exitIdx = -1;
+
+    // ── 입국 탭: 시계외할증 계산 ──────────────────────────
+    if(currentTab === '입국'){
+      const destInZone = isInSharedZone(arr.lat, arr.lng);
+      if(!destInZone && coords.length > 0){
+        const exit = findExitPoint(coords);
+        exitIdx = exit.exitIdx;
+        if(exitIdx >= 0){
+          normalKm    = exit.normalKm;
+          surchargeKm = Math.max(0, distKm - normalKm);
+        }
+      }
+    }
+
+    // 미터기 계산
+    const normalFare    = Math.round(normalKm * m.perKm / 100) * 100;
+    const surchargeFare = Math.round(surchargeKm * m.perKm * 1.2 / 100) * 100;
+    distFare = normalFare + surchargeFare;
+
+    let subtotal = m.base + distFare;
+    if(nightMult > 1) subtotal = Math.round(subtotal * nightMult / 100) * 100;
+    totalFare = subtotal + toll;
+
+    showResult({depName, arrName, distKm, baseFare: m.base, distFare, toll, totalFare, nightMult, veh, surchargeKm});
+    showMap(coords, dep, arr, depName, arrName, distKm, exitIdx);
 
   } catch(e){
     console.error('경로 오류:', e);
@@ -394,19 +487,21 @@ function getTimeRange(distKm){
   return '약 80분~';
 }
 
-function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,toll,totalFare,nightMult,veh,hr}){
+function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm}){
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
+  const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
     <div class="result-box"><div class="ri">
       <div class="el">ESTIMATE · ${depName.split(' ').slice(0,3).join(' ')}</div>
       <div class="ep">
         <span class="price">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span>
         ${nightLabel?`<span class="nb">${nightLabel}</span>`:''}
+        ${surLabel?`<span class="nb" style="background:#e53e3e">${surLabel}</span>`:''}
       </div>
       <div class="em">예상 ${getTimeRange(distKm)} · ${VNAMES[veh]} · 💳 카드결제 가능</div>
       <div class="bd">
         <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${(baseFare + distFare).toLocaleString()}원</span></div>
-        ${nightAdd?`<div class="br"><span class="k">야간할증 (+${Math.round((nightMult-1)*100)}%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
+        ${surchargeKm>0?`<div class="br"><span class="k" style="color:#fc8181">└ 시계외구간 ${surchargeKm.toFixed(1)}km (×1.2)</span><span class="v" style="color:#fc8181">포함</span></div>`:''}
         <div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div>
         <div class="br tot"><span class="k">예상요금</span><span class="v">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span></div>
       </div>
@@ -423,7 +518,7 @@ function openKakao(){
 }
 
 // ── 지도 ──────────────────────────────────────────────────
-function showMap(coords, dep, arr, depName, arrName, distKm){
+function showMap(coords, dep, arr, depName, arrName, distKm, exitIdx){
   if(leafMap){ leafMap.remove(); leafMap=null; }
   document.getElementById('map-container').innerHTML = `
     <div class="map-wrap">
@@ -440,10 +535,29 @@ function showMap(coords, dep, arr, depName, arrName, distKm){
     document.getElementById('map').style.display='block';
     leafMap = L.map('map',{zoomControl:true,attributionControl:false});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(leafMap);
-    const line = L.polyline(coords,{color:'#22c55e',weight:5,opacity:.9}).addTo(leafMap);
+
+    let mainLine;
+    if(exitIdx > 0 && exitIdx < coords.length){
+      // 공동사업구역 내 구간: 초록
+      const normalCoords    = coords.slice(0, exitIdx + 1);
+      // 시계외할증 구간: 빨강
+      const surchargeCoords = coords.slice(exitIdx);
+      const line1 = L.polyline(normalCoords,   {color:'#22c55e', weight:5, opacity:.9}).addTo(leafMap);
+      const line2 = L.polyline(surchargeCoords,{color:'#ef4444', weight:5, opacity:.9}).addTo(leafMap);
+      // 빨간 구간 범례
+      const mid = surchargeCoords[Math.floor(surchargeCoords.length/2)];
+      if(mid) L.marker(mid,{icon:L.divIcon({
+        html:`<div style="background:#ef4444;color:white;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.4)">시계외할증</div>`,
+        iconAnchor:[30,10],className:''
+      })}).addTo(leafMap);
+      mainLine = L.featureGroup([line1, line2]);
+    } else {
+      mainLine = L.polyline(coords,{color:'#22c55e',weight:5,opacity:.9}).addTo(leafMap);
+    }
+
     addMarker(dep.lat,dep.lng,'출','#3b82f6',depName);
     addMarker(arr.lat,arr.lng,'착','#ef4444',arrName);
-    leafMap.fitBounds(line.getBounds(),{padding:[18,18]});
+    leafMap.fitBounds(mainLine.getBounds(),{padding:[18,18]});
   },100);
 }
 
