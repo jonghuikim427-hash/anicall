@@ -365,6 +365,7 @@ async function calculate(){
     // 미터기 분해 (표시용)
     const m = METER[veh];
     let distFare   = Math.round(distKm * m.perKm / 100) * 100;
+    if(nightMult > 1) distFare = Math.round(distFare * nightMult / 100) * 100;
     let nightAdd   = 0;
 
     // 경로 좌표 (지도용)
@@ -385,21 +386,29 @@ async function calculate(){
 }
 
 // ── 결과 표시 ─────────────────────────────────────────────
+function getTimeRange(distKm){
+  if(distKm < 50)  return '약 40~60분';
+  if(distKm < 70)  return '약 50~80분';
+  if(distKm < 90)  return '약 60~90분';
+  if(distKm < 110) return '약 70~100분';
+  return '약 80분~';
+}
+
 function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,toll,totalFare,nightMult,veh,hr}){
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
     <div class="result-box"><div class="ri">
       <div class="el">ESTIMATE · ${depName.split(' ').slice(0,3).join(' ')}</div>
       <div class="ep">
-        <span class="price">${totalFare.toLocaleString()}원</span>
+        <span class="price">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span>
         ${nightLabel?`<span class="nb">${nightLabel}</span>`:''}
       </div>
-      <div class="em">실제 도로 ${distKm.toFixed(1)}km · 예상 ${durMin}분 · ${VNAMES[veh]}</div>
+      <div class="em">실제 도로 ${distKm.toFixed(1)}km · 예상 ${getTimeRange(distKm)} · ${VNAMES[veh]}</div>
       <div class="bd">
         <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${(baseFare + distFare).toLocaleString()}원</span></div>
         ${nightAdd?`<div class="br"><span class="k">야간할증 (+${Math.round((nightMult-1)*100)}%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
         <div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div>
-        <div class="br tot"><span class="k">합계</span><span class="v">${totalFare.toLocaleString()}원</span></div>
+        <div class="br tot"><span class="k">예상요금</span><span class="v">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span></div>
       </div>
       <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 교통상황에 따라 ±10~15% 차이가 날 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
       <div class="btn-row">
