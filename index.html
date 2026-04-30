@@ -98,20 +98,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
   </div>
 
   <div class="body">
-    <div class="tabs">
+    <div class="tabs" style="order:0">
       <button class="tab on" id="tab-out" onclick="switchTab('출국')" style="font-size:9.5px;padding:8px 2px">🛫 출국(출발지→공항)</button>
       <button class="tab" id="tab-in" onclick="switchTab('입국')" style="font-size:9.5px;padding:8px 2px">🛬 입국(공항→목적지)</button>
       <button class="tab" id="tab-long" onclick="switchTab('장거리')" style="font-size:9.5px;padding:8px 2px">🚗 전국장거리</button>
     </div>
 
-    <div class="field" id="field-addr">
+    <div class="field" id="field-addr" style="order:1">
       <label class="lbl" id="lbl-addr">출발지 주소</label>
       <input class="inp" id="inp-addr" placeholder="예: 서울 마포구 망원로 76" autocomplete="off"
         oninput="onAddrInput()" onblur="hideAc()">
       <div class="ac" id="ac-list"></div>
     </div>
 
-    <div class="field" id="field-airport">
+    <div class="field" id="field-airport" style="order:2">
       <label class="lbl" id="lbl-ap">도착 공항</label>
       <select class="sel" id="sel-airport" onchange="onAirportChange()">
         <option value="T1">인천공항 T1</option>
@@ -120,14 +120,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       </select>
     </div>
 
-    <div class="field" id="field-long" style="display:none">
+    <div class="field" id="field-long" style="display:none;order:3">
       <label class="lbl">장거리 목적지 주소</label>
       <input class="inp" id="inp-long" placeholder="예: 부산시 해운대구 우동 1로" autocomplete="off"
         oninput="onLongInput()" onblur="hideAcLong()">
       <div class="ac" id="ac-list-long"></div>
     </div>
 
-    <div class="row2">
+    <div class="row2" style="order:4">
       <div class="field w2">
         <label class="lbl">탑승 일시</label>
         <input class="inp" type="datetime-local" id="inp-date" style="font-size:12px" onchange="clearResult()">
@@ -143,13 +143,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
     </div>
 
     <!-- 항공편명 (입국만) -->
-    <div class="field" id="field-flight" style="display:none">
+    <div class="field" id="field-flight" style="display:none;order:5">
       <label class="lbl">✈️ 항공편명 <span style="color:#f5b800">(필수)</span></label>
       <input class="inp" id="inp-flight" placeholder="예: KE123, OZ456" autocomplete="off">
     </div>
 
     <!-- 짐 정보 -->
-    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px;margin-top:0">
+    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px;margin-top:0;order:6">
       <div class="field" style="flex:1;margin-bottom:0">
         <label class="lbl" style="font-size:9px;letter-spacing:0">화물용 캐리어(대)</label>
         <div class="stepper">
@@ -176,7 +176,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" style="order:7">
       <label class="lbl">차량 종류</label>
       <select class="sel" id="sel-veh" onchange="clearResult()">
         <option value="medium">중형택시 (4인승)</option>
@@ -185,11 +185,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       </select>
     </div>
 
-    <div class="err-msg" id="err-msg"></div>
-    <button class="calc-btn" onclick="calculate()" id="btn-calc">🔍 예상 요금 계산하기</button>
+    <div class="err-msg" id="err-msg" style="order:8"></div>
+    <button class="calc-btn" onclick="calculate()" id="btn-calc" style="order:9">🔍 예상 요금 계산하기</button>
 
-    <div id="result-wrap"></div>
-    <div id="map-container"></div>
+    <div id="result-wrap" style="order:10"></div>
+    <div id="map-container" style="order:11"></div>
   </div>
 </div>
 
