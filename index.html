@@ -668,8 +668,8 @@ async function calculate(){
     let totalFare, distFare, surchargeKm = 0, normalKm = distKm;
     let exitIdx = -1;
 
-    // ── 입국 탭: 시계외할증 계산 ──────────────────────────
-    if(currentTab === '입국'){
+    // ── 입국/장거리 탭: 시계외할증 계산 ──────────────────
+    if(currentTab === '입국' || currentTab === '장거리'){
       const destInZone = await isInSharedZoneAPI(arr.lat, arr.lng);
       if(!destInZone && coords.length > 0){
         btn.textContent='📍 구간 분석 중...';
@@ -683,15 +683,15 @@ async function calculate(){
     }
 
     // 미터기 계산
-    if(currentTab === '장거리'){
-      // 장거리: 원래 공식 그대로 (카카오 동일)
+    if(currentTab === '장거리' && surchargeKm === 0){
+      // 장거리 + 시계외 없음: 원래 공식 그대로
       const rawDist = Math.round(distKm * m.perKm / 100) * 100;
       let subtotal = m.base + rawDist;
       if(nightMult > 1) subtotal = Math.round(subtotal * nightMult / 100) * 100;
       totalFare = subtotal + toll;
       distFare  = rawDist;
     } else {
-      // 입출국: 시간대 경계 쪼개기
+      // 입출국 또는 장거리+시계외: 시간대 경계 쪼개기
       const depMin    = Math.floor(hhmm/100)*60 + (hhmm%100);
       const travelMin = getEstimatedMinutes(distKm);
       const borderMin = (surchargeKm > 0)
