@@ -403,13 +403,14 @@ function showResult({depName,arrName,distKm,durMin,baseFare,distFare,nightAdd,to
         <span class="price">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span>
         ${nightLabel?`<span class="nb">${nightLabel}</span>`:''}
       </div>
-      <div class="em">💳 카드결제 가능 · ${VNAMES[veh]}</div>
+      <div class="em">예상 ${getTimeRange(distKm)} · ${VNAMES[veh]} · 💳 카드결제 가능</div>
       <div class="bd">
         <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${(baseFare + distFare).toLocaleString()}원</span></div>
         ${nightAdd?`<div class="br"><span class="k">야간할증 (+${Math.round((nightMult-1)*100)}%)</span><span class="v">+${nightAdd.toLocaleString()}원</span></div>`:''}
         <div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div>
         <div class="br tot"><span class="k">예상요금</span><span class="v">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span></div>
       </div>
+      <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 교통상황에 따라 차이가 날 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
       <div class="btn-row">
         <button class="kbtn sub" onclick="openKakao()">💬 채팅 문의</button>
         <button class="kbtn main" onclick="openKakao()">📋 예약하기 →</button>
