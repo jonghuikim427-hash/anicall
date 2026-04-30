@@ -831,13 +831,34 @@ function buildCallCard(){
   }
 }
 
+function copyToClipboard(text){
+  // 방법1: 최신 API
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text);
+  }
+  // 방법2: execCommand 폴백 (구형 브라우저/인앱)
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
 function openKakao(){
   const card = buildCallCard();
-  navigator.clipboard.writeText(card).catch(()=>{});
-  // 복사 안내 메시지 잠깐 표시
-  const btns = document.querySelectorAll('.kbtn');
-  btns.forEach(b => { const orig = b.textContent; b.textContent='📋 복사됨! 채팅창에 붙여넣기 하세요'; setTimeout(()=>b.textContent=orig, 2500); });
-  setTimeout(()=>window.open('https://pf.kakao.com/_gVxaAX/chat','_blank'), 300);
+  copyToClipboard(card).finally(()=>{
+    // 복사 안내
+    const btns = document.querySelectorAll('.kbtn');
+    btns.forEach(b=>{
+      const orig = b.innerHTML;
+      b.innerHTML = '📋 복사됨! 카톡창에 붙여넣기!';
+      setTimeout(()=>b.innerHTML=orig, 3000);
+    });
+    setTimeout(()=>window.open('https://pf.kakao.com/_gVxaAX/chat','_blank'), 500);
+  });
 }
 
 // ── 지도 ──────────────────────────────────────────────────
