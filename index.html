@@ -663,8 +663,8 @@ async function calculate(){
     let totalFare, distFare, surchargeKm = 0, normalKm = distKm;
     let exitIdx = -1;
 
-    // ── 입국 탭: 시계외할증 계산 (장거리는 제외) ───────────
-    if(currentTab === '입국'){
+    // ── 입국/장거리 탭: 시계외할증 계산 ──────────────────
+    if(currentTab === '입국' || currentTab === '장거리'){
       const destInZone = await isInSharedZoneAPI(arr.lat, arr.lng);
       if(!destInZone && coords.length > 0){
         btn.textContent='📍 구간 분석 중...';
