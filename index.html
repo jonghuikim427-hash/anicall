@@ -93,9 +93,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 
   <div class="body">
     <div class="tabs">
-      <button class="tab on" id="tab-out" onclick="switchTab('출국')" style="font-size:10px">🛫 출국</button>
-      <button class="tab" id="tab-in" onclick="switchTab('입국')" style="font-size:10px">🛬 입국</button>
-      <button class="tab" id="tab-long" onclick="switchTab('장거리')" style="font-size:10px">🚗 전국장거리</button>
+      <button class="tab on" id="tab-out" onclick="switchTab('출국')" style="font-size:9.5px;padding:8px 2px">🛫 출국(출발지→공항)</button>
+      <button class="tab" id="tab-in" onclick="switchTab('입국')" style="font-size:9.5px;padding:8px 2px">🛬 입국(공항→목적지)</button>
+      <button class="tab" id="tab-long" onclick="switchTab('장거리')" style="font-size:9.5px;padding:8px 2px">🚗 전국장거리</button>
     </div>
 
     <div class="field" id="field-addr">
@@ -139,18 +139,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
     </div>
 
     <!-- 짐 정보 -->
-    <div class="lbl" style="margin-bottom:6px">짐 정보</div>
-    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px">
+    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px;margin-top:0">
       <div class="field" style="flex:1;margin-bottom:0">
-        <label class="lbl" style="font-size:9px">기내용 캐리어<br><span style="opacity:.5">(작은거)</span></label>
+        <label class="lbl" style="font-size:9px;letter-spacing:0">기내캐리어(소)</label>
         <input class="inp" type="number" id="inp-cabin" min="0" max="9" value="0" style="text-align:center">
       </div>
       <div class="field" style="flex:1;margin-bottom:0">
-        <label class="lbl" style="font-size:9px">화물용 캐리어<br><span style="opacity:.5">(큰거)</span></label>
+        <label class="lbl" style="font-size:9px;letter-spacing:0">화물캐리어(대)</label>
         <input class="inp" type="number" id="inp-cargo" min="0" max="9" value="0" style="text-align:center">
       </div>
       <div class="field" style="flex:1;margin-bottom:0">
-        <label class="lbl" style="font-size:9px">골프백/기타<br><span style="opacity:.5">&nbsp;</span></label>
+        <label class="lbl" style="font-size:9px;letter-spacing:0">골프백/기타</label>
         <input class="inp" type="number" id="inp-golf" min="0" max="9" value="0" style="text-align:center">
       </div>
     </div>
