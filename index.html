@@ -92,14 +92,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .modal-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.8;white-space:pre-wrap;word-break:break-all}
 .modal-btns{display:flex;gap:8px;margin-top:12px}
 .modal-btn{flex:1;padding:13px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.modal-btn.copy{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
+.modal-btn.copy{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);font-size:12px;padding:10px}
 .modal-btn.copy.done{background:#22c55e;border-color:#22c55e;color:white}
-.modal-btn.kakao{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
-.modal-guide{display:none;background:linear-gradient(135deg,rgba(200,136,10,0.2),rgba(245,184,0,0.1));border:2px solid rgba(245,184,0,0.6);border-radius:16px;padding:44px 24px;text-align:center;line-height:1.9}
+.modal-btn.kakao{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d;padding:22px;font-size:17px}
+.modal-guide{display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(245,184,0,0.3);border-radius:14px;padding:20px 16px;text-align:center;line-height:1.8}
 .modal-guide.show{display:block}
-.modal-guide-icon{font-size:48px;margin-bottom:14px}
-.modal-guide-title{font-size:22px;font-weight:900;color:#f5b800;margin-bottom:10px}
-.modal-guide-sub{font-size:15px;font-weight:700;color:white;line-height:2}
+.modal-guide-icon{font-size:28px;margin-bottom:6px}
+.modal-guide-title{font-size:11px;font-weight:500;color:rgba(255,255,255,0.4);margin-top:12px}
+.modal-guide-sub{font-size:20px;font-weight:900;color:#f5b800;line-height:1.7}
 </style>
 </head>
 <body>
@@ -846,8 +846,8 @@ function openKakao(){
       </div>
       <div class="modal-guide" id="modal-guide">
         <div class="modal-guide-icon">📋</div>
-        <div class="modal-guide-title">복사 완료!</div>
-        <div class="modal-guide-sub">카톡이 연결되면<br>채팅을 꾹 눌러<br>붙여넣기 해주세요<br><br>빠른 상담이 가능합니다 😊</div>
+        <div class="modal-guide-sub">카톡이 연결되면<br>채팅을 꾹 눌러<br>붙여넣기 해주세요!</div>
+        <div class="modal-guide-title">복사 완료</div>
       </div>
       <div class="modal-btns" id="kakao-btn-wrap" style="display:none;margin-top:8px">
         <button class="modal-btn kakao" onclick="gotoKakao()">💬 카톡 열기 →</button>
