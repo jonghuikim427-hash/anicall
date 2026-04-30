@@ -88,6 +88,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;display:flex;align-items:flex-end;justify-content:center}
 .modal{background:#1a3354;border-radius:16px 16px 0 0;width:100%;max-width:440px;padding:16px 16px 32px;max-height:82vh;overflow-y:auto;position:relative}
 .modal-close{position:absolute;top:12px;right:14px;width:28px;height:28px;border:none;background:rgba(255,255,255,0.1);border-radius:50%;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.extra-section{margin-bottom:14px}
+.extra-label{font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.08em;margin-bottom:4px;display:block}
+.extra-label.req{color:#f5b800}
+.extra-label.req::after{content:' *';color:#f5b800}
+.extra-inp{width:100%;padding:11px 12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:white;font-size:13px;font-family:inherit;outline:none}
+.extra-inp.req{border-color:rgba(245,184,0,0.3)}
+.extra-inp:focus{border-color:rgba(245,184,0,0.5)}
+.extra-inp::placeholder{color:rgba(255,255,255,0.25)}
+.extra-divider{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:14px 0}
+.extra-opt-title{font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:.1em;margin-bottom:10px}
+.extra-row{display:flex;gap:8px}
+.extra-row .extra-section{flex:1}
 .modal-title{font-size:13px;font-weight:700;color:#f5b800;margin-bottom:12px;padding-right:32px}
 .modal-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.8;white-space:pre-wrap;word-break:break-all}
 .modal-btns{display:flex;gap:8px;margin-top:12px}
@@ -740,12 +752,13 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
       <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
       <div class="btn-row">
         <button class="kbtn sub" onclick="openKakao()">💬 채팅 문의</button>
-        <button class="kbtn main" onclick="openKakao()">📋 예약하기 →</button>
+        <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
       </div>
     </div></div>`;
 }
 
-function buildCallCard(){
+function buildCallCard(extra){
+  extra = extra || {};
   const dateV = document.getElementById('inp-date').value;
   const d = dateV ? new Date(dateV) : new Date();
   const month = d.getMonth()+1, day = d.getDate();
@@ -774,14 +787,14 @@ function buildCallCard(){
 6️⃣기내용 케리어(개수) : ${cabin}
 7️⃣화물용 케리어(개수) : ${cargo}
 8️⃣골프백 기타(개수) : ${golf}
-9️⃣연락처 :
-🔟이름 :
+9️⃣연락처 : ${extra.phone||''}
+🔟이름 : ${extra.name||''}
 💗추가사항(※필요시기재)
-🔹카시트대여 (콜밴,대형 1만원) :
-🔹외국인 피켓 픽업 서비스요청 :
-🔹카카오톡 ID :
-🔹요청사항 :
-🔹경유지:`;
+🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
+🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
+🔹카카오톡 ID : ${extra.kakaoId||''}
+🔹요청사항 : ${extra.request||''}
+🔹경유지: ${extra.waypoint||''}`;
 
   } else if(currentTab === '입국'){
     const to = document.getElementById('inp-addr').value || '';
@@ -799,14 +812,14 @@ function buildCallCard(){
 6️⃣기내용 케리어(개수) : ${cabin}
 7️⃣화물용 케리어(개수) : ${cargo}
 8️⃣골프백,기타(개수) : ${golf}
-9️⃣연락처 :
-🔟이름 :
+9️⃣연락처 : ${extra.phone||''}
+🔟이름 : ${extra.name||''}
 💗추가사항(※필요시기재)
-🔹카시트대여 (콜밴,대형 1만원) :
-🔹외국인 피켓 픽업 서비스요청 :
-🔹카카오톡 ID :
-🔹요청사항 :
-🔹경유지:`;
+🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
+🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
+🔹카카오톡 ID : ${extra.kakaoId||''}
+🔹요청사항 : ${extra.request||''}
+🔹경유지: ${extra.waypoint||''}`;
 
   } else { // 장거리
     const from = document.getElementById('inp-addr').value || '';
@@ -830,8 +843,84 @@ function buildCallCard(){
   }
 }
 
-function openKakao(){
-  const card = buildCallCard();
+function openExtra(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕</button>
+      <div class="modal-title" style="font-size:15px">📋 예약 추가 정보</div>
+
+      <div class="extra-section">
+        <label class="extra-label req">연락처</label>
+        <input class="extra-inp req" id="ex-phone" type="tel" placeholder="010-0000-0000">
+      </div>
+      <div class="extra-section">
+        <label class="extra-label req">이름</label>
+        <input class="extra-inp req" id="ex-name" placeholder="홍길동">
+      </div>
+
+      <hr class="extra-divider">
+      <div class="extra-opt-title">✦ 추가사항 (선택)</div>
+
+      <div class="extra-row">
+        <div class="extra-section">
+          <label class="extra-label">카시트 대여</label>
+          <input class="extra-inp" id="ex-carseat" placeholder="콜밴,대형 1만원">
+        </div>
+        <div class="extra-section">
+          <label class="extra-label">외국인 피켓 픽업</label>
+          <input class="extra-inp" id="ex-picket" placeholder="이름 입력">
+        </div>
+      </div>
+      <div class="extra-section">
+        <label class="extra-label">카카오톡 ID</label>
+        <input class="extra-inp" id="ex-kakao" placeholder="카카오톡 ID">
+      </div>
+      <div class="extra-section">
+        <label class="extra-label">요청사항</label>
+        <input class="extra-inp" id="ex-request" placeholder="기타 요청사항">
+      </div>
+      <div class="extra-section">
+        <label class="extra-label">경유지</label>
+        <input class="extra-inp" id="ex-waypoint" placeholder="경유지 주소">
+      </div>
+
+      <div class="modal-btns" style="margin-top:16px">
+        <button class="modal-btn kakao" onclick="confirmExtra()">확인 → 콜카드 보기</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+
+function confirmExtra(){
+  const phone = document.getElementById('ex-phone').value.trim();
+  const name  = document.getElementById('ex-name').value.trim();
+  if(!phone){
+    const el = document.getElementById('ex-phone');
+    el.style.borderColor='rgba(255,80,80,0.6)';
+    el.focus();
+    setTimeout(()=>el.style.borderColor='',1500);
+    return;
+  }
+  // 추가정보 수집
+  const extra = {
+    phone, name,
+    carseat  : document.getElementById('ex-carseat').value.trim(),
+    picket   : document.getElementById('ex-picket').value.trim(),
+    kakaoId  : document.getElementById('ex-kakao').value.trim(),
+    request  : document.getElementById('ex-request').value.trim(),
+    waypoint : document.getElementById('ex-waypoint').value.trim(),
+  };
+  // 추가정보 모달 닫기
+  const bg = document.querySelector('.modal-bg');
+  if(bg) document.body.removeChild(bg);
+  // 콜카드 모달 열기
+  openKakao(extra);
+}
+
+function openKakao(extra){
+  const card = buildCallCard(extra);
   // 모달로 카드 표시
   const bg = document.createElement('div');
   bg.className = 'modal-bg';
