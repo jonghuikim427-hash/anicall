@@ -92,9 +92,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .modal-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.8;white-space:pre-wrap;word-break:break-all}
 .modal-btns{display:flex;gap:8px;margin-top:12px}
 .modal-btn{flex:1;padding:13px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.modal-btn.copy{background:rgba(255,255,255,0.12);color:white;border:1px solid rgba(255,255,255,0.2)}
-.modal-btn.copy.done{background:#22c55e;border-color:#22c55e}
-.modal-btn.kakao{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
+.modal-btn.copy{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
+.modal-btn.copy.done{background:#22c55e;border-color:#22c55e;color:white}
+.modal-btn.kakao{background:linear-gradient(135deg,#1a6b3a,#22c55e);color:white}
+.modal-guide{font-size:11px;color:#f5b800;text-align:center;margin-top:10px;line-height:1.6;display:none}
+.modal-guide.show{display:block}
 </style>
 </head>
 <body>
@@ -837,7 +839,12 @@ function openKakao(){
       <div class="modal-title">📋 콜카드 확인 후 복사 → 카톡에 붙여넣기</div>
       <div class="modal-card" id="${cardId}">${card}</div>
       <div class="modal-btns">
-        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하기</button>
+        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하고 카톡 연결</button>
+      </div>
+      <div class="modal-guide" id="modal-guide">
+        📌 카톡이 연결되면 붙여넣기 해주세요!<br>빠른 상담이 가능합니다 😊
+      </div>
+      <div class="modal-btns" id="kakao-btn-wrap" style="display:none;margin-top:8px">
         <button class="modal-btn kakao" onclick="gotoKakao()">💬 카톡 열기 →</button>
       </div>
     </div>`;
@@ -851,7 +858,8 @@ function doCopy(id){
   const copy = ()=>{
     btn.textContent='✅ 복사됐어요!';
     btn.classList.add('done');
-    setTimeout(()=>{ btn.textContent='📋 복사하기'; btn.classList.remove('done'); }, 2500);
+    document.getElementById('modal-guide').classList.add('show');
+    document.getElementById('kakao-btn-wrap').style.display='flex';
   };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(copy).catch(()=>fallbackCopy(text, copy));
