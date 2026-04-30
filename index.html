@@ -205,6 +205,22 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ════════════════════════════════════════════════════════
+// ██  개발자 설정 영역  ██
+// ════════════════════════════════════════════════════════
+// API 엔드포인트: /api/route (Vercel 서버리스)
+//   - type=address  : 카카오 주소검색
+//   - type=region   : 카카오 좌표→행정구역 (시계외할증 판단)
+//   - type=route    : T-map 경로/통행료
+//
+// 카카오 채널 링크: https://pf.kakao.com/_gVxaAX/chat
+//
+// [연동 필요 항목]
+//   1. 예약 완료 → DB 저장 (예약 정보)
+//   2. 카카오 알림톡 자동 발송 (손님/관리자)
+//   3. 전화번호 인증 (솔라피/알리고 등)
+// ════════════════════════════════════════════════════════
+
 // ── 상수 ─────────────────────────────────────────────────
 const AIRPORTS = {
   T1:{name:'인천공항 T1', lat:37.44936, lng:126.45100},
@@ -212,9 +228,9 @@ const AIRPORTS = {
   GMP:{name:'김포공항', lat:37.55830, lng:126.79060},
 };
 const METER = {
-  medium:{base:4800, baseKm:1.6, perKm:757.58},
-  large: {base:6500, baseKm:2.0, perKm:787.40},
-  van:   {base:8000, baseKm:2.0, perKm:900.00},
+  medium:{base:4800, perKm:757.58},
+  large: {base:6500, perKm:787.40},
+  van:   {base:8000, perKm:900.00},
 };
 const VNAMES = {medium:'중형택시', large:'대형택시', van:'콜밴'};
 
@@ -535,38 +551,6 @@ function calcSegmentFare(startMin, endMin, segKm, perKm, cityMult){
   return Math.round(fare / 100) * 100;
 }
 
-// ── 통행료 추정 ──────────────────────────────────────────
-function estimateToll(depLat, depLng, apId){
-  let toll = 0;
-  // 인천대교 경유 (경기 남부)
-  if(depLat < 37.38 && depLng > 126.55 && depLng < 126.80){
-    toll = 8400; // 인천대교 + 공항진입
-  } else if(depLng < 126.95 && depLat > 37.44 && depLat < 37.62){
-    toll = 3200; // 서울 서부 (마포/강서/영등포/양천) → 가양IC
-  } else if(depLat > 37.62){
-    toll = 4500; // 경기 북부
-  } else if(depLat < 37.38){
-    toll = 5500; // 경기 남부
-  } else {
-    toll = 6600; // 서울 동부/강남 → 서울TG
-  }
-  if(apId==='T2') toll += 900;
-  return toll;
-}
-
-// ── 요금 계산 ─────────────────────────────────────────────
-function calcFare(distKm, veh, nightMult, baseFare){
-  const m = METER[veh];
-  // 전체 거리 × 757원 + 시간대별 기본요금, 야간할증은 전체에 적용
-  const distFare = Math.round(distKm * m.perKm / 100) * 100;
-  let fare = baseFare + distFare;
-  // 야간할증: 기본요금은 이미 반영됨, 거리요금에 추가 할증 적용
-  // 실제 미터기는 (기본+거리) 전체에 할증 적용
-  if(nightMult > 1){
-    fare = Math.round((baseFare + distFare) * nightMult / 100) * 100;
-  }
-  return fare;
-}
 
 // ── 메인 계산 ─────────────────────────────────────────────
 async function calculate(){
