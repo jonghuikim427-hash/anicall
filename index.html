@@ -307,17 +307,58 @@ function clearResult(){
   if(leafMap){ leafMap.remove(); leafMap=null; }
 }
 
-// ── 시간대별 기본요금 ────────────────────────────────────
-function getBaseFare(hr){
-  if(hr>=23||hr<2) return 6800;  // 23~02시 40%
-  if(hr>=22||hr<4) return 5700;  // 22~23시, 02~04시 20%
-  return 4800;                    // 평시
+// ── 시간대별 기본요금 (분 단위 정확하게) ────────────────
+function getHHMM(dateV){
+  const d = dateV ? new Date(dateV) : new Date();
+  return d.getHours() * 100 + d.getMinutes();
 }
 
-function getNightMult(hr){
-  if(hr>=23||hr<2) return 1.4;
-  if(hr>=22||hr<4) return 1.2;
+function getBaseFare(hhmm){
+  if(hhmm >= 2300 || hhmm < 200) return 6800;  // 23:00~01:59 40%
+  if(hhmm >= 2200 || hhmm < 400) return 5700;  // 22:00~22:59, 02:00~03:59 20%
+  return 4800;                                   // 평시
+}
+
+function getNightMult(hhmm){
+  if(hhmm >= 2300 || hhmm < 200) return 1.4;
+  if(hhmm >= 2200 || hhmm < 400) return 1.2;
   return 1.0;
+}
+
+// ── 시간대별 할증 배수 (분 단위) ─────────────────────────
+function getMultiplierAt(minutesFromMidnight){
+  const m = ((minutesFromMidnight % 1440) + 1440) % 1440;
+  if(m >= 1380 || m < 120) return 1.4;  // 23:00~02:00
+  if((m >= 1320 && m < 1380) || (m >= 120 && m < 240)) return 1.2;  // 22:00~23:00, 02:00~04:00
+  return 1.0;
+}
+
+// ── 야간 예상 소요시간 (분) ───────────────────────────────
+function getEstimatedMinutes(distKm){
+  if(distKm < 50)  return 40;
+  if(distKm < 70)  return 50;
+  if(distKm < 90)  return 60;
+  if(distKm < 110) return 70;
+  return 80;
+}
+
+// ── 구간별 거리요금 계산 (시간대 경계 쪼개기) ─────────────
+// startMin: 구간 시작(자정 기준 분), endMin: 구간 끝
+// segKm: 구간 거리, perKm: km당 요금, cityMult: 시계외 배수
+function calcSegmentFare(startMin, endMin, segKm, perKm, cityMult){
+  if(segKm <= 0 || endMin <= startMin) return 0;
+  const segTotalMin = endMin - startMin;
+  // 경계점 (자정 기준 분): 22:00=1320, 23:00=1380, 02:00=120(+1440=1560), 04:00=240(+1440=1680)
+  const boundaries = [120, 240, 1320, 1380, 1560, 1680, 2760, 2820].filter(b => b > startMin && b < endMin);
+  const pts = [startMin, ...boundaries, endMin];
+  let fare = 0;
+  for(let i = 0; i < pts.length - 1; i++){
+    const ratio = (pts[i+1] - pts[i]) / segTotalMin;
+    const km    = segKm * ratio;
+    const mult  = getMultiplierAt(pts[i] + 0.5);
+    fare += km * perKm * mult * cityMult;
+  }
+  return Math.round(fare / 100) * 100;
 }
 
 // ── 통행료 추정 ──────────────────────────────────────────
@@ -392,9 +433,9 @@ async function calculate(){
   const ap    = AIRPORTS[apId];
   const veh   = document.getElementById('sel-veh').value;
   const dateV = document.getElementById('inp-date').value;
-  const hr    = dateV ? new Date(dateV).getHours() : new Date().getHours();
-  const nightMult = getNightMult(hr);
-  const baseFare  = getBaseFare(hr);
+  const hhmm      = getHHMM(dateV);
+  const nightMult = getNightMult(hhmm);
+  const baseFare  = getBaseFare(hhmm);
 
   const dep = currentTab==='출국' ? {lat:selectedAddr.lat, lng:selectedAddr.lng} : {lat:ap.lat, lng:ap.lng};
   const arr = currentTab==='출국' ? {lat:ap.lat, lng:ap.lng} : {lat:selectedAddr.lat, lng:selectedAddr.lng};
@@ -437,14 +478,22 @@ async function calculate(){
       }
     }
 
-    // 미터기 계산
-    const normalFare    = Math.round(normalKm * m.perKm / 100) * 100;
-    const surchargeFare = Math.round(surchargeKm * m.perKm * 1.2 / 100) * 100;
+    // 미터기 계산 (시간대 경계 쪼개기)
+    const depMin    = Math.floor(hhmm/100)*60 + (hhmm%100);
+    const travelMin = getEstimatedMinutes(distKm);
+    // 공동사업구역 이탈 시각
+    const borderMin = (surchargeKm > 0)
+      ? depMin + travelMin * (normalKm / distKm)
+      : depMin + travelMin;
+
+    // 공동구간: 시간대별 할증만
+    const normalFare    = calcSegmentFare(depMin, borderMin, normalKm, m.perKm, 1.0);
+    // 시계외구간: 시간대별 할증 × 시계외 1.2
+    const surchargeFare = calcSegmentFare(borderMin, depMin + travelMin, surchargeKm, m.perKm, 1.2);
     distFare = normalFare + surchargeFare;
 
-    let subtotal = m.base + distFare;
-    if(nightMult > 1) subtotal = Math.round(subtotal * nightMult / 100) * 100;
-    totalFare = subtotal + toll;
+    const baseFareNight = Math.round(m.base * nightMult / 100) * 100;
+    totalFare = baseFareNight + distFare + toll;
 
     showResult({depName, arrName, distKm, baseFare: m.base, distFare, toll, totalFare, nightMult, veh, surchargeKm});
     showMap(coords, dep, arr, depName, arrName, distKm, exitIdx);
