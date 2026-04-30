@@ -154,57 +154,20 @@ const METER = {
 };
 const VNAMES = {medium:'중형택시', large:'대형택시', van:'콜밴'};
 
-// ── 공동사업구역 폴리곤 [lng, lat] ──────────────────────
-const SHARED_ZONES = {
-  서울: [
-    [126.7342,37.4133],[126.7644,37.4458],[126.8207,37.4479],[126.8344,37.4892],
-    [126.7891,37.5124],[126.7342,37.5682],[126.7709,37.6035],[126.8103,37.6418],
-    [126.8618,37.6539],[126.9197,37.7154],[126.9743,37.7154],[127.0289,37.6836],
-    [127.1108,37.6836],[127.1654,37.6418],[127.2200,37.6099],[127.2746,37.5682],
-    [127.2746,37.4974],[127.2200,37.4592],[127.1654,37.4133],[127.0562,37.4133],
-    [126.9743,37.4451],[126.8920,37.4133],[126.7342,37.4133]
-  ],
-  인천: [
-    [126.2010,37.2400],[126.4010,37.2400],[126.5500,37.3200],[126.6200,37.3800],
-    [126.7100,37.3900],[126.7950,37.4200],[126.7950,37.5500],[126.7100,37.5800],
-    [126.6500,37.6200],[126.5500,37.6400],[126.4500,37.6940],[126.3500,37.6940],
-    [126.2500,37.6500],[126.2010,37.5500],[126.2010,37.2400]
-  ],
-  고양: [
-    [126.7000,37.5930],[126.7600,37.5930],[126.8200,37.6100],[126.8700,37.6300],
-    [126.9200,37.6500],[126.9600,37.6800],[126.9600,37.7200],[126.9200,37.7600],
-    [126.8700,37.7850],[126.8000,37.7850],[126.7500,37.7500],[126.7000,37.7000],
-    [126.7000,37.5930]
-  ],
-  부천: [
-    [126.7120,37.4680],[126.7600,37.4680],[126.8000,37.4800],[126.8330,37.5000],
-    [126.8330,37.5400],[126.8000,37.5600],[126.7600,37.5600],[126.7120,37.5400],
-    [126.7120,37.4680]
-  ],
-  김포: [
-    [126.5300,37.5700],[126.6000,37.5700],[126.6800,37.5900],[126.7500,37.6200],
-    [126.7700,37.6700],[126.7500,37.7200],[126.7000,37.7400],[126.6200,37.7200],
-    [126.5500,37.6800],[126.5300,37.6200],[126.5300,37.5700]
-  ],
-  광명: [
-    [126.8400,37.4180],[126.8800,37.4180],[126.9200,37.4400],[126.9200,37.4980],
-    [126.8800,37.4980],[126.8400,37.4700],[126.8400,37.4180]
-  ]
-};
+// ── 공동사업구역 (카카오 API로 정확하게 판단) ───────────
+const SHARED_NAMES = ['서울특별시','인천광역시','고양시','부천시','김포시','광명시'];
 
-// ── 포인트-인-폴리곤 (Ray Casting) ──────────────────────
-function pointInPolygon(lng, lat, polygon){
-  let inside = false;
-  for(let i=0, j=polygon.length-1; i<polygon.length; j=i++){
-    const xi=polygon[i][0], yi=polygon[i][1];
-    const xj=polygon[j][0], yj=polygon[j][1];
-    if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
-  }
-  return inside;
-}
-
-function isInSharedZone(lat, lng){
-  return Object.values(SHARED_ZONES).some(poly => pointInPolygon(lng, lat, poly));
+async function isInSharedZoneAPI(lat, lng){
+  try {
+    const res = await fetch(`/api/route?type=region&x=${lng}&y=${lat}`);
+    const data = await res.json();
+    if(!data.documents || !data.documents.length) return false;
+    const doc = data.documents[0];
+    return SHARED_NAMES.some(name =>
+      doc.region_1depth_name.includes(name) ||
+      doc.region_2depth_name.includes(name)
+    );
+  } catch(e){ return false; }
 }
 
 // ── 두 좌표간 거리 (km, Haversine) ──────────────────────
@@ -214,20 +177,36 @@ function haversine(lat1, lng1, lat2, lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// ── 경로 좌표에서 공동사업구역 이탈 지점 찾기 ───────────
-// coords: [[lat,lng],...] (T-map 순서)
-// 반환: {exitIdx, normalKm, surchargeKm}
-function findExitPoint(coords){
+// ── 이진탐색으로 공동사업구역 이탈 지점 찾기 ─────────────
+// API 호출 최소화: log2(n) ≈ 8회
+async function findExitPointAPI(coords){
+  // 목적지가 공동사업구역 안이면 할증 없음
+  const last = coords[coords.length-1];
+  const destIn = await isInSharedZoneAPI(last[0], last[1]);
+  if(destIn) return { exitIdx: -1, normalKm: 0 };
+
+  // 이진탐색으로 경계 찾기
+  let lo = 0, hi = coords.length - 1;
+  while(hi - lo > 3){
+    const mid = Math.floor((lo + hi) / 2);
+    const inZone = await isInSharedZoneAPI(coords[mid][0], coords[mid][1]);
+    if(inZone) lo = mid;
+    else hi = mid;
+  }
+
+  // lo~hi 구간 세밀하게 확인
+  let exitIdx = hi;
+  for(let i = lo; i <= hi; i++){
+    const inZone = await isInSharedZoneAPI(coords[i][0], coords[i][1]);
+    if(!inZone){ exitIdx = i; break; }
+  }
+
+  // 이탈 지점까지 거리 계산
   let normalKm = 0;
-  for(let i=0; i<coords.length-1; i++){
-    const [lat,lng] = coords[i];
-    if(!isInSharedZone(lat, lng)){
-      // 이탈 지점 발견
-      return { exitIdx: i, normalKm };
-    }
+  for(let i = 0; i < exitIdx - 1; i++){
     normalKm += haversine(coords[i][0],coords[i][1],coords[i+1][0],coords[i+1][1]);
   }
-  return { exitIdx: -1, normalKm: 0 }; // 전 구간 공동사업구역
+  return { exitIdx, normalKm };
 }
 
 // ── 상태 ─────────────────────────────────────────────────
@@ -446,9 +425,10 @@ async function calculate(){
 
     // ── 입국 탭: 시계외할증 계산 ──────────────────────────
     if(currentTab === '입국'){
-      const destInZone = isInSharedZone(arr.lat, arr.lng);
+      const destInZone = await isInSharedZoneAPI(arr.lat, arr.lng);
       if(!destInZone && coords.length > 0){
-        const exit = findExitPoint(coords);
+        btn.textContent='📍 구간 분석 중...';
+        const exit = await findExitPointAPI(coords);
         exitIdx = exit.exitIdx;
         if(exitIdx >= 0){
           normalKm    = exit.normalKm;
