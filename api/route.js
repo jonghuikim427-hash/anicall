@@ -2,11 +2,11 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { type, query, startX, startY, endX, endY } = req.query;
+  const { type, query, startX, startY, endX, endY, x, y } = req.query;
 
+  // 카카오 주소 검색
   if (type === 'address') {
     try {
       const r1 = await fetch(
@@ -27,6 +27,21 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // 좌표 → 행정구역 조회 (시계외할증 판단용)
+  if (type === 'region') {
+    try {
+      const r = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${x}&y=${y}`,
+        { headers: { Authorization: 'KakaoAK 919c3312f6ce069ca2076328c40b4a56' } }
+      );
+      const d = await r.json();
+      return res.status(200).json(d);
+    } catch(e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // T-map 경로 검색
   if (type === 'route') {
     try {
       const r = await fetch('https://apis.openapi.sk.com/tmap/routes?version=1&format=json', {
