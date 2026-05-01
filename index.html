@@ -235,20 +235,12 @@ const FIXED_FARE = {
 };
 
 // 확정요금 지역 여부 + 해당 요금 반환
-function getFixedFare(addrDisplay, hhmm, tab){
+function getFixedFare(addrDisplay, hhmm){
   const region = Object.keys(FIXED_FARE).find(r => addrDisplay.includes(r));
   if(!region) return null;
   const fare = FIXED_FARE[region];
-  let isSurcharge = false;
-  if(tab === '출국'){
-    // 탑승시간 21:30~03:30 → 할증
-    const min = Math.floor(hhmm/100)*60 + (hhmm%100);
-    isSurcharge = (min >= 21*60+30) || (min <= 3*60+30);
-  } else if(tab === '입국'){
-    // 비행기 도착시간 21:00~03:00 → 할증
-    const min = Math.floor(hhmm/100)*60 + (hhmm%100);
-    isSurcharge = (min >= 21*60) || (min <= 3*60);
-  }
+  // 22:00~04:00 → 할증
+  const isSurcharge = hhmm >= 2200 || hhmm < 400;
   return { region, amount: isSurcharge ? fare.surcharge : fare.normal, isSurcharge };
 }
 
@@ -693,7 +685,7 @@ async function calculate(){
 
   // ── 확정요금 지역 체크 ───────────────────────────────────
   const checkAddr = currentTab === '입국' ? selectedAddr.display : selectedAddr.display;
-  const fixedFare = getFixedFare(checkAddr, hhmm, currentTab);
+  const fixedFare = getFixedFare(checkAddr, hhmm);
   if(fixedFare){
     btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
     showFixedFare(fixedFare, depName, arrName);
