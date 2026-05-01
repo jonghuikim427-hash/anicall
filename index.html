@@ -775,7 +775,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
       <div class="el">${depName.split(' ').slice(0,3).join(' ')} ──→ ${arrName.split(' ').slice(0,3).join(' ')}</div>
       <div class="ep">
         <span class="price">${amount.toLocaleString()}원</span>
-        <span class="nb" style="background:${isSurcharge?'#7c3aed':'#1a73e8'}">${label}</span>
+        ${isSurcharge ? `<span class="nb" style="background:#7c3aed">🌙 야간요금</span>` : ''}
       </div>
       <div class="em">💳 카드결제 가능</div>
       <div class="nt">※ 실제 요금은 위 금액으로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.</div>
