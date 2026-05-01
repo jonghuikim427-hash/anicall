@@ -131,14 +131,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       <button class="tab" id="tab-long" onclick="switchTab('장거리')" style="font-size:9.5px;padding:8px 2px">🚗 전국장거리</button>
     </div>
 
-    <div class="field" id="field-addr" style="order:1">
+    <div class="field" id="field-addr" style="order:2">
       <label class="lbl" id="lbl-addr">출발지 주소</label>
-      <input class="inp" id="inp-addr" placeholder="예: 서울 마포구 망원로 76" autocomplete="off"
+      <input class="inp" id="inp-addr" placeholder="예: 테헤란로 64길 8" autocomplete="off"
         oninput="onAddrInput()" onblur="hideAc()">
       <div class="ac" id="ac-list"></div>
     </div>
+    <div class="field" id="field-detail" style="order:3;margin-top:-4px">
+      <input class="inp" id="inp-detail" placeholder="상세주소 (동/호수/건물명 등)" autocomplete="off">
+    </div>
 
-    <div class="field" id="field-airport" style="order:2">
+    <div class="field" id="field-airport" style="order:4">
       <label class="lbl" id="lbl-ap">도착 공항</label>
       <select class="sel" id="sel-airport" onchange="onAirportChange()">
         <option value="T1">인천공항 T1</option>
@@ -147,9 +150,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
       </select>
     </div>
 
-    <div class="field" id="field-long" style="display:none;order:3">
-      <label class="lbl">장거리 목적지 주소</label>
-      <input class="inp" id="inp-long" placeholder="예: 부산시 해운대구 우동 1로" autocomplete="off"
+    <div class="field" id="field-long" style="display:none;order:99">
+      <label class="lbl">도착지 주소</label>
+      <input class="inp" id="inp-long" placeholder="예: 해운대역, 아산병원, 강원랜드 등" autocomplete="off"
         oninput="onLongInput()" onblur="hideAcLong()">
       <div class="ac" id="ac-list-long"></div>
     </div>
@@ -222,6 +225,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ── 확정요금 지역 ────────────────────────────────────────
+const FIXED_FARE = {
+  '인천': {normal: 50000, surcharge: 60000},
+  '부천': {normal: 50000, surcharge: 60000},
+  '고양': {normal: 55000, surcharge: 65000},
+  '김포': {normal: 55000, surcharge: 65000},
+  '광명': {normal: 55000, surcharge: 65000},
+};
+
+// 확정요금 지역 여부 + 해당 요금 반환
+function getFixedFare(addrDisplay, hhmm, tab){
+  const region = Object.keys(FIXED_FARE).find(r => addrDisplay.includes(r));
+  if(!region) return null;
+  const fare = FIXED_FARE[region];
+  let isSurcharge = false;
+  if(tab === '출국'){
+    // 탑승시간 21:30~03:30 → 할증
+    const min = Math.floor(hhmm/100)*60 + (hhmm%100);
+    isSurcharge = (min >= 21*60+30) || (min <= 3*60+30);
+  } else if(tab === '입국'){
+    // 비행기 도착시간 21:00~03:00 → 할증
+    const min = Math.floor(hhmm/100)*60 + (hhmm%100);
+    isSurcharge = (min >= 21*60) || (min <= 3*60);
+  }
+  return { region, amount: isSurcharge ? fare.surcharge : fare.normal, isSurcharge };
+}
+
 // ════════════════════════════════════════════════════════
 // ██  개발자 설정 영역  ██
 // ════════════════════════════════════════════════════════
@@ -335,20 +365,22 @@ function switchTab(t){
   selectedAddr = null; selectedLong = null;
 
   // 요소 참조
-  const fAp    = document.getElementById('field-airport');
-  const fLong  = document.getElementById('field-long');
-  const fFlight= document.getElementById('field-flight');
-  const fAddr  = document.getElementById('field-addr');
+  const fAp     = document.getElementById('field-airport');
+  const fLong   = document.getElementById('field-long');
+  const fFlight = document.getElementById('field-flight');
+  const fAddr   = document.getElementById('field-addr');
+  const fDetail = document.getElementById('field-detail');
 
-  // CSS order로 순서 제어 (DOM 이동 없음)
+  // CSS order로 순서 제어
   if(t === '출국'){
     fAp.style.display    = 'block';
     fLong.style.display  = 'none';
     fFlight.style.display= 'none';
-    fAddr.style.order  = '1';
-    fAp.style.order    = '2';
-    fLong.style.order  = '3';
-    fFlight.style.order= '99';
+    fAddr.style.order    = '2';
+    fDetail.style.order  = '3';
+    fAp.style.order      = '4';
+    fLong.style.order    = '99';
+    fFlight.style.order  = '99';
     document.getElementById('lbl-addr').textContent = '출발지 주소';
     document.getElementById('lbl-ap').textContent   = '도착 공항';
 
@@ -356,10 +388,11 @@ function switchTab(t){
     fAp.style.display    = 'block';
     fLong.style.display  = 'none';
     fFlight.style.display= 'block';
-    fAp.style.order    = '1';
-    fAddr.style.order  = '2';
-    fFlight.style.order= '3';
-    fLong.style.order  = '99';
+    fAp.style.order      = '2';
+    fAddr.style.order    = '3';
+    fDetail.style.order  = '4';
+    fFlight.style.order  = '5';
+    fLong.style.order    = '99';
     document.getElementById('lbl-addr').textContent = '도착지 주소';
     document.getElementById('lbl-ap').textContent   = '출발 공항';
 
@@ -367,12 +400,13 @@ function switchTab(t){
     fAp.style.display    = 'none';
     fLong.style.display  = 'block';
     fFlight.style.display= 'none';
-    fAddr.style.order  = '1';
-    fLong.style.order  = '2';
-    fAp.style.order    = '99';
-    fFlight.style.order= '99';
+    fAddr.style.order    = '2';
+    fDetail.style.order  = '3';
+    fLong.style.order    = '4';
+    fAp.style.order      = '99';
+    fFlight.style.order  = '99';
     document.getElementById('lbl-addr').textContent = '출발지 주소';
-    document.getElementById('inp-long').placeholder = '도착지 주소 (예: 부산 해운대구 우동 1로)';
+    document.getElementById('inp-long').placeholder = '예: 해운대역, 아산병원, 강원랜드 등';
   }
 
   // 탑승일시 라벨
@@ -657,6 +691,17 @@ async function calculate(){
   const depName = isDepFirst ? selectedAddr.display : ap.name;
   const arrName = isDepFirst ? ap.name : selectedAddr.display;
 
+  // ── 확정요금 지역 체크 ───────────────────────────────────
+  const checkAddr = currentTab === '입국' ? selectedAddr.display : selectedAddr.display;
+  const fixedFare = getFixedFare(checkAddr, hhmm, currentTab);
+  if(fixedFare){
+    btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+    showFixedFare(fixedFare, depName, arrName);
+    // 지도는 T-map 없이 직선으로 표시
+    showMap([], dep, arr, depName, arrName, 0, -1);
+    return;
+  }
+
   try {
     // T-map 경로 API (실제 통행료 + 택시요금)
     const tmapRes = await fetch(
@@ -731,6 +776,24 @@ function getTimeRange(distKm){
   return '약 80분~';
 }
 
+function showFixedFare({region, amount, isSurcharge}, depName, arrName){
+  const label = isSurcharge ? '🌙 야간요금' : '☀️ 일반요금';
+  document.getElementById('result-wrap').innerHTML = `
+    <div class="result-box"><div class="ri">
+      <div class="el">${depName.split(' ').slice(0,3).join(' ')} ──→ ${arrName.split(' ').slice(0,3).join(' ')}</div>
+      <div class="ep">
+        <span class="price">${amount.toLocaleString()}원</span>
+        <span class="nb" style="background:${isSurcharge?'#7c3aed':'#1a73e8'}">${label}</span>
+      </div>
+      <div class="em">💳 카드결제 가능</div>
+      <div class="nt">※ 실제 요금은 위 금액으로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.</div>
+      <div class="btn-row">
+        <button class="kbtn sub" onclick="openKakao()">💬 채팅 문의</button>
+        <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
+      </div>
+    </div></div>`;
+}
+
 function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm}){
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
@@ -774,7 +837,8 @@ function buildCallCard(extra){
   const golf  = document.getElementById('inp-golf').textContent  || '0';
 
   if(currentTab === '출국'){
-    const from = document.getElementById('inp-addr').value || '';
+    const detail = document.getElementById('inp-detail').value.trim();
+    const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     return `🚖출국택시 예약
@@ -797,7 +861,8 @@ function buildCallCard(extra){
 🔹경유지: ${extra.waypoint||''}`;
 
   } else if(currentTab === '입국'){
-    const to = document.getElementById('inp-addr').value || '';
+    const detail = document.getElementById('inp-detail').value.trim();
+    const to = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     const flight = document.getElementById('inp-flight').value || '';
@@ -822,7 +887,8 @@ function buildCallCard(extra){
 🔹경유지: ${extra.waypoint||''}`;
 
   } else { // 장거리
-    const from = document.getElementById('inp-addr').value || '';
+    const detail = document.getElementById('inp-detail').value.trim();
+    const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const to   = document.getElementById('inp-long').value || '';
     return `🚗전국장거리 예약
 
@@ -866,11 +932,11 @@ function openExtra(){
       <div class="extra-row">
         <div class="extra-section">
           <label class="extra-label">카시트 대여</label>
-          <input class="extra-inp" id="ex-carseat" placeholder="콜밴,대형 1만원">
+          <input class="extra-inp" id="ex-carseat" placeholder="대형·콜밴시 1만원">
         </div>
         <div class="extra-section">
           <label class="extra-label">외국인 피켓 픽업</label>
-          <input class="extra-inp" id="ex-picket" placeholder="이름 입력">
+          <input class="extra-inp" id="ex-picket" placeholder="2만원">
         </div>
       </div>
       <div class="extra-section">
