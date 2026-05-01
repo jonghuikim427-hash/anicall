@@ -824,7 +824,7 @@ function buildCallCard(extra){
   const hours = d.getHours(), minutes = d.getMinutes();
   const ampm = hours < 12 ? '오전' : '오후';
   const h12 = hours % 12 || 12;
-  const timeStr = `${ampm} ${h12}시${minutes > 0 ? ` ${minutes}분` : ''}`;
+  const timeStr = ampm + ' ' + h12 + '시' + (minutes > 0 ? ' ' + minutes + '분' : '');
   const dateStr = `${month}월 ${day}일`;
 
   const pax   = document.getElementById('inp-pax').textContent   || '1';
@@ -854,7 +854,9 @@ function buildCallCard(extra){
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}`;
+🔹경유지: ${extra.waypoint||''}
+
+${extra.tail||''}`;
 
   } else if(currentTab === '입국'){
     const detail = document.getElementById('inp-detail').value.trim();
@@ -880,7 +882,9 @@ function buildCallCard(extra){
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}`;
+🔹경유지: ${extra.waypoint||''}
+
+${extra.tail||''}`;
 
   } else { // 장거리
     const detail = document.getElementById('inp-detail').value.trim();
@@ -903,6 +907,99 @@ function buildCallCard(extra){
 🔹요청사항 :
 🔹경유지:`;
   }
+}
+
+// ── 꼬리 생성 ────────────────────────────────────────────
+function extractRegion(addr){
+  // 예외 지명 (더 유명한 지명 우선)
+  const exceptions = ['동탄','분당','판교','일산','수지','기흥','별내'];
+  for(const ex of exceptions){
+    if(addr.includes(ex)) return ex;
+  }
+  // 서울 → 구 단위
+  const seoulGu = addr.match(/서울[^시]*?([가-힣]+구)/);
+  if(seoulGu) return seoulGu[1].replace('구','');
+  // 경기/지방 → 시 단위
+  const si = addr.match(/([가-힣]+시)/);
+  if(si) return si[1].replace('시','');
+  // 구 단위
+  const gu = addr.match(/([가-힣]+구)/);
+  if(gu) return gu[1].replace('구','');
+  return addr.split(' ')[1] || addr.split(' ')[0] || '미상';
+}
+
+function calcTotalBag(cabin, cargo, golf){
+  return parseInt(cabin||0) + parseInt(cargo||0) + parseInt(golf||0)*2;
+}
+
+function getVehCode(veh){
+  if(veh==='large') return '대';
+  if(veh==='van')   return '콜';
+  if(veh==='solar') return '쏠';
+  return '중';
+}
+
+function getDispatchType(pax, totalBag){
+  // 인원/캐리어 기준표
+  const p = parseInt(pax), b = totalBag;
+  if(p<=1){ if(b<=3) return 'G우선'; return 'EQ배차'; }
+  if(p<=2){ if(b<=2) return 'G우선'; return 'EQ배차'; }
+  if(p<=3){ if(b<=2) return 'GQE'; return 'EQ배차'; }
+  if(p<=4){ if(b<=1) return 'GQE'; return 'EQ배차'; }
+  return '';
+}
+
+function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
+  const now = dateV ? new Date(dateV) : new Date();
+  const yy   = String(now.getFullYear()).slice(2);
+  const mmdd = String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  const hhmm2= String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+  const dir  = tab==='입국' ? '입' : '출';
+  const region = extractRegion(addr);
+  const vehCode = getVehCode(veh);
+  const name = extra.name || '';
+  const hasExtra = !!(extra.carseat||extra.picket||extra.kakaoId||extra.request||extra.waypoint);
+
+  let line1='', warn='';
+
+  if(veh==='medium'){
+    // 중형
+    if(totalBag >= 5){
+      return `짐이 많으십니다
+채널>애니>${name}`;
+    }
+    const dtype = getDispatchType(pax, totalBag);
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2} ${dtype}`;
+  } else if(veh==='large'){
+    // 대형
+    const p = parseInt(pax);
+    if(p>=10){
+      warn = `⚠️ 인원 확인요망
+`;
+    } else if(p>=8 || totalBag>=6){
+      warn = `⚠️ 인원/짐 확인요망
+`;
+    }
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+  } else if(veh==='van'){
+    // 콜밴
+    return `짐이 많으십니다
+채널>애니>${name}`;
+  } else if(veh==='solar'){
+    // 쏠라티
+    const p = parseInt(pax);
+    if(p<10) warn = `⚠️ 인원 확인요망
+`;
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+  }
+
+  // 추가사항 있으면 경고 추가
+  if(hasExtra && !warn) warn = `⚠️ 추가사항 확인요망
+`;
+  else if(hasExtra && warn) {} // 이미 warn 있음
+
+  return `${warn}${line1}
+채널>애니>${name}`;
 }
 
 function openExtra(){
@@ -958,27 +1055,74 @@ function openExtra(){
 function confirmExtra(){
   const phone = document.getElementById('ex-phone').value.trim();
   const name  = document.getElementById('ex-name').value.trim();
-  if(!phone){
-    const el = document.getElementById('ex-phone');
+
+  // 이름 검증
+  if(!name){
+    const el = document.getElementById('ex-name');
     el.style.borderColor='rgba(255,80,80,0.6)';
     el.focus();
     setTimeout(()=>el.style.borderColor='',1500);
     return;
   }
-  // 추가정보 수집
+
+  // 전화번호 검증 - 숫자만 추출해서 11자리 확인
+  const phoneDigits = phone.replace(/[^0-9]/g,'');
+  if(phoneDigits.length !== 11){
+    const el = document.getElementById('ex-phone');
+    el.style.borderColor='rgba(255,80,80,0.6)';
+    el.focus();
+    // 팝업
+    showAlert('📱 전화번호를 확인해주세요! 숫자 11자리를 입력해주세요.');
+    setTimeout(()=>el.style.borderColor='',1500);
+    return;
+  }
+
   const extra = {
-    phone, name,
+    phone: phoneDigits.replace(/([0-9]{3})([0-9]{4})([0-9]{4})/,'$1-$2-$3'),
+    name,
     carseat  : document.getElementById('ex-carseat').value.trim(),
     picket   : document.getElementById('ex-picket').value.trim(),
     kakaoId  : document.getElementById('ex-kakao').value.trim(),
     request  : document.getElementById('ex-request').value.trim(),
     waypoint : document.getElementById('ex-waypoint').value.trim(),
   };
-  // 추가정보 모달 닫기
+
+  // 짐 계산
+  const cabin   = parseInt(document.getElementById('inp-cabin').textContent||0);
+  const cargo   = parseInt(document.getElementById('inp-cargo').textContent||0);
+  const golf    = parseInt(document.getElementById('inp-golf').textContent||0);
+  const totalBag = calcTotalBag(cabin, cargo, golf);
+  const pax     = parseInt(document.getElementById('inp-pax').textContent||1);
+  const veh     = document.getElementById('sel-veh').value;
+  const dateV   = document.getElementById('inp-date').value;
+  const addr    = selectedAddr ? selectedAddr.display : '';
+  const tab     = currentTab;
+
+  // 짐 0개 확인 팝업 (중형만)
+  if(veh==='medium' && totalBag===0){
+    if(!confirm('🧳 짐이 정말 없으신가요? (기내용 캐리어도 없으신가요?)')) return;
+  }
+
+  // 10명 이상인데 중형/대형 선택
+  if(pax>=10 && (veh==='medium'||veh==='large')){
+    showAlert('👥 인원이 많으셔서 상담이 필요합니다!');
+  }
+
+  // 짐 5개 이상 중형 → 상담 필요 알림
+  if(veh==='medium' && totalBag>=5){
+    showAlert('🧳 짐이 많으시네요! 상담이 필요합니다.');
+  }
+
+  // 꼬리 생성
+  extra.tail = buildTail(extra, veh, pax, totalBag, addr, dateV, tab);
+
   const bg = document.querySelector('.modal-bg');
   if(bg) document.body.removeChild(bg);
-  // 콜카드 모달 열기
   openKakao(extra);
+}
+
+function showAlert(msg){
+  alert(msg);
 }
 
 function openKakao(extra){
