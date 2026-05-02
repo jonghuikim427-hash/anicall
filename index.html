@@ -674,6 +674,57 @@ async function calculate(){
   errEl.classList.remove('show');
   clearResult();
 
+  // ── 기초 검증 ──────────────────────────────────────────
+  const pop = (msg) => { alert(msg); return false; };
+
+  // 1. 주소
+  if(!selectedAddr && currentTab !== '장거리'){
+    const q = document.getElementById('inp-addr').value.trim();
+    if(!q) return pop('출발지 주소를 입력해주세요');
+  }
+  if(currentTab === '장거리' && !selectedLong){
+    if(!document.getElementById('inp-long').value.trim()) return pop('도착지 주소를 입력해주세요');
+  }
+
+  // 2. 상세주소
+  if(!document.getElementById('inp-detail').value.trim()){
+    return pop('상세주소를 입력해주세요 (동/호수/건물명 등)');
+  }
+
+  // 3. 공항
+  if(currentTab !== '장거리' && !document.getElementById('sel-airport').value){
+    return pop(currentTab==='입국' ? '출발 공항을 선택해주세요' : '도착 공항을 선택해주세요');
+  }
+
+  // 4. 시간
+  if(!document.getElementById('inp-date').value){
+    return pop(currentTab==='입국' ? '비행기 도착 시간을 입력해주세요' : '택시 탑승 시간을 입력해주세요');
+  }
+
+  // 5. 인원
+  if(parseInt(document.getElementById('inp-pax').textContent||0) < 1){
+    return pop('탑승 인원을 입력해주세요');
+  }
+
+  // 6. 짐
+  const cabinV = parseInt(document.getElementById('inp-cabin').textContent||0);
+  const cargoV = parseInt(document.getElementById('inp-cargo').textContent||0);
+  const golfV  = parseInt(document.getElementById('inp-golf').textContent||0);
+  if(cabinV===0 && cargoV===0 && golfV===0){
+    return pop('수화물을 입력해주세요');
+  }
+
+  // 7. 차량종류
+  if(!document.getElementById('sel-veh').value){
+    return pop('차량 종류를 선택해주세요');
+  }
+
+  // 8. 입국 항공편명
+  if(currentTab==='입국' && !document.getElementById('inp-flight').value.trim()){
+    return pop('항공편명을 입력해주세요');
+  }
+  // ────────────────────────────────────────────────────────
+
   // 주소 없을 때 자동 검색
   if(!selectedAddr){
     const q = document.getElementById('inp-addr').value.trim();
