@@ -375,11 +375,7 @@ let acTimer = null;
 // ── Vercel API 기반 검색 (CORS 없음) ────────────────────
 
 // ── 날짜 초기화 ─────────────────────────────────────────
-(()=>{
-  const n = new Date();
-  n.setMinutes(n.getMinutes()-n.getTimezoneOffset());
-  document.getElementById('inp-date').value = n.toISOString().slice(0,16);
-})();
+// 날짜 공란 시작
 
 // ── 탭 ──────────────────────────────────────────────────
 function switchTab(t){
