@@ -76,6 +76,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .spinner{width:24px;height:24px;border:2px solid rgba(245,184,0,0.2);border-top-color:#f5b800;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* 커스텀 드롭다운 */
+.csel{width:100%;padding:9px 11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.3);font-size:13px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.csel.selected{color:white}
+.csel-arrow{font-size:10px;opacity:.5}
+.csel-opts{display:none;position:absolute;z-index:100;width:100%;background:#1a3354;border:1px solid rgba(245,184,0,0.3);border-radius:8px;overflow:hidden;margin-top:3px}
+.csel-opts.open{display:block}
+.csel-opt{padding:11px 13px;font-size:13px;color:rgba(255,255,255,0.8);cursor:pointer;transition:background .1s}
+.csel-opt:hover{background:rgba(245,184,0,0.15);color:white}
+.csel-opt.on{background:rgba(245,184,0,0.2);color:#f5b800;font-weight:700}
+.csel-opt-desc{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px}
+.csel-wrap{position:relative}
 .err-msg{margin-top:8px;padding:10px 12px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);border-radius:8px;font-size:12px;color:#ff9999;display:none}
 .stepper{display:flex;align-items:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:9px;overflow:hidden;height:40px}
 .stepper-btn{width:36px;height:100%;border:none;background:transparent;color:rgba(255,255,255,0.7);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
@@ -143,11 +154,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 
     <div class="field" id="field-airport" style="order:4">
       <label class="lbl" id="lbl-ap">도착 공항</label>
-      <select class="sel" id="sel-airport" onchange="onAirportChange()">
-        <option value="T1">인천공항 T1</option>
-        <option value="T2">인천공항 T2</option>
-        <option value="GMP">김포공항</option>
-      </select>
+      <div class="csel-wrap">
+        <div class="csel" id="csel-ap" onclick="toggleCsel('ap')">
+          <span id="csel-ap-txt">선택해주세요</span>
+          <span class="csel-arrow">▼</span>
+        </div>
+        <div class="csel-opts" id="csel-ap-opts">
+          <div class="csel-opt" onclick="selectAirport('T1')">인천공항 T1</div>
+          <div class="csel-opt" onclick="selectAirport('T2')">인천공항 T2</div>
+          <div class="csel-opt" onclick="selectAirport('GMP')">김포공항</div>
+        </div>
+      </div>
+      <input type="hidden" id="sel-airport" value="">
     </div>
 
     <div class="field" id="field-long" style="display:none;order:99">
@@ -166,7 +184,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
         <label class="lbl">인원</label>
         <div class="stepper">
           <button class="stepper-btn" onclick="stepPax(-1)">−</button>
-          <span class="stepper-val" id="inp-pax">1</span>
+          <span class="stepper-val" id="inp-pax">0</span>
           <button class="stepper-btn" onclick="stepPax(1)">+</button>
         </div>
       </div>
@@ -208,11 +226,31 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 
     <div class="field" style="order:7">
       <label class="lbl">차량 종류</label>
-      <select class="sel" id="sel-veh" onchange="clearResult()">
-        <option value="medium">중형택시 (4인승)</option>
-        <option value="large">대형택시 (6인승)</option>
-        <option value="van">콜밴 (9인승)</option>
-      </select>
+      <div class="csel-wrap">
+        <div class="csel" id="csel-veh" onclick="toggleCsel('veh')">
+          <span id="csel-veh-txt">선택해주세요</span>
+          <span class="csel-arrow">▼</span>
+        </div>
+        <div class="csel-opts" id="csel-veh-opts">
+          <div class="csel-opt" onclick="selectVeh('medium')">
+            🚕 일반택시 (4인승)
+            <div class="csel-opt-desc">기본 공항택시</div>
+          </div>
+          <div class="csel-opt" onclick="selectVeh('large')">
+            🚙 대형택시 (5~8인승)
+            <div class="csel-opt-desc">골프장 · 가족여행 · 장거리 편안한 이동시</div>
+          </div>
+          <div class="csel-opt" onclick="selectVeh('van')">
+            🚐 콜밴택시 (4인승)
+            <div class="csel-opt-desc">짐이 많을때 · 큰 짐이 있을때</div>
+          </div>
+          <div class="csel-opt" onclick="selectVeh('solar')">
+            🚌 쏠라티 (15인승)
+            <div class="csel-opt-desc">단체 · 행사 · 가족여행</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="sel-veh" value="">
     </div>
 
     <div class="err-msg" id="err-msg" style="order:8"></div>
@@ -478,14 +516,48 @@ function stepVal(id, delta){
 }
 function stepPax(delta){
   const el = document.getElementById('inp-pax');
-  const v = Math.min(15, Math.max(1, parseInt(el.textContent||'1') + delta));
+  const v = Math.min(15, Math.max(0, parseInt(el.textContent||'0') + delta));
   el.textContent = v;
 }
 
 // ── 공항 선택 변경 ────────────────────────────────────────
+function toggleCsel(type){
+  const opts = document.getElementById('csel-'+type+'-opts');
+  opts.classList.toggle('open');
+}
+
+function selectAirport(val){
+  const labels = {T1:'인천공항 T1', T2:'인천공항 T2', GMP:'김포공항'};
+  document.getElementById('sel-airport').value = val;
+  const txt = document.getElementById('csel-ap-txt');
+  txt.textContent = labels[val];
+  document.getElementById('csel-ap').classList.add('selected');
+  // 선택된 옵션 표시
+  document.querySelectorAll('#csel-ap-opts .csel-opt').forEach(el=>{
+    el.classList.toggle('on', el.textContent.trim().startsWith(labels[val].slice(0,4)));
+  });
+  document.getElementById('csel-ap-opts').classList.remove('open');
+  clearResult();
+}
+
+function selectVeh(val){
+  const labels = {medium:'🚕 일반택시 (4인승)', large:'🚙 대형택시 (5~8인승)', van:'🚐 콜밴택시 (4인승)', solar:'🚌 쏠라티 (15인승)'};
+  document.getElementById('sel-veh').value = val;
+  const txt = document.getElementById('csel-veh-txt');
+  txt.textContent = labels[val];
+  document.getElementById('csel-veh').classList.add('selected');
+  document.getElementById('csel-veh-opts').classList.remove('open');
+  clearResult();
+}
+
+// 외부 클릭시 드롭다운 닫기
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.csel-wrap')){
+    document.querySelectorAll('.csel-opts').forEach(el=>el.classList.remove('open'));
+  }
+});
+
 function onAirportChange(){
-  const v = document.getElementById('sel-airport').value;
-  document.getElementById('field-long').style.display = v==='LONG' ? 'block' : 'none';
   clearResult();
 }
 
