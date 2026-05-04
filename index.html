@@ -1359,6 +1359,19 @@ function openKakao(extra){
 
 }
 
+function doCopyFull(id){
+  const text = _fullCardText || document.getElementById(id).innerText;
+  const btn = document.getElementById('copybtn');
+  const copy = ()=>{
+    document.getElementById(id).style.display='none';
+    btn.style.display='none';
+    document.getElementById('modal-guide').classList.add('show');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(copy).catch(()=>fallbackCopy(text, copy));
+  } else { fallbackCopy(text, copy); }
+}
+
 function doCopy(id){
   const text = document.getElementById(id).innerText;
   const btn = document.getElementById('copybtn');
