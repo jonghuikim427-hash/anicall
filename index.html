@@ -943,6 +943,15 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
     </div></div>`;
 }
 
+function buildCallCardDisplay(extra){
+  // 손님 표시용 - 꼬리 없는 버전
+  const origTail = extra.tail;
+  extra.tail = '';
+  const card = buildCallCard(extra);
+  extra.tail = origTail;
+  return card;
+}
+
 function buildCallCard(extra){
   extra = extra || {};
   const dateV = document.getElementById('inp-date').value;
@@ -1163,7 +1172,7 @@ function openExtra(){
       </div>
 
       <div class="modal-btns" style="margin-top:16px">
-        <button class="modal-btn kakao" onclick="confirmExtra()">확인 → 콜카드 보기</button>
+        <button class="modal-btn kakao" onclick="confirmExtra()">확인 → 예약카드 보기</button>
       </div>
     </div>`;
   document.body.appendChild(bg);
@@ -1289,7 +1298,7 @@ function openChatInquiry(){
         <div class="confirm-check-wrap">
           <div class="confirm-msg">
             <span class="warn">⚠️ 예약 접수는 채팅창에서 "붙여넣기 완료" 후 진행됩니다</span><br><br>
-            📋 콜카드가 복사되었습니다<br>
+            📋 예약카드가 복사되었습니다<br>
             👉 카톡 채팅창을 꾹 눌러 '붙여넣기' 해주세요<br><br>
             <span class="danger">❗ 붙여넣지 않으면 예약이 접수되지 않습니다</span>
           </div>
@@ -1309,7 +1318,8 @@ function openChatInquiry(){
 }
 
 function openKakao(extra){
-  const card = buildCallCard(extra);
+  const cardDisplay = buildCallCardDisplay(extra); // 손님 표시용 (꼬리 없음)
+  const card = buildCallCard(extra);               // 복사용 (꼬리 있음)
   // 모달로 카드 표시
   const bg = document.createElement('div');
   bg.className = 'modal-bg';
@@ -1317,10 +1327,11 @@ function openKakao(extra){
   bg.innerHTML = `
     <div class="modal">
       <button class="modal-close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕</button>
-      <div class="modal-title">📋 콜카드 확인 후 복사 → 카톡에 붙여넣기</div>
-      <div class="modal-card" id="${cardId}">${card}</div>
+      <div class="modal-title">📋 예약카드 확인 후 복사 → 카톡에 붙여넣기</div>
+      <div class="modal-card" id="${cardId}">${cardDisplay}</div>
+      <input type="hidden" id="copy-text-${cardId}" value="">
       <div class="modal-btns">
-        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하기</button>
+        <button class="modal-btn copy" id="copybtn" onclick="doCopyFull('${cardId}')">📋 복사하기</button>
       </div>
       <div class="modal-guide" id="modal-guide">
         <div class="modal-guide-icon">📋</div>
@@ -1328,7 +1339,7 @@ function openKakao(extra){
         <div class="confirm-check-wrap">
           <div class="confirm-msg">
             <span class="warn">⚠️ 예약 접수는 채팅창에서 "붙여넣기 완료" 후 진행됩니다</span><br><br>
-            📋 콜카드가 복사되었습니다<br>
+            📋 예약카드가 복사되었습니다<br>
             👉 카톡 채팅창을 꾹 눌러 '붙여넣기' 해주세요<br><br>
             <span class="danger">❗ 붙여넣지 않으면 예약이 접수되지 않습니다</span>
           </div>
