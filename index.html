@@ -1329,7 +1329,6 @@ function openKakao(extra){
       <button class="modal-close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕</button>
       <div class="modal-title">📋 예약카드 확인 후 복사 → 카톡에 붙여넣기</div>
       <div class="modal-card" id="${cardId}">${cardDisplay}</div>
-      <input type="hidden" id="copy-text-${cardId}" value="">
       <div class="modal-btns">
         <button class="modal-btn copy" id="copybtn" onclick="doCopyFull('${cardId}')">📋 복사하기</button>
       </div>
