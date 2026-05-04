@@ -118,6 +118,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
 .modal-btn.copy{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d}
 .modal-btn.copy.done{background:#22c55e;border-color:#22c55e;color:white}
 .modal-btn.kakao{background:linear-gradient(135deg,#c8880a,#f5b800);color:#0b1e3d;padding:22px;font-size:17px}
+.confirm-check-wrap{margin-top:14px;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.25);border-radius:10px;padding:14px 12px}
+.confirm-msg{font-size:12px;color:rgba(255,255,255,0.8);line-height:1.8;margin-bottom:12px}
+.confirm-msg .warn{color:#f5b800;font-weight:700}
+.confirm-msg .danger{color:#ff6b6b;font-weight:700}
+.confirm-check-label{display:flex;align-items:center;gap:8px;font-size:12px;color:white;cursor:pointer;font-weight:700}
+.confirm-check-label input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:#f5b800}
 .modal-guide{display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(245,184,0,0.3);border-radius:14px;padding:20px 16px;text-align:center;line-height:1.8}
 .modal-guide.show{display:block}
 .modal-guide-icon{font-size:28px;margin-bottom:6px}
@@ -958,7 +964,7 @@ function buildCallCard(extra){
     const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
-    return `🚖출국택시 예약
+    return `${extra.tail||''}🚖출국택시 예약
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
@@ -983,7 +989,7 @@ function buildCallCard(extra){
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     const flight = document.getElementById('inp-flight').value || '';
-    return `🚕입국택시 예약
+    return `${extra.tail||''}🚕입국택시 예약
 
 1️⃣입국일자 : ${dateStr}
 2️⃣비행기 도착시간(오전/오후) : ${timeStr}
@@ -1007,7 +1013,7 @@ function buildCallCard(extra){
     const detail = document.getElementById('inp-detail').value.trim();
     const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const to   = document.getElementById('inp-long').value || '';
-    return `🚗전국장거리 예약
+    return `${extra.tail||''}🚗전국장거리 예약
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
@@ -1275,15 +1281,28 @@ function openChatInquiry(){
       <div class="modal-title" style="font-size:15px">💬 채팅 문의</div>
       <div class="modal-card" id="${cardId}">${card}</div>
       <div class="modal-btns">
-        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하고 카톡 연결</button>
+        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하기</button>
       </div>
       <div class="modal-guide" id="modal-guide">
         <div class="modal-guide-icon">📋</div>
         <div class="modal-guide-title">복사 완료!</div>
-        <div class="modal-guide-sub">카톡이 연결되면<br>채팅창을 꾹 눌러<br>붙여넣기 해주세요!<br>빠른 상담이 가능합니다^^</div>
-      </div>
-      <div class="modal-btns" id="kakao-btn-wrap" style="display:none;margin-top:8px">
-        <button class="modal-btn kakao" onclick="gotoKakao()">💬 카톡 열기 →</button>
+        <div class="confirm-check-wrap">
+          <div class="confirm-msg">
+            <span class="warn">⚠️ 예약 접수는 채팅창에서 "붙여넣기 완료" 후 진행됩니다</span><br><br>
+            📋 콜카드가 복사되었습니다<br>
+            👉 카톡 채팅창을 꾹 눌러 '붙여넣기' 해주세요<br><br>
+            <span class="danger">❗ 붙여넣지 않으면 예약이 접수되지 않습니다</span>
+          </div>
+          <label class="confirm-check-label">
+            <input type="checkbox" id="paste-confirm" onchange="onPasteCheck(this)">
+            위 내용을 확인했습니다
+          </label>
+        </div>
+        <div class="modal-btns" style="margin-top:10px">
+          <button class="modal-btn kakao" id="kakao-go-btn" onclick="gotoKakao()" disabled style="opacity:0.4;cursor:not-allowed">
+            📲 붙여넣기 하러 카톡 가기
+          </button>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(bg);
@@ -1308,9 +1327,7 @@ function openKakao(extra){
         <div class="modal-guide-sub">카톡이 연결되면<br>채팅창을 꾹 눌러<br>붙여넣기 해주세요!<br>빠른 상담이 가능합니다^^</div>
         <div class="modal-guide-title">복사 완료</div>
       </div>
-      <div class="modal-btns" id="kakao-btn-wrap" style="display:none;margin-top:8px">
-        <button class="modal-btn kakao" onclick="gotoKakao()">💬 카톡 열기 →</button>
-      </div>
+
     </div>`;
   document.body.appendChild(bg);
 
@@ -1320,11 +1337,9 @@ function doCopy(id){
   const text = document.getElementById(id).innerText;
   const btn = document.getElementById('copybtn');
   const copy = ()=>{
-    // 콜카드 숨기고 안내멘트 표시
     document.getElementById(id).style.display='none';
     btn.style.display='none';
     document.getElementById('modal-guide').classList.add('show');
-    document.getElementById('kakao-btn-wrap').style.display='flex';
   };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(copy).catch(()=>fallbackCopy(text, copy));
@@ -1339,6 +1354,19 @@ function fallbackCopy(text, cb){
   try{ document.execCommand('copy'); cb(); } catch(e){}
   document.body.removeChild(ta);
 }
+function onPasteCheck(el){
+  const btn = document.getElementById('kakao-go-btn');
+  if(el.checked){
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+  }
+}
+
 function gotoKakao(){
   window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');
 }
