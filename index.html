@@ -234,19 +234,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(160deg,#09
         <div class="csel-opts" id="csel-veh-opts">
           <div class="csel-opt" onclick="selectVeh('medium')">
             🚕 일반택시 (4인승)
-            <div class="csel-opt-desc">기본 공항택시</div>
+            <div class="csel-opt-desc">GN7·K8(세단형) / 스포티지·아이오닉5·EV6 등(SUV형)</div>
           </div>
           <div class="csel-opt" onclick="selectVeh('large')">
             🚙 대형택시 (5~8인승)
-            <div class="csel-opt-desc">골프장 · 가족여행 · 장거리 편안한 이동시</div>
+            <div class="csel-opt-desc">스타리아 · 골프장 · 가족여행 · 장거리 편안한 이동시</div>
           </div>
           <div class="csel-opt" onclick="selectVeh('van')">
             🚐 콜밴택시 (4인승)
             <div class="csel-opt-desc">짐이 많을때 · 큰 짐이 있을때</div>
           </div>
           <div class="csel-opt" onclick="selectVeh('solar')">
-            🚌 쏠라티 (15인승)
-            <div class="csel-opt-desc">단체 · 행사 · 가족여행</div>
+            🚌 미니버스 (15인승)
+            <div class="csel-opt-desc">쏠라티 · 단체 · 행사 · 가족여행</div>
           </div>
         </div>
       </div>
@@ -537,7 +537,7 @@ function selectAirport(val){
 }
 
 function selectVeh(val){
-  const labels = {medium:'🚕 일반택시 (4인승)', large:'🚙 대형택시 (5~8인승)', van:'🚐 콜밴택시 (4인승)', solar:'🚌 쏠라티 (15인승)'};
+  const labels = {medium:'🚕 일반택시 (4인승)', large:'🚙 대형택시 (5~8인승)', van:'🚐 콜밴택시 (4인승)', solar:'🚌 미니버스 (15인승)'};
   document.getElementById('sel-veh').value = val;
   const txt = document.getElementById('csel-veh-txt');
   txt.textContent = labels[val];
@@ -546,11 +546,13 @@ function selectVeh(val){
   clearResult();
 }
 
-// 외부 클릭시 드롭다운 닫기
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.csel-wrap')){
-    document.querySelectorAll('.csel-opts').forEach(el=>el.classList.remove('open'));
-  }
+// 외부 클릭시 드롭다운 닫기 (window.onload 후 실행)
+window.addEventListener('load', function(){
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.csel-wrap')){
+      document.querySelectorAll('.csel-opts').forEach(el=>el.classList.remove('open'));
+    }
+  });
 });
 
 function onAirportChange(){
@@ -1077,48 +1079,42 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   const region = extractRegion(addr);
   const vehCode = getVehCode(veh);
   const name = extra.name || '';
+  const p = parseInt(pax);
   const hasExtra = !!(extra.carseat||extra.picket||extra.kakaoId||extra.request||extra.waypoint);
 
-  let line1='', warn='';
+  // 경고 메시지 배열 (중복 가능)
+  const warns = [];
+
+  // 차종별 line1 설정
+  let line1 = '';
 
   if(veh==='medium'){
-    // 중형
-    if(totalBag >= 5){
-      return `짐이 많으십니다
-채널>애니>${name}`;
-    }
     const dtype = getDispatchType(pax, totalBag);
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2} ${dtype}`;
+    if(totalBag >= 5)     warns.push('⚠️ 짐 확인요망');
+    if(p >= 5)            warns.push('⚠️ 인원 확인요망 (중형선택)');
+
   } else if(veh==='large'){
-    // 대형
-    const p = parseInt(pax);
-    if(p>=10){
-      warn = `⚠️ 인원 확인요망
-`;
-    } else if(p>=8 || totalBag>=6){
-      warn = `⚠️ 인원/짐 확인요망
-`;
-    }
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    if(p >= 10)           warns.push('⚠️ 인원 확인요망');
+    else if(p>=8||totalBag>=6) warns.push('⚠️ 인원/짐 확인요망');
+    if(p >= 5 && p < 5)  {} // 정상 범위
+
   } else if(veh==='van'){
-    // 콜밴
-    return `짐이 많으십니다
-채널>애니>${name}`;
-  } else if(veh==='solar'){
-    // 쏠라티
-    const p = parseInt(pax);
-    if(p<10) warn = `⚠️ 인원 확인요망
-`;
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    warns.push('⚠️ 짐 확인요망');
+    if(p >= 5)            warns.push('⚠️ 인원 확인요망 (콜밴선택)');
+
+  } else if(veh==='solar'){
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    if(p < 10)            warns.push('⚠️ 인원 확인요망');
   }
 
-  // 추가사항 있으면 경고 추가
-  if(hasExtra && !warn) warn = `⚠️ 추가사항 확인요망
-`;
-  else if(hasExtra && warn) {} // 이미 warn 있음
+  // 추가사항
+  if(hasExtra) warns.push('⚠️ 추가사항 확인요망');
 
-  return `${warn}${line1}
-채널>애니>${name}`;
+  const warnStr = warns.length > 0 ? warns.join('\n') + '\n' : '';
+  return warnStr + line1 + '\n채널>애니>' + name;
 }
 
 function openExtra(){
@@ -1216,21 +1212,6 @@ function confirmExtra(){
   const dateV   = document.getElementById('inp-date').value;
   const addr    = selectedAddr ? selectedAddr.display : '';
   const tab     = currentTab;
-
-  // 짐 0개 확인 팝업 (중형만)
-  if(veh==='medium' && totalBag===0){
-    if(!confirm('🧳 짐이 정말 없으신가요? (기내용 캐리어도 없으신가요?)')) return;
-  }
-
-  // 10명 이상인데 중형/대형 선택
-  if(pax>=10 && (veh==='medium'||veh==='large')){
-    showAlert('👥 인원이 많으셔서 상담이 필요합니다!');
-  }
-
-  // 짐 5개 이상 중형 → 상담 필요 알림
-  if(veh==='medium' && totalBag>=5){
-    showAlert('🧳 짐이 많으시네요! 상담이 필요합니다.');
-  }
 
   // 꼬리 생성
   extra.tail = buildTail(extra, veh, pax, totalBag, addr, dateV, tab);
