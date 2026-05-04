@@ -1320,12 +1320,28 @@ function openKakao(extra){
       <div class="modal-title">📋 콜카드 확인 후 복사 → 카톡에 붙여넣기</div>
       <div class="modal-card" id="${cardId}">${card}</div>
       <div class="modal-btns">
-        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하고 카톡 연결</button>
+        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하기</button>
       </div>
       <div class="modal-guide" id="modal-guide">
         <div class="modal-guide-icon">📋</div>
-        <div class="modal-guide-sub">카톡이 연결되면<br>채팅창을 꾹 눌러<br>붙여넣기 해주세요!<br>빠른 상담이 가능합니다^^</div>
-        <div class="modal-guide-title">복사 완료</div>
+        <div class="modal-guide-title">복사 완료!</div>
+        <div class="confirm-check-wrap">
+          <div class="confirm-msg">
+            <span class="warn">⚠️ 예약 접수는 채팅창에서 "붙여넣기 완료" 후 진행됩니다</span><br><br>
+            📋 콜카드가 복사되었습니다<br>
+            👉 카톡 채팅창을 꾹 눌러 '붙여넣기' 해주세요<br><br>
+            <span class="danger">❗ 붙여넣지 않으면 예약이 접수되지 않습니다</span>
+          </div>
+          <label class="confirm-check-label">
+            <input type="checkbox" id="paste-confirm" onchange="onPasteCheck(this)">
+            위 내용을 확인했습니다
+          </label>
+        </div>
+        <div class="modal-btns" style="margin-top:10px">
+          <button class="modal-btn kakao" id="kakao-go-btn" onclick="gotoKakao()" disabled style="opacity:0.4;cursor:not-allowed">
+            📲 붙여넣기 하러 카톡 가기
+          </button>
+        </div>
       </div>
 
     </div>`;
