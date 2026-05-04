@@ -1096,6 +1096,16 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   // 경고 메시지 배열 (중복 가능)
   const warns = [];
 
+  // 긴급예약 체크 (3시간 이내)
+  if(dateV){
+    const depTime = new Date(dateV);
+    const now = new Date();
+    const diffMin = (depTime - now) / (1000 * 60);
+    if(diffMin > 0 && diffMin <= 180){
+      warns.unshift('❗❗❗긴급예약 확인요망');
+    }
+  }
+
   // 차종별 line1 설정
   let line1 = '';
 
