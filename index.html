@@ -905,7 +905,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
       <div class="em">💳 카드결제 가능</div>
       <div class="nt">※ 실제 요금은 위 금액으로 정산됩니다.</div>
       <div class="btn-row">
-        <button class="kbtn sub" onclick="openKakao()">💬 채팅 문의 ❗요금문의</button>
+        <button class="kbtn sub" onclick="openChatInquiry()">💬 채팅 문의</button>
         <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
       </div>
     </div></div>`;
@@ -931,7 +931,7 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
       </div>
       <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
       <div class="btn-row">
-        <button class="kbtn sub" onclick="openKakao()">💬 채팅 문의 ❗요금문의</button>
+        <button class="kbtn sub" onclick="openChatInquiry()">💬 채팅 문의</button>
         <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
       </div>
     </div></div>`;
@@ -1223,6 +1223,53 @@ function confirmExtra(){
 
 function showAlert(msg){
   alert(msg);
+}
+
+function openChatInquiry(){
+  // 현재 입력된 정보로 요금문의 꼬리 생성
+  const dateV   = document.getElementById('inp-date').value;
+  const now     = dateV ? new Date(dateV) : new Date();
+  const yy      = String(now.getFullYear()).slice(2);
+  const mmdd    = String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  const hhmm2   = String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+  const dir     = currentTab==='입국' ? '입' : '출';
+  const addr    = selectedAddr ? selectedAddr.display : '';
+  const region  = addr ? extractRegion(addr) : '미상';
+  const veh     = document.getElementById('sel-veh').value || 'medium';
+  const vehCode = getVehCode(veh);
+  const pax     = parseInt(document.getElementById('inp-pax').textContent||1);
+  const cabin   = parseInt(document.getElementById('inp-cabin').textContent||0);
+  const cargo   = parseInt(document.getElementById('inp-cargo').textContent||0);
+  const golf    = parseInt(document.getElementById('inp-golf').textContent||0);
+  const totalBag = calcTotalBag(cabin, cargo, golf);
+  const dtype   = veh==='medium' ? getDispatchType(pax, totalBag) : '';
+
+  const tail = `❗요금문의
+${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtype?' '+dtype:''}
+채널>애니>`;
+
+  // 모달로 표시
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  const cardId = 'card-' + Date.now();
+  bg.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕</button>
+      <div class="modal-title" style="font-size:15px">💬 채팅 문의</div>
+      <div class="modal-card" id="${cardId}">${tail}</div>
+      <div class="modal-btns">
+        <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하고 카톡 연결</button>
+      </div>
+      <div class="modal-guide" id="modal-guide">
+        <div class="modal-guide-icon">📋</div>
+        <div class="modal-guide-title">복사 완료!</div>
+        <div class="modal-guide-sub">카톡이 연결되면<br>채팅창을 꾹 눌러<br>붙여넣기 해주세요!<br>빠른 상담이 가능합니다^^</div>
+      </div>
+      <div class="modal-btns" id="kakao-btn-wrap" style="display:none;margin-top:8px">
+        <button class="modal-btn kakao" onclick="gotoKakao()">💬 카톡 열기 →</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
 }
 
 function openKakao(extra){
