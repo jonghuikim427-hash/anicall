@@ -1116,9 +1116,11 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
 
   if(veh==='medium'){
     const dtype = getDispatchType(pax, totalBag);
-    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2} ${dtype}`;
     if(totalBag >= 5)     warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (중형선택)');
+    // 경고 있으면 배차타입 제거
+    const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}`;
 
   } else if(veh==='large'){
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
