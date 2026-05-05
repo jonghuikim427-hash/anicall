@@ -970,7 +970,7 @@ async function calculate(){
     const largeFare = getLargeFare(addr2, vehVal2);
     if(largeFare){
       btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
-      showFixedFare({amount: largeFare.amount, isSurcharge: largeFare.isSurcharge}, depName, arrName);
+      showFixedFare({amount: largeFare.amount * 10000, isSurcharge: largeFare.isSurcharge}, depName, arrName);
       showMap([], dep, arr, depName, arrName, 0, -1);
       return;
     } else {
