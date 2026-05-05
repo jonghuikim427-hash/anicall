@@ -1079,6 +1079,7 @@ function getTimeRange(distKm){
 }
 
 function showFixedFare({region, amount, isSurcharge}, depName, arrName){
+  _lastFareText = `확정 ${amount.toLocaleString()}원`;
   const label = isSurcharge ? '🌙 야간요금' : '☀️ 일반요금';
   document.getElementById('result-wrap').innerHTML = `
     <div class="result-box"><div class="ri">
@@ -1097,6 +1098,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
 }
 
 function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm}){
+  _lastFareText = `예상 ${totalFare.toLocaleString()}~${(totalFare+3000).toLocaleString()}원`;
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
@@ -1316,7 +1318,8 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   if(hasExtra) warns.push('⚠️ 추가사항 확인요망');
 
   const warnStr = warns.length > 0 ? warns.join('\n') + '\n' : '';
-  return warnStr + line1 + '\n채널>애니>' + name;
+  const fareStr = _lastFareText ? String.fromCharCode(10) + _lastFareText : '';
+  return warnStr + line1 + '\n채널>애니>' + name + fareStr;
 }
 
 function openExtra(){
@@ -1464,9 +1467,10 @@ function openChatInquiry(isLongDist){
   // 경고 있으면 배차타입 제거
   const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
   const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
+  const fareStr2 = _lastFareText ? String.fromCharCode(10) + _lastFareText : '';
   const tail = `${inquiryLabel}
 ` + warnStr + `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}
-채널>애니>`;
+채널>애니>${fareStr2}`;
 
   // 기존 콜카드 생성 (이름/전화번호 없이)
   const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
