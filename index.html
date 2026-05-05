@@ -986,7 +986,7 @@ async function calculate(){
             친절하게 안내해드릴게요 😊
           </div>
           <div class="btn-row">
-            <button class="kbtn main" onclick="openChatInquiry()">💬 카톡으로 문의하기</button>
+            <button class="kbtn main" onclick="openChatInquiry(true)">💬 카톡으로 문의하기</button>
           </div>
         </div></div>`;
       return;
@@ -1427,7 +1427,7 @@ function showAlert(msg){
   alert(msg);
 }
 
-function openChatInquiry(){
+function openChatInquiry(isLongDist){
   // 현재 입력된 정보로 요금문의 꼬리 생성
   const dateV   = document.getElementById('inp-date').value;
   const now     = dateV ? new Date(dateV) : new Date();
@@ -1463,7 +1463,8 @@ function openChatInquiry(){
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
   const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
-  const tail = `❗요금문의
+  const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
+  const tail = `${inquiryLabel}
 ` + warnStr + `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}
 채널>애니>`;
 
