@@ -704,6 +704,12 @@ async function calculate(){
   if(!document.getElementById('inp-date').value){
     return pop(currentTab==='입국' ? '비행기 도착 시간을 입력해주세요' : '택시 탑승 시간을 입력해주세요');
   }
+  // 과거 시간 체크
+  const inputTime = new Date(document.getElementById('inp-date').value);
+  if(inputTime < new Date()){
+    return pop('🕐 날짜와 시간이 맞지 않습니다!
+시간을 다시 확인해주세요 😊');
+  }
 
   // 5. 인원
   if(parseInt(document.getElementById('inp-pax').textContent||0) < 1){
