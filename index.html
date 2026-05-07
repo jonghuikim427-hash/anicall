@@ -1739,8 +1739,7 @@ function openChatInquiry(isLongDist){
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
   const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
-  const fareStr2 = _lastFareText || '';
-  const tail = fareStr2;
+  const tail = '';
 
   // 기존 콜카드 생성 (이름/전화번호 없이)
   const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
