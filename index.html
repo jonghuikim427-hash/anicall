@@ -16,10 +16,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 .hdr-sub{font-size:8px;font-weight:700;color:rgba(0,0,0,0.45);letter-spacing:.15em}
 .hdr-title{font-size:17px;font-weight:900;color:#1a1a1a}
 .body{padding:13px 13px 0;display:flex;flex-direction:column}
-.tabs{display:flex;gap:5px;margin-bottom:12px;}
-.tab{flex:1;padding:9px 4px;border:1px solid #e0e0e0;border-radius:8px;cursor:pointer;font-family:inherit;font-size:9.5px;font-weight:700;transition:all .18s;color:#999;background:#ffffff}
-.tab:hover{border-color:#f5b800;color:#c8880a}
-.tab.on{background:linear-gradient(135deg,#f5b800,#ffdd57);color:#1a1a1a;border-color:transparent}
+.tabs{display:flex;gap:4px;align-items:center;margin-bottom:12px;}
+.tab{flex:2;padding:9px 5px;border:1.5px solid #e0e0e0;border-radius:9px;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;transition:all .18s;color:#888;background:#ffffff;line-height:1.4;text-align:center}.tab.long{flex:1.2;font-size:8px}
+.tab:hover{border-color:#f5b800;color:#c8880a}.tab-arrow{font-size:15px;color:#c8880a;flex-shrink:0;font-weight:700}
+.tab.on{background:linear-gradient(135deg,#f5b800,#ffdd57);color:#1a1a1a;border-color:#f5b800;border-width:2px}
 .field{margin-bottom:9px;position:relative}
 .lbl{display:block;font-size:10px;font-weight:700;color:#555;letter-spacing:.08em;margin-bottom:4px}
 .inp,.sel{width:100%;padding:10px 12px;background:#ffffff;border:1.5px solid #e0e0e0;border-radius:9px;color:#333333;font-size:13px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;transition:border-color .2s}
@@ -149,9 +149,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 
   <div class="body">
     <div class="tabs" style="order:0">
-      <button class="tab on" id="tab-out" onclick="switchTab('출국')" style="font-size:9.5px;padding:8px 2px">🛫 출국(출발지→공항)</button>
-      <button class="tab" id="tab-in" onclick="switchTab('입국')" style="font-size:9.5px;padding:8px 2px">🛬 입국(공항→목적지)</button>
-      <button class="tab" id="tab-long" onclick="switchTab('장거리')" style="font-size:9.5px;padding:8px 2px">🚗 전국장거리</button>
+      <button class="tab on" id="tab-out" onclick="switchTab('출국')">🛫 출국<br><span style="font-size:8px;font-weight:400;opacity:.75;white-space:nowrap">출발지→공항</span></button>
+      <span class="tab-arrow">⇄</span>
+      <button class="tab" id="tab-in" onclick="switchTab('입국')">🛬 입국<br><span style="font-size:8px;font-weight:400;white-space:nowrap">공항→목적지</span></button>
+      <span class="tab-arrow">⇄</span>
+      <button class="tab long" id="tab-long" onclick="switchTab('장거리')">🚗<br><span style="white-space:nowrap">전국장거리</span></button>
     </div>
 
     <div class="field" id="field-addr" style="order:2">
@@ -266,7 +268,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     </div>
 
     <div class="err-msg" id="err-msg" style="order:8"></div>
-    <button class="calc-btn" onclick="calculate()" id="btn-calc" style="order:9">🔍 예상 요금 계산하기</button>
+    <button class="calc-btn" onclick="calculate()" id="btn-calc" style="order:9">🔍 예상요금 확인하기</button>
 
     <div id="result-wrap" style="order:10"></div>
     <div id="map-container" style="order:11"></div>
@@ -1029,7 +1031,7 @@ async function calculate(){
     if(!found){
       errEl.textContent = '주소를 찾을 수 없어요. 더 자세히 입력해 주세요.';
       errEl.classList.add('show');
-      btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+      btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       return;
     }
     selectedAddr = found;
@@ -1043,7 +1045,7 @@ async function calculate(){
       el.classList.add('shake');
       el.style.borderColor='rgba(255,80,80,0.6)';
       setTimeout(()=>{el.classList.remove('shake');el.style.borderColor='';},600);
-      btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+      btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       return;
     }
   }
@@ -1059,7 +1061,7 @@ async function calculate(){
       if(!q){
         document.getElementById('inp-long').classList.add('shake');
         setTimeout(()=>document.getElementById('inp-long').classList.remove('shake'),500);
-        btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+        btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
         return;
       }
       btn.disabled=true; btn.textContent='🔍 주소 검색 중...';
@@ -1067,7 +1069,7 @@ async function calculate(){
       const geoData = await geoRes.json();
       if(!geoData.documents||!geoData.documents.length){
         errEl.textContent='목적지 주소를 찾을 수 없어요.'; errEl.classList.add('show');
-        btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기'; return;
+        btn.disabled=false; btn.textContent='🔍 예상요금 확인하기'; return;
       }
       selectedLong = {display:geoData.documents[0].address_name||q, lat:parseFloat(geoData.documents[0].y), lng:parseFloat(geoData.documents[0].x)};
     }
@@ -1100,13 +1102,13 @@ async function calculate(){
     const addr2 = selectedAddr ? selectedAddr.display : '';
     const largeFare = getLargeFare(addr2, vehVal2);
     if(largeFare){
-      btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+      btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       showFixedFare({amount: largeFare.amount * 10000, isSurcharge: largeFare.isSurcharge}, depName, arrName);
       showMap([], dep, arr, depName, arrName, 0, -1);
       return;
     } else {
       // 요금표에 없는 원거리
-      btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+      btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       document.getElementById('result-wrap').innerHTML = `
         <div class="result-box"><div class="ri">
           <div class="el">${depName} ──→ ${arrName}</div>
@@ -1128,7 +1130,7 @@ async function calculate(){
   const checkAddr = currentTab === '입국' ? selectedAddr.display : selectedAddr.display;
   const fixedFare = getFixedFare(checkAddr, hhmm);
   if(fixedFare){
-    btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+    btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
     showFixedFare(fixedFare, depName, arrName);
     // 지도는 T-map 없이 직선으로 표시
     showMap([], dep, arr, depName, arrName, 0, -1);
@@ -1197,7 +1199,7 @@ async function calculate(){
     errEl.classList.add('show');
   }
 
-  btn.disabled=false; btn.textContent='🔍 예상 요금 계산하기';
+  btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
 }
 
 // ── 결과 표시 ─────────────────────────────────────────────
