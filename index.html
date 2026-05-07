@@ -17,7 +17,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 .hdr-title{font-size:17px;font-weight:900;color:#1a1a1a}
 .body{padding:13px 13px 0;display:flex;flex-direction:column}
 .tabs{display:flex;gap:4px;align-items:center;margin-bottom:12px;}
-.tab{flex:2;padding:9px 5px;border:1.5px solid #e0e0e0;border-radius:9px;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;transition:all .18s;color:#888;background:#ffffff;line-height:1.4;text-align:center}.tab.long{flex:1.2;font-size:8px}
+.tab{flex:2;padding:10px 5px;border:1.5px solid #e0e0e0;border-radius:9px;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;transition:all .18s;color:#888;background:#ffffff;line-height:1.4;text-align:center}.tab.long{flex:1.2;font-size:8px}
 .tab:hover{border-color:#f5b800;color:#c8880a}.tab-arrow{font-size:15px;color:#c8880a;flex-shrink:0;font-weight:700}
 .tab.on{background:linear-gradient(135deg,#f5b800,#ffdd57);color:#1a1a1a;border-color:#f5b800;border-width:2px}
 .field{margin-bottom:9px;position:relative}
@@ -149,9 +149,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 
   <div class="body">
     <div class="tabs" style="order:0">
-      <button class="tab on" id="tab-out" onclick="switchTab('출국')">🛫 출국<br><span style="font-size:8px;font-weight:400;opacity:.75;white-space:nowrap">출발지→공항</span></button>
+      <button class="tab on" id="tab-out" onclick="switchTab('출국')">🛫 출국<br><span style="font-size:7.5px;font-weight:400;opacity:.7;white-space:nowrap">출발→공항</span></button>
       <span class="tab-arrow">⇄</span>
-      <button class="tab" id="tab-in" onclick="switchTab('입국')">🛬 입국<br><span style="font-size:8px;font-weight:400;white-space:nowrap">공항→목적지</span></button>
+      <button class="tab" id="tab-in" onclick="switchTab('입국')">🛬 입국<br><span style="font-size:7.5px;font-weight:400;opacity:.7;white-space:nowrap">공항→도착지</span></button>
       <span class="tab-arrow">⇄</span>
       <button class="tab long" id="tab-long" onclick="switchTab('장거리')">🚗<br><span style="white-space:nowrap">전국장거리</span></button>
     </div>
