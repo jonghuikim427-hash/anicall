@@ -1426,7 +1426,7 @@ function buildCallCard(extra){
     const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
-    return `${extra.tail||''}🚖출국택시 예약
+    return `${extra.tail||''}${_lastFareText ? '💰예상요금 : ' + _lastFareText + '\n' : ''}🚖출국택시 예약
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
@@ -1443,8 +1443,7 @@ function buildCallCard(extra){
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}
-${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
+🔹경유지: ${extra.waypoint||''}`;
 
   } else if(currentTab === '입국'){
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1452,7 +1451,7 @@ ${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     const flight = document.getElementById('inp-flight').value || '';
-    return `${extra.tail||''}🚕입국택시 예약
+    return `${extra.tail||''}${_lastFareText ? '💰예상요금 : ' + _lastFareText + '\n' : ''}🚕입국택시 예약
 
 1️⃣입국일자 : ${dateStr}
 2️⃣비행기 도착시간(오전/오후) : ${timeStr}
@@ -1470,14 +1469,13 @@ ${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}
-${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
+🔹경유지: ${extra.waypoint||''}`;
 
   } else { // 장거리
     const detail = document.getElementById('inp-detail').value.trim();
     const from = (document.getElementById('inp-addr').value || '') + (detail ? ' ' + detail : '');
     const to   = document.getElementById('inp-long').value || '';
-    return `${extra.tail||''}🚗전국장거리 예약
+    return `${extra.tail||''}${_lastFareText ? '💰예상요금 : ' + _lastFareText + '\n' : ''}🚗전국장거리 예약
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
@@ -1492,8 +1490,7 @@ ${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
 💗추가사항(※필요시기재)
 🔹카시트대여 (콜밴,대형 1만원) :
 🔹요청사항 :
-🔹경유지:
-${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
+🔹경유지:`;
   }
 }
 
