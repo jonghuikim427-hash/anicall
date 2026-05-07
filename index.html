@@ -1443,7 +1443,8 @@ function buildCallCard(extra){
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}`;
+🔹경유지: ${extra.waypoint||''}
+${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
 
   } else if(currentTab === '입국'){
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1469,7 +1470,8 @@ function buildCallCard(extra){
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
 🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}`;
+🔹경유지: ${extra.waypoint||''}
+${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
 
   } else { // 장거리
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1490,7 +1492,8 @@ function buildCallCard(extra){
 💗추가사항(※필요시기재)
 🔹카시트대여 (콜밴,대형 1만원) :
 🔹요청사항 :
-🔹경유지:`;
+🔹경유지:
+${_lastFareText ? '\n💰예상요금 : ' + _lastFareText : ''}`;
   }
 }
 
