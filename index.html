@@ -906,7 +906,7 @@ function showTmpPopup(timeStr, data){
     <div class="tmp-popup">
       <div class="tmp-popup-icon">📋</div>
       <div class="tmp-popup-title">${timeStr}에 입력하신 정보가 있어요!</div>
-      <div class="tmp-popup-sub">이전에 입력하신 정보를 불러올까요?<br>요금은 직접 다시 확인해 주세요.</div>
+      <div class="tmp-popup-sub">이전에 입력하신 정보를 불러올까요?</div>
       <div class="tmp-popup-btns">
         <button class="tmp-popup-btn-yes" onclick="tmpRestore()">네, 불러오기</button>
         <button class="tmp-popup-btn-no" onclick="tmpDismiss()">아니요, 새로 입력</button>
@@ -926,7 +926,7 @@ function tmpRestore(){
     // 주소 복원
     if(data.selectedAddr){
       selectedAddr = data.selectedAddr;
-      const box = document.getElementById('addr-input');
+      const box = document.getElementById('inp-addr');
       if(box) box.value = data.selectedAddr.display;
       const dropEl = document.getElementById('addr-drop');
       if(dropEl) dropEl.style.display='none';
@@ -1738,11 +1738,8 @@ function openChatInquiry(isLongDist){
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
   const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
-  const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
-  const fareStr2 = _lastFareText ? String.fromCharCode(10) + _lastFareText : '';
-  const tail = `${inquiryLabel}
-` + warnStr + `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}
-채널>애니>${fareStr2}`;
+  const fareStr2 = _lastFareText || '';
+  const tail = fareStr2;
 
   // 기존 콜카드 생성 (이름/전화번호 없이)
   const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
