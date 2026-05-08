@@ -830,7 +830,7 @@ function selectAirport(val){
         <div class="tmp-popup-sub">김포공항은 별도 배차 확인이 필요해요.<br>카톡으로 문의주시면 빠르게 안내해드릴게요!</div>
         <div class="tmp-popup-btns">
           <button class="tmp-popup-btn-yes" onclick="document.getElementById('gmp-popup-bg').remove(); window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');">💬 카톡으로 바로 연결하기</button>
-          <button class="tmp-popup-btn-no" onclick="document.getElementById('gmp-popup-bg').remove();">닫기</button>
+          <button class="tmp-popup-btn-no" onclick="document.getElementById('gmp-popup-bg').remove(); selectGMP();">닫기</button>
         </div>
       </div>`;
     document.body.appendChild(bg);
@@ -846,6 +846,19 @@ function selectAirport(val){
     el.classList.toggle('on', el.textContent.trim().startsWith(labels[val].slice(0,4)));
   });
   document.getElementById('csel-ap-opts').classList.remove('open');
+  clearResult();
+  tmpScheduleSave();
+}
+
+function selectGMP(){
+  const labels = {T1:'인천공항 T1', T2:'인천공항 T2', GMP:'김포공항'};
+  document.getElementById('sel-airport').value = 'GMP';
+  const txt = document.getElementById('csel-ap-txt');
+  txt.textContent = '김포공항';
+  document.getElementById('csel-ap').classList.add('selected');
+  document.querySelectorAll('#csel-ap-opts .csel-opt').forEach(el=>{
+    el.classList.toggle('on', el.textContent.trim().startsWith('김포'));
+  });
   clearResult();
   tmpScheduleSave();
 }
