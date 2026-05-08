@@ -1464,6 +1464,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
         ${IS_BOOKING ? '' : '<button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>'}
       </div>
     </div></div>`;
+  if(IS_BOOKING) setTimeout(()=>openExtra(), 100);
 }
 
 function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm}){
@@ -1491,6 +1492,8 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         ${IS_BOOKING ? '' : '<button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>'}
       </div>
     </div></div>`;
+  // 예약 모드: 요금 계산 완료 후 자동으로 예약카드 생성
+  if(IS_BOOKING) setTimeout(()=>openExtra(), 100);
 }
 
 function buildCallCardDisplay(extra){
