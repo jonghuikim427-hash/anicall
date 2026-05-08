@@ -827,7 +827,7 @@ function selectAirport(val){
       <div class="tmp-popup">
         <div class="tmp-popup-icon">🛫</div>
         <div class="tmp-popup-title">김포공항 예약 안내</div>
-        <div class="tmp-popup-sub">김포공항은 별도 배차 확인이 필요해요.<br>카톡으로 문의주시면 빠르게 잡아드릴게요!</div>
+        <div class="tmp-popup-sub">김포공항은 별도 배차 확인이 필요해요.<br>카톡으로 문의주시면 빠르게 안내해드릴게요!</div>
         <div class="tmp-popup-btns">
           <button class="tmp-popup-btn-yes" onclick="document.getElementById('gmp-popup-bg').remove(); window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');">💬 카톡으로 바로 연결하기</button>
           <button class="tmp-popup-btn-no" onclick="document.getElementById('gmp-popup-bg').remove();">닫기</button>
@@ -1248,6 +1248,13 @@ async function calculate(){
   // 3. 공항
   if(currentTab !== '장거리' && !document.getElementById('sel-airport').value){
     return pop(currentTab==='입국' ? '출발 공항을 선택해주세요' : '도착 공항을 선택해주세요');
+  }
+
+  // 김포공항 선택 시 요금계산 스킵 → 바로 예약카드 생성
+  if(currentTab !== '장거리' && document.getElementById('sel-airport').value === 'GMP'){
+    _lastFareText = ''; // 요금 없음
+    openExtra();
+    return;
   }
 
   // 4. 시간
@@ -1685,6 +1692,12 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
 
   // 경고 메시지 배열 (중복 가능)
   const warns = [];
+
+  // 김포공항 마크
+  const apId = document.getElementById('sel-airport').value;
+  if(apId === 'GMP'){
+    warns.unshift('✈️✈️✈️김포공항 확인요망');
+  }
 
   // 긴급예약 체크 (3시간 이내)
   if(dateV){
