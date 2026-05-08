@@ -1005,25 +1005,24 @@ function showBookingFields(){
   if(document.getElementById('booking-fields')) return;
   const calcBtn = document.getElementById('btn-calc');
   const wrap = document.createElement('div');
-  wrap.id = 'booking-fields';
-  wrap.style.cssText = 'display:contents';
-  wrap.innerHTML = `
-    <div class="field">
-      <label class="lbl">연락처 <span style="color:#f5b800">*</span></label>
-      <input class="inp" id="bk-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
-    </div>
-    <div class="field">
-      <label class="lbl">이름 <span style="color:#f5b800">*</span></label>
-      <input class="inp" id="bk-name" placeholder="홍길동" autocomplete="off">
-    </div>
-    <div class="field">
-      <label class="lbl">추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span></label>
-      <input class="inp" id="bk-request" placeholder="카시트, 경유지, 요청사항 등" autocomplete="off">
-    </div>
-  `;
-  // 에러메시지 앞에 삽입 (차량종류 뒤, 버튼 앞)
+  // 각 필드를 개별 삽입 (order 방식)
   const errMsg = document.getElementById('err-msg');
-  errMsg.parentNode.insertBefore(wrap, errMsg);
+  const parent = errMsg.parentNode;
+
+  const fields = [
+    { id:'bk-phone', lbl:'연락처 <span style="color:#f5b800">*</span>', type:'tel', ph:'010-0000-0000', order:15 },
+    { id:'bk-name',  lbl:'이름 <span style="color:#f5b800">*</span>',   type:'text', ph:'홍길동', order:16 },
+    { id:'bk-request', lbl:'추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span>', type:'text', ph:'카시트, 경유지, 요청사항 등', order:17 }
+  ];
+
+  fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.id = 'bk-field-' + f.id;
+    div.style.order = f.order;
+    div.innerHTML = `<label class="lbl">${f.lbl}</label><input class="inp" id="${f.id}" type="${f.type}" placeholder="${f.ph}" autocomplete="off">`;
+    parent.insertBefore(div, errMsg);
+  });
 }
 
 function getBookingExtra(){
