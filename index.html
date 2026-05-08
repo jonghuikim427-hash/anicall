@@ -1191,6 +1191,25 @@ async function calculate(){
   errEl.classList.remove('show');
   clearResult();
 
+  // ── 예약 모드 사전 검증 ──────────────────────────────────
+  if(IS_BOOKING){
+    const phone = (document.getElementById('bk-phone')||{}).value||'';
+    const name = (document.getElementById('bk-name')||{}).value||'';
+    const phoneDigits = phone.replace(/\D/g,'');
+    if(phoneDigits.length !== 11){
+      const el = document.getElementById('bk-phone');
+      if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
+      alert('📱 전화번호를 확인해주세요! 숫자 11자리를 입력해주세요.');
+      return;
+    }
+    if(!name){
+      const el = document.getElementById('bk-name');
+      if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
+      alert('이름을 입력해주세요.');
+      return;
+    }
+  }
+
   // ── 기초 검증 ──────────────────────────────────────────
   const pop = (msg) => { alert(msg); return false; };
 
@@ -1704,6 +1723,14 @@ function openExtra(){
     const reqdetail = (document.getElementById('bk-reqdetail')||{}).value||'';
     const waypoint = (document.getElementById('bk-waypoint')||{}).value||'';
     const request = reqdetail;
+    // 전화번호 검증 (11자리)
+    const phoneDigits = phone.replace(/\D/g,'');
+    if(phoneDigits.length !== 11){
+      const el = document.getElementById('bk-phone');
+      if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
+      showAlert('📱 전화번호를 확인해주세요! 숫자 11자리를 입력해주세요.');
+      return;
+    }
     if(!name){
       const el = document.getElementById('bk-name');
       if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
