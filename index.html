@@ -818,6 +818,24 @@ function toggleCsel(type){
 }
 
 function selectAirport(val){
+  // 예약 모드에서 김포공항 선택 시 팝업
+  if(val === 'GMP' && IS_BOOKING){
+    const bg = document.createElement('div');
+    bg.className = 'tmp-popup-bg';
+    bg.id = 'gmp-popup-bg';
+    bg.innerHTML = `
+      <div class="tmp-popup">
+        <div class="tmp-popup-icon">🛫</div>
+        <div class="tmp-popup-title">김포공항 예약 안내</div>
+        <div class="tmp-popup-sub">김포공항은 별도 배차 확인이 필요해요.<br>카톡으로 문의주시면 빠르게 잡아드릴게요!</div>
+        <div class="tmp-popup-btns">
+          <button class="tmp-popup-btn-yes" onclick="document.getElementById('gmp-popup-bg').remove(); window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');">💬 카톡으로 바로 연결하기</button>
+          <button class="tmp-popup-btn-no" onclick="document.getElementById('gmp-popup-bg').remove();">닫기</button>
+        </div>
+      </div>`;
+    document.body.appendChild(bg);
+    return;
+  }
   const labels = {T1:'인천공항 T1', T2:'인천공항 T2', GMP:'김포공항'};
   document.getElementById('sel-airport').value = val;
   const txt = document.getElementById('csel-ap-txt');
