@@ -898,6 +898,13 @@ function tmpSave(){
       golf: document.getElementById('inp-golf').textContent,
       veh: document.getElementById('sel-veh').value,
       flight: document.getElementById('inp-flight').value,
+      bkPhone: (document.getElementById('bk-phone')||{}).value||'',
+      bkName: (document.getElementById('bk-name')||{}).value||'',
+      bkCarseat: (document.getElementById('bk-carseat')||{}).value||'',
+      bkPicket: (document.getElementById('bk-picket')||{}).value||'',
+      bkKakao: (document.getElementById('bk-kakao')||{}).value||'',
+      bkReqdetail: (document.getElementById('bk-reqdetail')||{}).value||'',
+      bkWaypoint: (document.getElementById('bk-waypoint')||{}).value||'',
     };
     localStorage.setItem(TMP_KEY, JSON.stringify(data));
   } catch(e){}
@@ -983,6 +990,18 @@ function tmpRestore(){
     if(data.veh) selectVeh(data.veh);
     // 항공편명
     document.getElementById('inp-flight').value = data.flight || '';
+    // 예약모드 필드 복원
+    if(IS_BOOKING){
+      setTimeout(()=>{
+        if(document.getElementById('bk-phone')) document.getElementById('bk-phone').value = data.bkPhone||'';
+        if(document.getElementById('bk-name')) document.getElementById('bk-name').value = data.bkName||'';
+        if(document.getElementById('bk-carseat')) document.getElementById('bk-carseat').value = data.bkCarseat||'';
+        if(document.getElementById('bk-picket')) document.getElementById('bk-picket').value = data.bkPicket||'';
+        if(document.getElementById('bk-kakao')) document.getElementById('bk-kakao').value = data.bkKakao||'';
+        if(document.getElementById('bk-reqdetail')) document.getElementById('bk-reqdetail').value = data.bkReqdetail||'';
+        if(document.getElementById('bk-waypoint')) document.getElementById('bk-waypoint').value = data.bkWaypoint||'';
+      }, 300);
+    }
   } catch(e){}
 }
 
@@ -1939,7 +1958,8 @@ function openChatInquiry(isLongDist){
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
   const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
-  const tail = '';
+  const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
+  const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
 
   // 기존 콜카드 생성 (이름/전화번호 없이)
   const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
