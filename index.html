@@ -1961,9 +1961,10 @@ function openChatInquiry(isLongDist){
   const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
   const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
 
-  // 기존 콜카드 생성 (이름/전화번호 없이)
+  // 손님 표시용 (꼬리 없음) / 복사용 (꼬리 있음)
   const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
-  const card = buildCallCard(emptyExtra);
+  const cardFull = buildCallCard(emptyExtra);        // 복사용 (꼬리 포함)
+  const cardDisplay = buildCallCardDisplay(emptyExtra); // 손님 표시용 (꼬리 없음)
 
   // 모달로 표시
   const bg = document.createElement('div');
@@ -1973,7 +1974,7 @@ function openChatInquiry(isLongDist){
     <div class="modal">
       <button class="modal-close" onclick="document.body.removeChild(this.closest('.modal-bg'))">✕</button>
       <div class="modal-title" style="font-size:15px">💬 채팅 문의</div>
-      <div class="modal-card" id="${cardId}">${card}</div>
+      <div class="modal-card" id="${cardId}" data-full="${encodeURIComponent(cardFull)}">${cardDisplay}</div>
       <div class="modal-btns">
         <button class="modal-btn copy" id="copybtn" onclick="doCopy('${cardId}')">📋 복사하기</button>
       </div>
@@ -2086,7 +2087,9 @@ function doCopyFull(id){
 }
 
 function doCopy(id){
-  const text = document.getElementById(id).innerText;
+  const el = document.getElementById(id);
+  const fullData = el.getAttribute('data-full');
+  const text = fullData ? decodeURIComponent(fullData) : el.innerText;
   const btn = document.getElementById('copybtn');
   const copy = ()=>{
     document.getElementById(id).style.display='none';
