@@ -1603,6 +1603,7 @@ function buildCallCard(extra){
     const apId = document.getElementById('sel-airport').value;
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     return `${extra.tail||''}${_lastFareText ? _lastFareText + '\n' : ''}🚖출국택시 예약
+📌 예약번호 : ${extra.resNum||''}
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
@@ -1628,6 +1629,7 @@ function buildCallCard(extra){
     const apName = AIRPORTS[apId] ? AIRPORTS[apId].name : apId;
     const flight = document.getElementById('inp-flight').value || '';
     return `${extra.tail||''}${_lastFareText ? _lastFareText + '\n' : ''}🚕입국택시 예약
+📌 예약번호 : ${extra.resNum||''}
 
 1️⃣입국일자 : ${dateStr}
 2️⃣비행기 도착시간(오전/오후) : ${timeStr}
@@ -1889,9 +1891,16 @@ function confirmExtra(){
     return;
   }
 
+  // 예약번호 생성: MMDD-전번뒤4자리
+  const dateV0  = document.getElementById('inp-date').value;
+  const dateObj = dateV0 ? new Date(dateV0) : new Date();
+  const resMMDD = String(dateObj.getMonth()+1).padStart(2,'0') + String(dateObj.getDate()).padStart(2,'0');
+  const resNum  = resMMDD + '-' + phoneDigits.slice(-4);
+
   const extra = {
     phone: phoneDigits.replace(/([0-9]{3})([0-9]{4})([0-9]{4})/,'$1-$2-$3'),
     name,
+    resNum,
     carseat  : document.getElementById('ex-carseat').value.trim(),
     picket   : document.getElementById('ex-picket').value.trim(),
     kakaoId  : document.getElementById('ex-kakao').value.trim(),
