@@ -1690,8 +1690,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   if(hasExtra) warns.push('⚠️ 추가사항 확인요망');
 
   const warnStr = warns.length > 0 ? warns.join('\n') + '\n' : '';
-  const fareStr = _lastFareText ? String.fromCharCode(10) + _lastFareText : '';
-  return warnStr + line1 + '\n채널>애니>' + name + fareStr;
+  return warnStr + line1 + '\n채널>애니>' + name;
 }
 
 function openExtra(){
