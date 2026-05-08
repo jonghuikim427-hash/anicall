@@ -186,7 +186,6 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
         <div class="csel-opts" id="csel-ap-opts">
           <div class="csel-opt" onclick="selectAirport('T1')">인천공항 T1</div>
           <div class="csel-opt" onclick="selectAirport('T2')">인천공항 T2</div>
-          <div class="csel-opt" onclick="selectAirport('GMP')">김포공항</div>
         </div>
       </div>
       <input type="hidden" id="sel-airport" value="">
@@ -969,8 +968,68 @@ function tmpScheduleSave(){
   _tmpTimer = setTimeout(tmpSave, 500);
 }
 
+
+// ══════════════════════════════════════════════════════
+//  예약 모드 (?mode=booking)
+// ══════════════════════════════════════════════════════
+const IS_BOOKING = new URLSearchParams(window.location.search).get('mode') === 'booking';
+
+function initBookingMode(){
+  if(!IS_BOOKING) return;
+
+  // 제목 변경
+  document.title = '애니콜택시 - 예약하기';
+  const titleEl = document.querySelector('.hdr-title');
+  if(titleEl) titleEl.textContent = '예약하기';
+
+  // 계산 버튼 텍스트 변경
+  const calcBtn = document.getElementById('btn-calc');
+  if(calcBtn) calcBtn.textContent = '📋 예약카드 만들기';
+
+  // 김포공항 옵션 추가
+  const apOpts = document.getElementById('csel-ap-opts');
+  if(apOpts && !apOpts.querySelector('[data-gmp]')){
+    const gmpOpt = document.createElement('div');
+    gmpOpt.className = 'csel-opt';
+    gmpOpt.setAttribute('data-gmp','1');
+    gmpOpt.onclick = function(){ selectAirport('GMP'); };
+    gmpOpt.textContent = '김포공항';
+    apOpts.appendChild(gmpOpt);
+  }
+
+  // 이름/전번/추가사항 폼 바로 표시
+  showBookingFields();
+}
+
+function showBookingFields(){
+  // 기존에 없으면 추가
+  if(document.getElementById('booking-fields')) return;
+  const calcBtn = document.getElementById('btn-calc');
+  const wrap = document.createElement('div');
+  wrap.id = 'booking-fields';
+  wrap.style.cssText = 'margin-top:12px;display:flex;flex-direction:column;gap:10px;';
+  wrap.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">연락처 <span style="color:#f5b800">*</span></div>
+    <input id="bk-phone" type="tel" placeholder="010-0000-0000" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
+    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">이름 <span style="color:#f5b800">*</span></div>
+    <input id="bk-name" placeholder="홍길동" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
+    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span></div>
+    <input id="bk-request" placeholder="카시트, 경유지, 요청사항 등" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
+  `;
+  calcBtn.parentNode.insertBefore(wrap, calcBtn);
+}
+
+function getBookingExtra(){
+  if(!IS_BOOKING) return null;
+  const phone = (document.getElementById('bk-phone')||{}).value||'';
+  const name = (document.getElementById('bk-name')||{}).value||'';
+  const request = (document.getElementById('bk-request')||{}).value||'';
+  return { phone, name, request, carseat:'', picket:'', kakaoId:'', waypoint:'' };
+}
+
 window.addEventListener('load', function(){
   tmpLoad();
+  initBookingMode();
   document.addEventListener('click', function(e){
     if(!e.target.closest('.csel-wrap')){
       document.querySelectorAll('.csel-opts').forEach(el=>el.classList.remove('open'));
@@ -1596,6 +1655,32 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
 }
 
 function openExtra(){
+  // 예약 모드면 폼에서 바로 값 가져오기
+  if(IS_BOOKING){
+    const phone = (document.getElementById('bk-phone')||{}).value||'';
+    const name = (document.getElementById('bk-name')||{}).value||'';
+    const request = (document.getElementById('bk-request')||{}).value||'';
+    if(!name){
+      const el = document.getElementById('bk-name');
+      if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
+      return;
+    }
+    const extra = { phone, name, request, carseat:'', picket:'', kakaoId:'', waypoint:'' };
+    const tab = currentTab;
+    const veh = document.getElementById('sel-veh').value;
+    const pax = parseInt(document.getElementById('inp-pax').textContent)||0;
+    const cargo = parseInt(document.getElementById('inp-cargo').textContent)||0;
+    const cabin = parseInt(document.getElementById('inp-cabin').textContent)||0;
+    const golf = parseInt(document.getElementById('inp-golf').textContent)||0;
+    const totalBag = cargo+cabin+golf;
+    const addr = selectedAddr ? selectedAddr.display : '';
+    const dateV = document.getElementById('inp-date').value;
+    extra.tail = buildTail(extra, veh, pax, totalBag, addr, dateV, tab) + '\n';
+    const bg = document.querySelector('.modal-bg');
+    if(bg) document.body.removeChild(bg);
+    openKakao(extra);
+    return;
+  }
   const bg = document.createElement('div');
   bg.className = 'modal-bg';
   bg.innerHTML = `
