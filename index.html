@@ -276,8 +276,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
       <input type="hidden" id="sel-veh" value="">
     </div>
 
-    <div class="err-msg" id="err-msg" style="order:8"></div>
-    <button class="calc-btn" onclick="calculate()" id="btn-calc" style="order:9">🔍 예상요금 확인하기</button>
+    <div class="err-msg" id="err-msg" style="order:24"></div>
+    <button class="calc-btn" onclick="calculate()" id="btn-calc" style="order:25">🔍 예상요금 확인하기</button>
 
     <div id="result-wrap" style="order:10"></div>
     <div id="map-container" style="order:11"></div>
@@ -1002,19 +1002,23 @@ function initBookingMode(){
 }
 
 function showBookingFields(){
-  // 기존에 없으면 추가
   if(document.getElementById('booking-fields')) return;
   const calcBtn = document.getElementById('btn-calc');
   const wrap = document.createElement('div');
   wrap.id = 'booking-fields';
-  wrap.style.cssText = 'margin-top:12px;display:flex;flex-direction:column;gap:10px;';
   wrap.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">연락처 <span style="color:#f5b800">*</span></div>
-    <input id="bk-phone" type="tel" placeholder="010-0000-0000" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
-    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">이름 <span style="color:#f5b800">*</span></div>
-    <input id="bk-name" placeholder="홍길동" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
-    <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:-4px">추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span></div>
-    <input id="bk-request" placeholder="카시트, 경유지, 요청사항 등" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box">
+    <div class="field" style="order:20">
+      <label class="lbl">연락처 <span style="color:#f5b800">*</span></label>
+      <input class="inp" id="bk-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
+    </div>
+    <div class="field" style="order:21">
+      <label class="lbl">이름 <span style="color:#f5b800">*</span></label>
+      <input class="inp" id="bk-name" placeholder="홍길동" autocomplete="off">
+    </div>
+    <div class="field" style="order:22">
+      <label class="lbl">추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span></label>
+      <input class="inp" id="bk-request" placeholder="카시트, 경유지, 요청사항 등" autocomplete="off">
+    </div>
   `;
   calcBtn.parentNode.insertBefore(wrap, calcBtn);
 }
