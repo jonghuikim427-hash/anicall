@@ -1006,21 +1006,24 @@ function showBookingFields(){
   const calcBtn = document.getElementById('btn-calc');
   const wrap = document.createElement('div');
   wrap.id = 'booking-fields';
+  wrap.style.cssText = 'display:contents';
   wrap.innerHTML = `
-    <div class="field" style="order:20">
+    <div class="field">
       <label class="lbl">연락처 <span style="color:#f5b800">*</span></label>
       <input class="inp" id="bk-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">
     </div>
-    <div class="field" style="order:21">
+    <div class="field">
       <label class="lbl">이름 <span style="color:#f5b800">*</span></label>
       <input class="inp" id="bk-name" placeholder="홍길동" autocomplete="off">
     </div>
-    <div class="field" style="order:22">
+    <div class="field">
       <label class="lbl">추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span></label>
       <input class="inp" id="bk-request" placeholder="카시트, 경유지, 요청사항 등" autocomplete="off">
     </div>
   `;
-  calcBtn.parentNode.insertBefore(wrap, calcBtn);
+  // 에러메시지 앞에 삽입 (차량종류 뒤, 버튼 앞)
+  const errMsg = document.getElementById('err-msg');
+  errMsg.parentNode.insertBefore(wrap, errMsg);
 }
 
 function getBookingExtra(){
