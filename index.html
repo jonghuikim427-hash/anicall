@@ -1009,28 +1009,59 @@ function showBookingFields(){
   const errMsg = document.getElementById('err-msg');
   const parent = errMsg.parentNode;
 
-  const fields = [
-    { id:'bk-phone', lbl:'연락처 <span style="color:#f5b800">*</span>', type:'tel', ph:'010-0000-0000', order:15 },
-    { id:'bk-name',  lbl:'이름 <span style="color:#f5b800">*</span>',   type:'text', ph:'홍길동', order:16 },
-    { id:'bk-request', lbl:'추가사항 <span style="font-size:11px;font-weight:400;color:#aaa">(선택)</span>', type:'text', ph:'카시트, 경유지, 요청사항 등', order:17 }
-  ];
+  // 연락처
+  const phoneDiv = document.createElement('div');
+  phoneDiv.className = 'field'; phoneDiv.id = 'bk-field-phone'; phoneDiv.style.order = 15;
+  phoneDiv.innerHTML = `<label class="lbl">연락처 <span style="color:#f5b800">*</span></label><input class="inp" id="bk-phone" type="tel" placeholder="010-0000-0000" autocomplete="off">`;
+  parent.insertBefore(phoneDiv, errMsg);
 
-  fields.forEach(f => {
-    const div = document.createElement('div');
-    div.className = 'field';
-    div.id = 'bk-field-' + f.id;
-    div.style.order = f.order;
-    div.innerHTML = `<label class="lbl">${f.lbl}</label><input class="inp" id="${f.id}" type="${f.type}" placeholder="${f.ph}" autocomplete="off">`;
-    parent.insertBefore(div, errMsg);
-  });
+  // 이름
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'field'; nameDiv.id = 'bk-field-name'; nameDiv.style.order = 16;
+  nameDiv.innerHTML = `<label class="lbl">이름 <span style="color:#f5b800">*</span></label><input class="inp" id="bk-name" placeholder="홍길동" autocomplete="off">`;
+  parent.insertBefore(nameDiv, errMsg);
+
+  // 추가사항 세부 항목
+  const extraDiv = document.createElement('div');
+  extraDiv.id = 'bk-field-extra'; extraDiv.style.order = 17;
+  extraDiv.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:#888;margin:8px 0 6px">✦ 추가사항 <span style="font-weight:400">(선택)</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div style="flex:1">
+        <label class="lbl" style="font-size:9.5px">카시트 대여</label>
+        <input class="inp" id="bk-carseat" placeholder="대형·콜밴 1만원" autocomplete="off">
+      </div>
+      <div style="flex:1">
+        <label class="lbl" style="font-size:9.5px">외국인 피켓 픽업</label>
+        <input class="inp" id="bk-picket" placeholder="2만원" autocomplete="off">
+      </div>
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="lbl" style="font-size:9.5px">카카오톡 ID</label>
+      <input class="inp" id="bk-kakao" placeholder="카카오톡 ID" autocomplete="off">
+    </div>
+    <div style="margin-bottom:8px">
+      <label class="lbl" style="font-size:9.5px">요청사항</label>
+      <input class="inp" id="bk-reqdetail" placeholder="기타 요청사항" autocomplete="off">
+    </div>
+    <div>
+      <label class="lbl" style="font-size:9.5px">경유지</label>
+      <input class="inp" id="bk-waypoint" placeholder="경유지 주소" autocomplete="off">
+    </div>
+  `;
+  parent.insertBefore(extraDiv, errMsg);
 }
 
 function getBookingExtra(){
   if(!IS_BOOKING) return null;
   const phone = (document.getElementById('bk-phone')||{}).value||'';
   const name = (document.getElementById('bk-name')||{}).value||'';
-  const request = (document.getElementById('bk-request')||{}).value||'';
-  return { phone, name, request, carseat:'', picket:'', kakaoId:'', waypoint:'' };
+  const carseat = (document.getElementById('bk-carseat')||{}).value||'';
+  const picket = (document.getElementById('bk-picket')||{}).value||'';
+  const kakaoId = (document.getElementById('bk-kakao')||{}).value||'';
+  const request = (document.getElementById('bk-reqdetail')||{}).value||'';
+  const waypoint = (document.getElementById('bk-waypoint')||{}).value||'';
+  return { phone, name, request, carseat, picket, kakaoId, waypoint };
 }
 
 window.addEventListener('load', function(){
@@ -1665,13 +1696,18 @@ function openExtra(){
   if(IS_BOOKING){
     const phone = (document.getElementById('bk-phone')||{}).value||'';
     const name = (document.getElementById('bk-name')||{}).value||'';
-    const request = (document.getElementById('bk-request')||{}).value||'';
+    const carseat = (document.getElementById('bk-carseat')||{}).value||'';
+    const picket = (document.getElementById('bk-picket')||{}).value||'';
+    const kakaoId = (document.getElementById('bk-kakao')||{}).value||'';
+    const reqdetail = (document.getElementById('bk-reqdetail')||{}).value||'';
+    const waypoint = (document.getElementById('bk-waypoint')||{}).value||'';
+    const request = reqdetail;
     if(!name){
       const el = document.getElementById('bk-name');
       if(el){ el.style.borderColor='rgba(255,80,80,0.6)'; el.focus(); setTimeout(()=>el.style.borderColor='',1500); }
       return;
     }
-    const extra = { phone, name, request, carseat:'', picket:'', kakaoId:'', waypoint:'' };
+    const extra = { phone, name, request, carseat, picket, kakaoId, waypoint };
     const tab = currentTab;
     const veh = document.getElementById('sel-veh').value;
     const pax = parseInt(document.getElementById('inp-pax').textContent)||0;
