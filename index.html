@@ -1461,7 +1461,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
       <div class="nt">※ 실제 요금은 위 금액으로 정산됩니다.</div>
       <div class="btn-row">
         <button class="kbtn sub" onclick="openChatInquiry()">💬 채팅 문의</button>
-        <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
+        ${IS_BOOKING ? '' : '<button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>'}
       </div>
     </div></div>`;
 }
@@ -1488,7 +1488,7 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
       <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
       <div class="btn-row">
         <button class="kbtn sub" onclick="openChatInquiry()">💬 채팅 문의</button>
-        <button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>
+        ${IS_BOOKING ? '' : '<button class="kbtn main" onclick="openExtra()">📋 예약하기 →</button>'}
       </div>
     </div></div>`;
 }
