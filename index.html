@@ -1952,10 +1952,21 @@ function confirmExtra(){
   };
 
   try {
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvuUf4FB3FQ9vvOSDLsWEzEJD6K-wpcMkEm3Z1myog7vxYH8IjLd8o4Hl4b1z9Sg6mTQ/exec';
-    const formData = new URLSearchParams();
-    formData.append('data', JSON.stringify(payload));
-    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body:formData });
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx66_3sIoT_PCsEcBFa-acBQAp1mhI7eNZ_Q2tvFHiFv5f4MhCUVgIXmKtmU2f2Ch7V/exec';
+    const p = new URLSearchParams({
+      resNum  : payload.resNum   || '',
+      channel : payload.channel  || '',
+      address : payload.address  || '',
+      datetime: payload.datetime || '',
+      vehicle : payload.vehicle  || '',
+      pax     : payload.pax      || '',
+      cargo   : payload.cargo    || '',
+      name    : payload.name     || '',
+      phone   : payload.phone    || '',
+      request : payload.request  || '',
+    });
+    const img = new Image();
+    img.src = SCRIPT_URL + '?' + p.toString();
   } catch(e) {}
   // ─────────────────────────────────────────────
 
