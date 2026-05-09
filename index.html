@@ -751,7 +751,7 @@ async function searchAddr(q){
     const data = await res.json();
     if(data.documents && data.documents.length){
       renderAc(data.documents.map(d=>({
-        display: d.address_name || d.road_address_name || d.place_name,
+        display: d.road_address_name || d.address_name || d.place_name,
         place: d.place_name || '',
         lat: parseFloat(d.y),
         lng: parseFloat(d.x),
@@ -1150,7 +1150,7 @@ async function searchLong(q){
     const data = await res.json();
     if(data.documents && data.documents.length){
       renderAcLong(data.documents.map(d=>({
-        display: d.address_name || d.road_address_name || d.place_name,
+        display: d.road_address_name || d.address_name || d.place_name,
         place: d.place_name || '',
         lat: parseFloat(d.y), lng: parseFloat(d.x),
       })));
