@@ -1927,6 +1927,38 @@ function confirmExtra(){
 
   const bg = document.querySelector('.modal-bg');
   if(bg) document.body.removeChild(bg);
+
+  // ── Sheets 자동저장 ──────────────────────────
+  const vehLabel = veh==='large' ? '대형' : veh==='van' ? '콜밴' : '중형';
+  const dateObj2 = dateV ? new Date(dateV) : new Date();
+  const datetimeStr = dateObj2.getFullYear() + '-'
+    + String(dateObj2.getMonth()+1).padStart(2,'0') + '-'
+    + String(dateObj2.getDate()).padStart(2,'0') + ' '
+    + String(dateObj2.getHours()).padStart(2,'0') + ':'
+    + String(dateObj2.getMinutes()).padStart(2,'0');
+
+  const payload = {
+    resNum   : extra.resNum,
+    channel  : '',
+    address  : addr,
+    datetime : datetimeStr,
+    vehicle  : vehLabel,
+    pax      : pax,
+    cargo    : totalBag,
+    name     : extra.name,
+    phone    : extra.phone,
+    request  : extra.request,
+    callCard : extra.tail + buildCallCard(extra),
+  };
+
+  fetch('https://script.google.com/macros/s/AKfycbxzPyXTX_EjXJ0oGs2AYKxdigIA5NKZAAm76QQBArjCd-2M6f-1w4QnyrRo6OLBqNPmrg/exec', {
+    method : 'POST',
+    mode   : 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body   : JSON.stringify(payload),
+  }).catch(()=>{});
+  // ─────────────────────────────────────────────
+
   openKakao(extra);
 }
 
