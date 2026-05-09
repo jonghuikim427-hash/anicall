@@ -1951,10 +1951,8 @@ function confirmExtra(){
     callCard : extra.tail + buildCallCard(extra),
   };
 
-  fetch('https://script.google.com/macros/s/AKfycbxzPyXTX_EjXJ0oGs2AYKxdigIA5NKZAAm76QQBArjCd-2M6f-1w4QnyrRo6OLBqNPmrg/exec', {
+  fetch('https://script.google.com/macros/s/AKfycbyhbnuA7w5vKbN9nOHyDf5v7Nk0OsuK1iaagp3x-Z8A_eshaEkU6j08ASwISJ4PILmsPw/exec', {
     method : 'POST',
-    mode   : 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
     body   : JSON.stringify(payload),
   }).catch(()=>{});
   // ─────────────────────────────────────────────
