@@ -1953,23 +1953,9 @@ function confirmExtra(){
 
   try {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyvuUf4FB3FQ9vvOSDLsWEzEJD6K-wpcMkEm3Z1myog7vxYH8IjLd8o4Hl4b1z9Sg6mTQ/exec';
-    const iframe = document.createElement('iframe');
-    iframe.name = 'hif_' + Date.now();
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = SCRIPT_URL;
-    form.target = iframe.name;
-    form.style.display = 'none';
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'data';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-    setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe); }, 3000);
+    const formData = new URLSearchParams();
+    formData.append('data', JSON.stringify(payload));
+    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body:formData });
   } catch(e) {}
   // ─────────────────────────────────────────────
 
