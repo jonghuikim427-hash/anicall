@@ -787,9 +787,13 @@ function showAcMsg(msg){
 }
 
 function selectAddr(addr){
-  selectedAddr = addr;
+  const userInput = document.getElementById('inp-addr').value.trim();
+  const combined = (userInput && userInput !== addr.display)
+    ? addr.display + ' (' + userInput + ')'
+    : addr.display;
+  selectedAddr = { ...addr, display: combined };
   tmpScheduleSave();
-  document.getElementById('inp-addr').value = addr.display;
+  document.getElementById('inp-addr').value = combined;
   hideAcList();
 }
 
