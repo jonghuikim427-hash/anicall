@@ -1973,8 +1973,7 @@ function confirmExtra(){
       tail    : extra.tail      || '',
     });
     // callCard는 URL 길이 제한으로 별도 처리 안 함 (tail + 전체 내용)
-    const img = new Image();
-    img.src = SCRIPT_URL + '?' + p.toString();
+    fetch(SCRIPT_URL + '?' + p.toString(), {mode:'no-cors'}).catch(function(){});
   } catch(e) {}
   // ─────────────────────────────────────────────
 
