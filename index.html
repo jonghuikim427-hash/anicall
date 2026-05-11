@@ -1821,14 +1821,7 @@ function openExtra(){
     extra.tail = buildTail(extra, veh, pax, totalBag, addr, dateV, tab) + '\n';
     const bg = document.querySelector('.modal-bg');
     if(bg) document.body.removeChild(bg);
-    try {
-      const _d2 = dateV ? new Date(dateV) : new Date();
-      const _dt = _d2.getFullYear()+'-'+String(_d2.getMonth()+1).padStart(2,'0')+'-'+String(_d2.getDate()).padStart(2,'0')+' '+String(_d2.getHours()).padStart(2,'0')+':'+String(_d2.getMinutes()).padStart(2,'0');
-      const _vl = veh==='large'?'대형':veh==='van'?'콜밴':'중형';
-      const _p2 = new URLSearchParams({ resNum:extra.resNum||'', address:addr||'', datetime:_dt, vehicle:_vl, pax:String(pax||''), cargo:String(totalBag||''), name:extra.name||'', phone:extra.phone||'', request:extra.request||'' });
-      const _img2 = new Image();
-      _img2.src = 'https://script.google.com/macros/s/AKfycbxBOdPw_3jplv7QLfeCvMrN7VYE7brPUV_Bfb2gkfHgClFaeSBLpSoRiCU7deLedTCyZQ/exec?' + _p2.toString();
-    } catch(e) {}
+    
     openKakao(extra);
     return;
   }
