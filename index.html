@@ -1966,17 +1966,8 @@ function confirmExtra(){
       tail    : extra.tail      || '',
     });
     // callCard는 URL 길이 제한으로 별도 처리 안 함 (tail + 전체 내용)
-    try {
-      const payload = JSON.stringify(Object.fromEntries(p));
-      if(navigator.sendBeacon) {
-        navigator.sendBeacon(SCRIPT_URL, new Blob([payload], {type:'text/plain'}));
-      } else {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', SCRIPT_URL, true);
-        xhr.setRequestHeader('Content-Type', 'text/plain');
-        xhr.send(payload);
-      }
-    } catch(ex) {}
+    const _img = new Image();
+    _img.src = SCRIPT_URL + '?' + p.toString();
   } catch(e) {}
   // ─────────────────────────────────────────────
 
