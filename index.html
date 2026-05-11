@@ -1966,7 +1966,12 @@ function confirmExtra(){
       tail    : extra.tail      || '',
     });
     // callCard는 URL 길이 제한으로 별도 처리 안 함 (tail + 전체 내용)
-    fetch(SCRIPT_URL + '?' + p.toString(), {mode:'no-cors'}).catch(function(){});
+    fetch(SCRIPT_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify(Object.fromEntries(p))
+    }).catch(function(){});
   } catch(e) {}
   // ─────────────────────────────────────────────
 
@@ -2235,4 +2240,3 @@ function addMarker(lat,lng,label,color,name){
 </script>
 </body>
 </html>
-.
