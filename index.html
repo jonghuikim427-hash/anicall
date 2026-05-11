@@ -1949,34 +1949,30 @@ function confirmExtra(){
     + String(dateObj2.getHours()).padStart(2,'0') + ':'
     + String(dateObj2.getMinutes()).padStart(2,'0');
 
-  const payload = {
-    resNum   : extra.resNum,
-    channel  : '',
-    address  : addr,
-    datetime : datetimeStr,
-    vehicle  : vehLabel,
-    pax      : pax,
-    cargo    : totalBag,
-    name     : extra.name,
-    phone    : extra.phone,
-    request  : extra.request,
-    callCard : extra.tail + buildCallCard(extra),
-  };
+  const airportVal = document.getElementById('sel-airport') ? document.getElementById('sel-airport').value : '';
+  const callCardFull = extra.tail + buildCallCard(extra);
 
   try {
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBOdPw_3jplv7QLfeCvMrN7VYE7brPUV_Bfb2gkfHgClFaeSBLpSoRiCU7deLedTCyZQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIyANqf1wHFHiG1Tkhq1QTgk14YlianpEm1g6oAU1IrvAWFPlVeI6KY_cC_4KAtFBiag/exec';
     const p = new URLSearchParams({
-      resNum  : payload.resNum   || '',
-      channel : payload.channel  || '',
-      address : payload.address  || '',
-      datetime: payload.datetime || '',
-      vehicle : payload.vehicle  || '',
-      pax     : payload.pax      || '',
-      cargo   : payload.cargo    || '',
-      name    : payload.name     || '',
-      phone   : payload.phone    || '',
-      request : payload.request  || '',
+      resNum  : extra.resNum    || '',
+      channel : '애니',
+      address : addr            || '',
+      datetime: datetimeStr     || '',
+      airport : airportVal      || '',
+      vehicle : vehLabel        || '',
+      pax     : String(pax)     || '',
+      cargo   : String(totalBag)|| '',
+      name    : extra.name      || '',
+      phone   : extra.phone     || '',
+      request : extra.request   || '',
+      carseat : extra.carseat   || '',
+      picket  : extra.picket    || '',
+      kakaoId : extra.kakaoId   || '',
+      waypoint: extra.waypoint  || '',
+      tail    : extra.tail      || '',
     });
+    // callCard는 URL 길이 제한으로 별도 처리 안 함 (tail + 전체 내용)
     const img = new Image();
     img.src = SCRIPT_URL + '?' + p.toString();
   } catch(e) {}
