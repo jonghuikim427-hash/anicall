@@ -963,9 +963,16 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
   try {
     if (!_fbDb) return;
     var tail = (extra.tail||'').trim();
-    var tailLines = tail.split('\n');
-    var title1 = tailLines[0]||'';
-    var title2 = tailLines[1]||'';
+    var tailLines = tail.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    // ⚠️ 경고줄 제외하고 실제 꼬리줄 추출
+    var title1 = '', title2 = '';
+    for (var ti = 0; ti < tailLines.length; ti++) {
+      var tl = tailLines[ti];
+      if (tl.indexOf('채널>') === 0) { title2 = tl; }
+      else if (!title1 && tl.indexOf('⚠️') !== 0 && tl.length > 8) { title1 = tl; }
+    }
+    if (!title1) title1 = tailLines[0]||'';
+    if (!title2) { for (var ti2=0;ti2<tailLines.length;ti2++){if(tailLines[ti2]!==title1){title2=tailLines[ti2];break;}} }
     
     // rideDate, rideHHMM
     var rideDate='', rideHHMM='';
