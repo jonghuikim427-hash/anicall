@@ -1841,7 +1841,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
     if(totalBag >= 5)     warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (중형선택)');
     // 경고 있으면 배차타입 제거
-    const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
+    const dtypeStr = dtype ? ' ' + dtype : '';
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}`;
 
   } else if(veh==='large'){
@@ -2089,7 +2089,7 @@ function openChatInquiry(isLongDist){
   }
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
-  const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
+  const dtypeStr = dtype ? ' ' + dtype : '';
   const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
   const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
 
