@@ -1822,7 +1822,7 @@ function openExtra(){
     const bg = document.querySelector('.modal-bg');
     if(bg) document.body.removeChild(bg);
     try {
-      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCHTfAsyp8PhQDO8gg38Um5Gm6Lfy7oUqmNXOp9vNO71AVZFMOcZzJ1vlFazCvBOWmNA/exec';
+      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhPs35iUnDcyU2SdG15aLA72KRSD-B4LRCWGD6_hzmW7aye32G_VVKpfipf4zYYq4/exec';
       const _d2 = dateV ? new Date(dateV) : new Date();
       const _dt = _d2.getFullYear()+'-'+String(_d2.getMonth()+1).padStart(2,'0')+'-'+String(_d2.getDate()).padStart(2,'0')+' '+String(_d2.getHours()).padStart(2,'0')+':'+String(_d2.getMinutes()).padStart(2,'0');
       const _vl = veh==='large'?'대형':veh==='van'?'콜밴':'중형';
@@ -1981,7 +1981,7 @@ function confirmExtra(){
   const callCardFull = extra.tail + buildCallCard(extra);
 
   try {
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCHTfAsyp8PhQDO8gg38Um5Gm6Lfy7oUqmNXOp9vNO71AVZFMOcZzJ1vlFazCvBOWmNA/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhPs35iUnDcyU2SdG15aLA72KRSD-B4LRCWGD6_hzmW7aye32G_VVKpfipf4zYYq4/exec';
     const p = new URLSearchParams({
       resNum  : extra.resNum    || '',
       channel : '애니',
