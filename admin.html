@@ -294,6 +294,27 @@ function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function getWarnings(r) {
+  var warns = [];
+  var tail = r.tail || '';
+  tail.split('\n').forEach(function(line) {
+    var t = line.trim();
+    if (t.indexOf('⚠️') === 0 || t.indexOf('❗') === 0) warns.push(t);
+  });
+  return warns;
+}
+
+function warnBadges(r) {
+  var warns = getWarnings(r);
+  if (!warns.length) return '';
+  return warns.map(function(w){
+    var isUrgent = w.indexOf('❗') === 0;
+    var bg = isUrgent ? '#fce4ec' : '#fff3e0';
+    var color = isUrgent ? '#b71c1c' : '#e65100';
+    return '<span style="background:'+bg+';color:'+color+';border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;margin-right:2px">'+esc(w)+'</span>';
+  }).join('');
+}
+
 function cardLabel(r) { return r.title1 || r.resNum || '(카드)'; }
 
 function fmtElapsed(ts) {
@@ -336,6 +357,8 @@ function renderConfirm(container) {
   if (selectedCard) {
     var sc = selectedCard, dups = getDups(sc);
     lh += '<div class="pin-card" onclick="selCard(\''+sc.id+'\')">';
+    var _pw = warnBadges(sc);
+    if (_pw) lh += '<div style="margin-bottom:3px">'+_pw+'</div>';
     lh += '<div class="pin-tail">'+esc(sc.title1||'')+'</div>';
     lh += '<div class="pin-sub">'+esc(sc.title2||'')+' | 예약번호: '+esc(sc.resNum||'')+'</div>';
     lh += '<div class="pin-dup"><span class="pin-dup-lbl">중복카드:</span>';
@@ -357,7 +380,14 @@ function renderConfirm(container) {
       var isOn = selectedCard && selectedCard.id === r.id;
       var isNew = !isOld && idx === 0;
       lh += '<div class="lc'+(isOn?' on':'')+(isNew?' lc-new':'')+'" onclick="selCard(\''+r.id+'\')">';
-      lh += '<div class="lc-label">'+esc(cardLabel(r))+'</div>';
+      lh += '<div class="lc-label">';
+      var _warns = getWarnings(r);
+      _warns.forEach(function(w){
+        lh += (w.indexOf('❗')===0
+          ? '<span style="color:#b71c1c;font-weight:700">❗</span>'
+          : '<span style="color:#e65100;font-weight:700">⚠️</span>');
+      });
+      lh += esc(cardLabel(r))+'</div>';
       if (isNew) lh += '<span class="badge-new">NEW</span>';
       if (isOld) lh += '<span class="elapsed '+elClass(r.createdAt)+'">'+fmtElapsed(r.createdAt)+'</span>';
       else lh += '<span class="badge-wait">대기</span>';
@@ -388,6 +418,8 @@ function renderConfirm(container) {
       rh += '</div>';
     }
 
+    var _dw = warnBadges(c);
+    if (_dw) rh += '<div style="margin-bottom:6px">'+_dw+'</div>';
     rh += '<div class="det-tail-line">'+esc(c.title1||'')+'</div>';
     rh += '<div class="det-channel">'+esc(c.title2||'')+'</div>';
 
