@@ -1830,11 +1830,13 @@ function openExtra(){
       const _cabinV2 = parseInt(document.getElementById('inp-cabin').textContent||0);
       const _cargoV2 = parseInt(document.getElementById('inp-cargo').textContent||0);
       const _golfV2  = parseInt(document.getElementById('inp-golf').textContent||0);
+      const _detail2 = (document.getElementById('inp-detail')||{}).value||'';
+      const _addrFull2 = (addr + (_detail2 ? ' ' + _detail2 : '')).trim();
       const _p = new URLSearchParams({
         resNum  : extra.resNum||'',
         channel : '애니',
         tab     : tab||'',
-        address : addr||'',
+        address : _addrFull2||'',
         datetime: _dt,
         airport : airportVal||'',
         flight  : document.getElementById('inp-flight').value||'',
