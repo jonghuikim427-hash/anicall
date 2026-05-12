@@ -969,7 +969,7 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
     for (var ti = 0; ti < tailLines.length; ti++) {
       var tl = tailLines[ti];
       if (tl.indexOf('채널>') === 0) { title2 = tl; }
-      else if (!title1 && tl.indexOf('⚠️') !== 0 && tl.length > 8) { title1 = tl; }
+      else if (!title1 && tl.indexOf('⚠️') !== 0 && tl.indexOf('❗') !== 0 && tl.length > 8) { title1 = tl; }
     }
     if (!title1) title1 = tailLines[0]||'';
     if (!title2) { for (var ti2=0;ti2<tailLines.length;ti2++){if(tailLines[ti2]!==title1){title2=tailLines[ti2];break;}} }
