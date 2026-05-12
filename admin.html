@@ -208,7 +208,7 @@ var calMonth = new Date().getMonth();
 
 var TAB_HDRS = [
   '① 확정대기 최신방',
-  '② 확정대기 오래된방 (10분+ 경과 · 24시간 후 자동삭제)',
+  '② 확정대기 오래된방 (30분+ 경과 · 24시간 후 자동삭제)',
   '③ 당일 배차방',
   '④ 당일 배차완료방',
   '⑤ 달력'
@@ -240,7 +240,7 @@ function autoMoveOld() {
   allData.forEach(function(r) {
     if (r.status !== '대기') return;
     var t = r.createdAt || 0;
-    if ((now - t) > 10 * 60 * 1000) {
+    if ((now - t) > 30 * 60 * 1000) {
       db.ref('cards/' + r.id).update({ status: '대기_오래됨' });
     }
   });
@@ -395,7 +395,7 @@ function renderConfirm(container) {
     });
   }
   lh += '</div>';
-  lh += '<div class="list-note">'+(isOld?'※ 24시간 경과 → 자동삭제':'※ 10분 경과 → 오래된 방으로 자동이동')+'</div>';
+  lh += '<div class="list-note">'+(isOld?'※ 24시간 경과 → 자동삭제':'※ 30분 경과 → 오래된 방으로 자동이동')+'</div>';
   lh += '</div>';
   L.innerHTML = lh;
 
