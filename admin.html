@@ -556,6 +556,27 @@ function renderBaecha(container) {
   // 오른쪽 - 메시지 복사 3종
   var Rp = document.createElement('div'); Rp.className = 't2-right';
   var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
+  var rh2 = '';
+  // 수정 모드
+  if (selectedCard && editingCard === selectedCard.id) {
+    rh2 += '<div class="edit-box" style="margin-bottom:12px">';
+    rh2 += '<div class="edit-box-title">✏️ 카드 수정</div>';
+    rh2 += '<div class="edit-label">꼬리 1줄 (제목)</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(selectedCard.title1||'')+'</textarea>';
+    rh2 += '<div class="edit-label">꼬리 2줄 (채널)</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(selectedCard.title2||'')+'</textarea>';
+    rh2 += '<div class="edit-label">카드 본문 전체</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(selectedCard.body||'')+'</textarea>';
+    rh2 += '<div class="edit-btns">';
+    rh2 += '<button class="btn-save" onclick="saveEdit(''+selectedCard.id+'')">💾 저장</button>';
+    rh2 += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
+    rh2 += '</div></div>';
+    Rp.innerHTML = rh2;
+    container.appendChild(L);
+    container.appendChild(M);
+    container.appendChild(Rp);
+    return;
+  }
 
   // 기사에게 줄 콜카드 (꼬리 없는 카드)
   var driverCard = '';
@@ -573,8 +594,10 @@ function renderBaecha(container) {
     drvInfo = '이름: '+(dm2.driver||'')+'\n전화: '+(dm2.driverPhone||'010-xxxx-xxxx')+'\n차종: '+(dm2.driverVehicle||'-')+'\n차량번호: '+(dm2.driverVehicleNum||'-');
   }
 
-  var rh2 = '';
-
+  // 수정 버튼
+  if (selectedCard) {
+    rh2 += '<div style="text-align:right;margin-bottom:8px"><button class="btn-edit" onclick="openEdit(''+selectedCard.id+'')">✏️ 카드 수정</button></div>';
+  }
   // 기사에게 줄 콜카드 복사
   rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드 (꼬리 제거)</div>';
   rh2 += '<div class="msg-content" id="msg-driver-card">'+esc(driverCard||(selectedCard?'카드 선택됨':'카드를 선택하세요'))+'</div>';
@@ -773,9 +796,13 @@ function doConfirm(){
   if(!selectedCard)return;
   var btn=document.getElementById('btn-confirm');
   btn.disabled=true; btn.textContent='처리 중...';
+  var _t1 = selectedCard.title1 || '';
+  var _newTail = _t1 + '\n채널>애니>' + nick;
   db.ref('cards/'+selectedCard.id).update({
     status:'확정',
     kakaoNick:nick,
+    title2:'채널>애니>'+nick,
+    tail:_newTail,
     confirmedAt:Date.now()
   }).then(function(){
     selectedCard=null;
@@ -876,6 +903,7 @@ function saveEdit(id) {
     body: newBody
   }).then(function() {
     editingCard = null;
+    render();
   });
 }
 
