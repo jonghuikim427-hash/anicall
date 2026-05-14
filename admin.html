@@ -152,6 +152,26 @@ table.cal th:last-child{color:#1565c0}
 .cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#666}
 .cal-leg-dot{width:14px;height:10px;border-radius:2px}
 .empty-msg{text-align:center;color:#ccc;font-size:12px;padding:30px 0}
+/* 수정 모드 */
+.edit-box{background:#fffde7;border:2px solid #f5b800;border-radius:8px;padding:12px;margin-top:10px}
+.edit-box-title{font-size:11px;font-weight:700;color:#c8880a;margin-bottom:8px}
+.edit-ta{width:100%;padding:7px;border:1px solid #e0c060;border-radius:5px;font-size:12px;font-family:'Malgun Gothic',sans-serif;resize:vertical;outline:none;background:#fff}
+.edit-ta:focus{border-color:#c8880a}
+.edit-label{font-size:10px;color:#888;margin-bottom:3px;margin-top:7px;font-weight:700}
+.edit-btns{display:flex;gap:6px;margin-top:9px}
+.btn-save{flex:2;padding:8px;background:#c8880a;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#a36800}
+.btn-cancel-edit{flex:1;padding:8px;background:#f0f0f0;color:#666;border:1px solid #ddd;border-radius:5px;font-size:12px;cursor:pointer}
+.btn-edit{padding:5px 12px;background:#fff8e1;color:#c8880a;border:1px solid #f5b800;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;float:right}
+.btn-edit:hover{background:#fff3cd}
+/* 날짜 필터 */
+.date-filter{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0f0f0;border-bottom:1px solid #e0e0e0;flex-shrink:0}
+.date-filter label{font-size:10px;color:#666;font-weight:700;flex-shrink:0}
+.date-filter input[type=date]{padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:11px;font-family:inherit;outline:none}
+.date-filter input[type=date]:focus{border-color:#1a2a4a}
+.btn-all-date{padding:3px 9px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer;color:#555}
+.btn-all-date.on{background:#1a2a4a;color:#FFD700;border-color:#1a2a4a;font-weight:700}
+.date-cnt{font-size:10px;color:#888;margin-left:4px}
 /* 배차 드라이버 입력 확장 */
 .bc-row-inputs{display:flex;gap:3px;align-items:center;flex-shrink:0}
 .bc-dphone{width:72px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
@@ -202,6 +222,8 @@ var baechaText = '';
 var rebTarget = null;
 var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
+var editingCard = null;
+var baechaDateFilter = '';
 
 var TAB_HDRS = [
   '① 확정대기 최신방',
@@ -237,7 +259,7 @@ function go(n) {
   document.querySelectorAll('.tab').forEach(function(t, i) {
     t.className = 'tab' + (i === n ? ' on' : '');
   });
-  selectedCard = null; searchQuery = ''; rebTarget = null;
+  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null;
   render();
 }
 
@@ -424,6 +446,23 @@ function renderConfirm(container) {
     rh += '<button class="btn-confirm" id="btn-confirm" onclick="doConfirm()" disabled>☑ 예약확정 → 날짜방으로</button>';
     rh += '<button class="btn-close2" onclick="selectedCard=null;render()">닫기</button>';
     rh += '</div></div>';
+    // 수정 버튼
+    rh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+c.id+'\')" >✏️ 카드 수정</button></div>';
+    // 수정 모드
+    if (editingCard === c.id) {
+      rh += '<div class="edit-box">';
+      rh += '<div class="edit-box-title">✏️ 카드 수정</div>';
+      rh += '<div class="edit-label">꼬리 1줄 (제목)</div>';
+      rh += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(c.title1||'')+'</textarea>';
+      rh += '<div class="edit-label">꼬리 2줄 (채널)</div>';
+      rh += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(c.title2||'')+'</textarea>';
+      rh += '<div class="edit-label">카드 본문 전체</div>';
+      rh += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(c.body||'')+'</textarea>';
+      rh += '<div class="edit-btns">';
+      rh += '<button class="btn-save" onclick="saveEdit(\''+c.id+'\')" >💾 저장</button>';
+      rh += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
+      rh += '</div></div>';
+    }
   } else {
     rh += '<div class="det-empty">← 카드를 클릭하면 상세 정보가 표시됩니다</div>';
   }
@@ -437,14 +476,23 @@ function renderConfirm(container) {
 function renderBaecha(container) {
   var today = todayStr();
   var list = allData.filter(function(r) {
-    return r.status === '확정';
+    if (r.status !== '확정') return false;
+    if (baechaDateFilter && r.rideDate !== baechaDateFilter) return false;
+    return true;
   }).sort(function(a,b) {
-    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+    return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
 
   // 왼쪽 - 카드 목록
   var L = document.createElement('div'); L.className = 't2-left';
-  var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div><div class="t2-list">';
+  var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div>';
+  lh += '<div class="date-filter">';
+  lh += '<label>날짜:</label>';
+  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')" >전체</button>';
+  lh += '<input type="date" value="'+esc(baechaDateFilter)+'" onchange="setBaechaDate(this.value)">';
+  lh += '<span class="date-cnt" id="baecha-cnt"></span>';
+  lh += '</div>';
+  lh += '<div class="t2-list">';
   if (list.length === 0) { lh += '<div class="empty-msg">확정된 예약 없음</div>'; }
   else {
     list.forEach(function(r, idx) {
@@ -484,6 +532,23 @@ function renderBaecha(container) {
     if (selectedCard.name) mh += '이름: '+esc(selectedCard.name)+'<br>';
     if (selectedCard.resNum) mh += '예약번호: '+esc(selectedCard.resNum);
     mh += '</div></div>';
+  }
+  // 수정 모드 (당일배차방)
+  if (selectedCard && editingCard === selectedCard.id) {
+    mh += '<div class="edit-box">';
+    mh += '<div class="edit-box-title">✏️ 카드 수정</div>';
+    mh += '<div class="edit-label">꼬리 1줄 (제목)</div>';
+    mh += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(selectedCard.title1||'')+'</textarea>';
+    mh += '<div class="edit-label">꼬리 2줄 (채널)</div>';
+    mh += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(selectedCard.title2||'')+'</textarea>';
+    mh += '<div class="edit-label">카드 본문 전체</div>';
+    mh += '<textarea class="edit-ta" id="edit-body" rows="8">'+esc(selectedCard.body||'')+'</textarea>';
+    mh += '<div class="edit-btns">';
+    mh += '<button class="btn-save" onclick="saveEdit(\''+selectedCard.id+'\')" >💾 저장</button>';
+    mh += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
+    mh += '</div></div>';
+  } else if (selectedCard) {
+    mh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+selectedCard.id+'\')" >✏️ 카드 수정</button></div>';
   }
   mh += '</div>';
   M.innerHTML = mh;
@@ -781,6 +846,36 @@ function askReb(id){
 function doRebaecha(id){
   db.ref('cards/'+id).update({status:'확정'}).then(function(){
     rebTarget=null;selectedCard=null;
+  });
+}
+
+function setBaechaDate(v) {
+  baechaDateFilter = v;
+  render();
+}
+
+function openEdit(id) {
+  editingCard = id;
+  render();
+}
+
+function saveEdit(id) {
+  var t1 = document.getElementById('edit-title1');
+  var t2 = document.getElementById('edit-title2');
+  var body = document.getElementById('edit-body');
+  if (!t1 || !body) return;
+  var newTitle1 = t1.value.trim();
+  var newTitle2 = t2 ? t2.value.trim() : '';
+  var newBody = body.value;
+  // tail 재조합
+  var newTail = newTitle1 + (newTitle2 ? '\n' + newTitle2 : '');
+  db.ref('cards/'+id).update({
+    title1: newTitle1,
+    title2: newTitle2,
+    tail: newTail,
+    body: newBody
+  }).then(function() {
+    editingCard = null;
   });
 }
 
