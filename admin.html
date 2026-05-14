@@ -554,6 +554,8 @@ function renderBaecha(container) {
   M.innerHTML = mh;
 
   // 오른쪽 - 메시지 복사 3종
+  var currentEditId = selectedCard ? selectedCard.id : '';
+  window.currentEditId = currentEditId;
   var Rp = document.createElement('div'); Rp.className = 't2-right';
   var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
   var rh2 = '';
@@ -568,7 +570,7 @@ function renderBaecha(container) {
     rh2 += '<div class="edit-label">카드 본문 전체</div>';
     rh2 += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(selectedCard.body||'')+'</textarea>';
     rh2 += '<div class="edit-btns">';
-    rh2 += '<button class="btn-save" onclick="saveEdit(''+selectedCard.id+'')">💾 저장</button>';
+    rh2 += '<button class="btn-save" onclick="saveEdit(currentEditId)">💾 저장</button>';
     rh2 += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
     rh2 += '</div></div>';
     Rp.innerHTML = rh2;
@@ -596,7 +598,7 @@ function renderBaecha(container) {
 
   // 수정 버튼
   if (selectedCard) {
-    rh2 += '<div style="text-align:right;margin-bottom:8px"><button class="btn-edit" onclick="openEdit(''+selectedCard.id+'')">✏️ 카드 수정</button></div>';
+    rh2 += '<div style="text-align:right;margin-bottom:8px"><button class="btn-edit" onclick="openEdit(currentEditId)">✏️ 카드 수정</button></div>';
   }
   // 기사에게 줄 콜카드 복사
   rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드 (꼬리 제거)</div>';
