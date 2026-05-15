@@ -777,12 +777,17 @@ function doConfirm(){
   var btn=document.getElementById('btn-confirm');
   btn.disabled=true; btn.textContent='처리 중...';
   var _t1 = selectedCard.title1 || '';
-  var _newTail = _t1 + '\n채널>애니>' + nick;
+  var _oldT2 = selectedCard.title2 || '';
+  var _newT2 = '채널>애니>' + nick;
+  var _newTail = _t1 + '\n' + _newT2;
+  // body에서 옛날 title2를 새 닉으로 교체
+  var _newBody = (selectedCard.body || '').replace(_oldT2, _newT2);
   db.ref('cards/'+selectedCard.id).update({
     status:'확정',
     kakaoNick:nick,
-    title2:'채널>애니>'+nick,
+    title2:_newT2,
     tail:_newTail,
+    body:_newBody,
     confirmedAt:Date.now()
   }).then(function(){
     selectedCard=null;
