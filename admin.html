@@ -543,6 +543,7 @@ function renderBaecha(container) {
   lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
   lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
   lh += '<button onclick="toggleBaechaSort()" style="padding:3px 10px;background:'+(baechaSortByNum?'#e65100':'#888')+';color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">'+(baechaSortByNum?'번호순':'시간순')+'</button>';
+  if (baechaDateFilter) lh += '<button onclick="genBaechaList()" style="padding:3px 10px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">📋 리스트생성</button>';
   if (_usedNums.length > 0) lh += '<span style="font-size:10px;color:#2e7d32;margin-left:4px">마지막: '+Math.max.apply(null,_usedNums)+'번</span>';
   lh += '</div>';
   lh += '<div class="t2-list">';
@@ -555,7 +556,12 @@ function renderBaecha(container) {
       lh += '<div class="bc-row'+(isOn?' on':'')+'" onclick="selBaecha(\''+r.id+'\')">';
       var _bNum = r.baechaNum || '';
       lh += '<div class="bc-num" style="background:'+(_bNum?'#1a2a4a':'#888')+'">'+ (_bNum||'-') +'</div>';
-      lh += '<div class="bc-label">'+esc(cardLabel(r));
+      lh += '<div class="bc-label">';
+      var _bwarn = getWarnings(r);
+      _bwarn.forEach(function(w){
+        lh += (w.indexOf('❗')===0 ? '<span style="color:#b71c1c;font-weight:700">❗</span>' : '<span style="color:#e65100;font-weight:700">⚠️</span>');
+      });
+      lh += esc(cardLabel(r));
       if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
@@ -1238,6 +1244,76 @@ function openDriverKakao(id) {
     copyText(driverName, null);
     alert('기사 목록에 전화번호가 없어요.\n이름이 복사됐으니 카톡에서 검색해주세요: ' + driverName);
   }
+}
+
+function genBaechaList() {
+  var list = allData.filter(function(r) {
+    return r.status === '확정' && r.rideDate === baechaDateFilter && r.baechaNum;
+  }).sort(function(a,b){ return a.baechaNum - b.baechaNum; });
+
+  if (list.length === 0) { alert('넘버링된 카드가 없어요!'); return; }
+
+  // 날짜 표시
+  var d = new Date(baechaDateFilter);
+  var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  var lines = ['✈️ ' + dateLabel, ''];
+
+  list.forEach(function(r) {
+    var title1 = r.title1 || '';
+    // 배차타입 추출 (G우선, EQ배차, GQE)
+    var dtype = '';
+    if (title1.indexOf('G우선') >= 0) dtype = 'G우선';
+    else if (title1.indexOf('EQ배차') >= 0) dtype = 'EQ배차';
+
+    // 확정금액 추출
+    var confirmed = '';
+    var body = r.body || '';
+    var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
+    if (confMatch) confirmed = confMatch[0].replace(/\s/g,'');
+
+    // ⚠️ 특이사항 체크
+    var warns = getWarnings(r);
+    var hasSpecial = warns.length > 0 || (r.carseat && r.carseat.trim()) || (r.waypoint && r.waypoint.trim()) || (r.picket && r.picket.trim());
+    var warnMark = hasSpecial ? ' ⚠️' : '';
+
+    // 시간
+    var hhmm = r.rideHHMM || '';
+    var timeStr = hhmm ? hhmm.slice(0,2) + ':' + hhmm.slice(2) : '';
+
+    // 출발지 간략화 (시/구 이름만)
+    var addr = r.address || '';
+    var addrShort = addr.replace(/서울특별시|서울시|경기도|인천광역시/g,'').trim().split(' ')[0] || addr;
+
+    // 공항
+    var airport = r.airport || 'T1';
+    var airportShort = airport.replace('인천공항','').trim() || airport;
+
+    // 방향
+    var dir = title1.indexOf(' 입 ') >= 0 || title1.startsWith('중 입') || title1.startsWith('대 입') || title1.startsWith('버 입') ? 'in' : 'out';
+
+    // 윗줄
+    var line1 = r.baechaNum + '. ' + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark;
+    // 아랫줄
+    var line2 = dir === 'out'
+      ? timeStr + ' ' + addrShort + ' → ' + airportShort
+      : airportShort + ' → ' + addrShort + ' ' + timeStr;
+
+    lines.push(line1.trim());
+    lines.push(line2.trim());
+    lines.push('');
+  });
+
+  var text = lines.join('\n');
+
+  // 복사
+  var el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  alert('배차 리스트 복사됐어요! (' + list.length + '개)\n카카오 배차방에 붙여넣기 하세요!');
 }
 
 function toggleBaechaSort() {
