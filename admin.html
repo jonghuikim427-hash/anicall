@@ -1322,9 +1322,15 @@ function genBaechaList() {
     var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
     if (confMatch) confirmed = confMatch[0].replace(/\s/g,'');
 
-    // ⚠️ 특이사항 체크
+    // ⚠️ 특이사항 체크 (tail 경고줄 + body에서 직접 파싱)
     var warns = getWarnings(r);
-    var hasSpecial = warns.length > 0 || (r.carseat && r.carseat.trim()) || (r.waypoint && r.waypoint.trim()) || (r.picket && r.picket.trim());
+    var _body = r.body || '';
+    var _bLines = _body.split('\n');
+    var _hasCarSeat = _bLines.some(function(l){ return l.indexOf('카시트') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
+    var _hasWaypoint = _bLines.some(function(l){ return l.indexOf('경유지') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
+    var _hasPicket = _bLines.some(function(l){ return l.indexOf('피켓') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
+    var _hasReqVeh = _bLines.some(function(l){ return l.indexOf('요청사항') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
+    var hasSpecial = warns.length > 0 || _hasCarSeat || _hasWaypoint || _hasPicket || _hasReqVeh;
     var warnMark = hasSpecial ? ' ⚠️' : '';
 
     // 시간
