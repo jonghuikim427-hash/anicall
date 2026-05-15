@@ -870,6 +870,13 @@ function parseDrvCard() {
   if (missing.length > 0) {
     alert('자동인식 실패: ' + missing.join(', ') + ' - 직접 입력해주세요!');
   }
+  // 동명이인 경고
+  if (name) {
+    var sameCount = allDrivers.filter(function(d){ return d.name === name; }).length;
+    if (sameCount > 0) {
+    alert('동명이인 주의! 기사목록에 [' + name + '] 이름이 이미 ' + sameCount + '명 있어요. 중복 등록 확인해주세요!');
+    }
+  }
 
   // 미리보기 표시
   var preview = document.getElementById('drv-preview');
@@ -1058,7 +1065,6 @@ function doAutoMatch(){
   var ta=document.getElementById('baecha-ta');
   if(!ta)return;
   baechaText=ta.value;
-  // 반드시 renderBaecha와 동일한 필터+정렬 적용
   var list=allData.filter(function(r){
     if(r.status!=='확정') return false;
     if(baechaDateFilter && r.rideDate!==baechaDateFilter) return false;
@@ -1067,6 +1073,8 @@ function doAutoMatch(){
   list.sort(function(a,b){
     return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
+  // 동명이인 체크
+  var duplicateWarnings = [];
   ta.value.split('\n').forEach(function(line){
     var m=line.match(/^(\d+)[.\s]\s*(.+)/);
     if(!m)return;
@@ -1079,6 +1087,19 @@ function doAutoMatch(){
       }
     }
   });
+  // 동명이인 경고
+  duplicateWarnings = [];
+  Object.keys(driverMap).forEach(function(id) {
+    var name = driverMap[id] && driverMap[id].driver;
+    if (!name) return;
+    var count = allDrivers.filter(function(d){ return d.name === name; }).length;
+    if (count > 1) {
+      duplicateWarnings.push(name + ' (' + count + '명)');
+    }
+  });
+  if (duplicateWarnings.length > 0) {
+    alert('동명이인 주의! 기사목록에 같은 이름이 여러 명이에요: ' + duplicateWarnings.join(', '));
+  }
   render();
 }
 
