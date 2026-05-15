@@ -394,7 +394,9 @@ function renderConfirm(container) {
           ? '<span style="color:#b71c1c;font-weight:700">❗</span>'
           : '<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
-      lh += esc(cardLabel(r))+'</div>';
+      lh += esc(cardLabel(r));
+      if (r.name) lh += ' <span style="color:#1565c0;font-size:10px;font-weight:700">· '+esc(r.name)+'</span>';
+      lh += '</div>';
       if (isNew) lh += '<span class="badge-new">NEW</span>';
       if (isOld) lh += '<span class="elapsed '+elClass(r.createdAt)+'">'+fmtElapsed(r.createdAt)+'</span>';
       else lh += '<span class="badge-wait">대기</span>';
@@ -501,10 +503,21 @@ function renderBaecha(container) {
       var isOn = selectedCard && selectedCard.id === r.id;
       lh += '<div class="bc-row'+(isOn?' on':'')+'" onclick="selBaecha(\''+r.id+'\')">';
       lh += '<div class="bc-num">'+num+'</div>';
-      lh += '<div class="bc-label">'+esc(cardLabel(r))+'</div>';
+      lh += '<div class="bc-label">'+esc(cardLabel(r));
+      if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
+      lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
-      lh += '<input class="bc-drv'+(dm.driver?' filled':'')+'" id="drv-'+r.id+'" type="text" placeholder="기사명" value="'+esc(dm.driver||'')+'" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
-      lh += '<input class="bc-kak" type="text" placeholder="카톡닉" value="'+esc(dm.kakao||'')+'" oninput="updDrv(\''+r.id+'\',\'kakao\',this.value)">';
+      if (dm.driver) {
+        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();openDriverKakao(\''+r.id+'\')" title="클릭시 기사 카톡 열기">'+esc(dm.driver)+'</button>';
+      } else {
+        lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
+      }
+      var _custNick = r.kakaoNick || '';
+      if (_custNick) {
+        lh += '<button class="bc-kak" style="background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;cursor:pointer" onclick="event.stopPropagation();copyText(\''+_custNick.replace(/'/g,'').replace(/"/g,'')+'\'  ,this)" title="클릭시 복사">'+esc(_custNick)+'</button>';
+      } else {
+        lh += '<button class="bc-kak" style="background:#f5f5f5;color:#bbb;cursor:default;border:1px solid #eee">카톡닉</button>';
+      }
       lh += '</div>';
       if (dm.driver) {
         lh += '<button class="bc-done" onclick="event.stopPropagation();doBaechaCard(\''+r.id+'\')">배차완료</button>';
@@ -866,6 +879,23 @@ function doRebaecha(id){
   db.ref('cards/'+id).update({status:'확정'}).then(function(){
     rebTarget=null;selectedCard=null;
   });
+}
+
+function copyText(text, btn) {
+  var el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  if (btn) {
+    var orig = btn.textContent;
+    var origBg = btn.style.background;
+    btn.textContent = '✅복사됨';
+    btn.style.background = '#c8e6c9';
+    setTimeout(function(){ btn.textContent = orig; btn.style.background = origBg; }, 1500);
+  }
 }
 
 function copyKakao(id, nick) {
