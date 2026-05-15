@@ -540,8 +540,8 @@ function renderBaecha(container) {
 
   lh += '<div class="date-filter">';
   lh += '<label>날짜:</label>';
-  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')">전체</button>';
   lh += '<input type="date" value="'+esc(baechaDateFilter)+'" onchange="setBaechaDate(this.value)">';
+  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')">전체</button>';
   lh += '<span style="margin-left:8px;font-size:10px;color:#888;flex-shrink:0">시작번호:</span>';
   lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
   lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
@@ -783,7 +783,7 @@ function renderBaechaComplete(container) {
     list.forEach(function(r, idx) {
       var isOn = selectedCard && selectedCard.id === r.id;
       lh += '<div class="bcd-row'+(isOn?' on':'')+'" onclick="selBaechaComplete(\''+r.id+'\')">';
-      lh += '<div class="bcd-num" style="font-size:10px">'+(r.rideHHMM?r.rideHHMM.slice(0,2)+':'+r.rideHHMM.slice(2):'-')+'</div>';
+      if (r.baechaNum) lh += '<div class="bcd-num">'+r.baechaNum+'</div>';
       lh += '<div class="bcd-title">';
       var _cw = getWarnings(r);
       _cw.forEach(function(w){
