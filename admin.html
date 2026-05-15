@@ -253,10 +253,11 @@ var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
 var editingCard = null;
 var allDrivers = [];
-var baechaDateFilter = '';
+var baechaDateFilter = todayStr(); // 오늘 날짜 기본값
 var baechaNumStart = 31;
 var baechaSortByNum = false; // false=탑승시간순, true=번호순
-var baechaListMode = null; // null=일반, 'view'=리스트보기, 'edit'=편집, 'final'=최종
+var baechaListMode = null;
+var baechaCompleteDateFilter = todayStr(); // 배차완료방 날짜 기본값 // null=일반, 'view'=리스트보기, 'edit'=편집, 'final'=최종
 var baechaListText = ''; // 리스트 텍스트
 
 var TAB_HDRS = [
@@ -294,7 +295,7 @@ function go(n) {
   document.querySelectorAll('.tab').forEach(function(t, i) {
     t.className = 'tab' + (i === n ? ' on' : '');
   });
-  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null; copiedState = {}; baechaListMode = null;
+  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null; copiedState = {}; baechaListMode = null; baechaCompleteDateFilter = todayStr();
   render();
 }
 
@@ -821,12 +822,17 @@ function renderBaechaComplete(container) {
   var Rp = document.createElement('div'); Rp.className = 't3-right';
   var rh = '';
   if (selectedCard) {
+    // 기사목록에서 추가 정보 보완
+    var _drvInf = allDrivers.find(function(d){ return d.name === selectedCard.driverName; });
+    var _dispPhone = selectedCard.driverPhone || (_drvInf && _drvInf.phone) || '-';
+    var _dispVeh = selectedCard.driverVehicleType || (_drvInf && _drvInf.vehicle) || '-';
+    var _dispVNum = selectedCard.driverVehicleNum || (_drvInf && _drvInf.vehicleNum) || '-';
     rh += '<div class="info-box"><div class="info-box-title">기사 정보</div>';
     rh += '<div class="info-box-body">';
     rh += '이름: '+esc(selectedCard.driverName||'-')+'<br>';
-    rh += '전화번호: '+esc(selectedCard.driverPhone||'-')+'<br>';
-    rh += '차량종류: '+esc(selectedCard.driverVehicleType||'-')+'<br>';
-    rh += '차량번호: '+esc(selectedCard.driverVehicleNum||'-');
+    rh += '전화번호: '+esc(_dispPhone)+'<br>';
+    rh += '차량종류: '+esc(_dispVeh)+'<br>';
+    rh += '차량번호: '+esc(_dispVNum);
     rh += '</div></div>';
 
     rh += '<div class="info-box org"><div class="info-box-title">손님 정보</div>';
@@ -1161,13 +1167,18 @@ function doBaechaCard(id){
   if(!r)return;
   var dm=driverMap[id]||{};
   if(!dm.driver){alert('기사 이름을 입력해주세요.');return;}
+  // 기사목록에서 전화/차종/차량번호 자동완성
+  var _foundDrvBC = allDrivers.find(function(d){ return d.name === dm.driver; });
+  var _dPhoneBC = dm.driverPhone || (_foundDrvBC && _foundDrvBC.phone) || '';
+  var _dVehBC = dm.driverVehicle || (_foundDrvBC && _foundDrvBC.vehicle) || '';
+  var _dVNumBC = dm.driverVehicleNum || (_foundDrvBC && _foundDrvBC.vehicleNum) || '';
   db.ref('cards/'+id).update({
     status:'배차완료',
     driverName:dm.driver||'',
     driverKakao:dm.kakao||'',
-    driverPhone:dm.driverPhone||'',
-    driverVehicleType:dm.driverVehicle||'',
-    driverVehicleNum:dm.driverVehicleNum||'',
+    driverPhone:_dPhoneBC,
+    driverVehicleType:_dVehBC,
+    driverVehicleNum:_dVNumBC,
     baechaNum: null
   });
 }
