@@ -1306,7 +1306,7 @@ function genBaechaList() {
     // 아랫줄
     var line2 = dir === 'out'
       ? timeStr + ' ' + addrShort + ' → ' + airportShort
-      : airportShort + ' → ' + addrShort + ' ' + timeStr;
+      : timeStr + ' ' + airportShort + ' → ' + addrShort;
 
     lines.push(line1.trim());
     lines.push(line2.trim());
