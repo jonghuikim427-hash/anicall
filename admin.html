@@ -538,10 +538,6 @@ function renderBaecha(container) {
   var Rp = document.createElement('div'); Rp.className = 't2-right';
   var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
   var rh2 = '';
-  // 수정 버튼 (항상 표시)
-  if (selectedCard) {
-    rh2 += '<div style="text-align:right;margin-bottom:8px"><button class="btn-edit" onclick="openEdit(window.currentEditId)">✏️ 카드 수정</button></div>';
-  }
   // 수정 모드
   if (selectedCard && editingCard === selectedCard.id) {
     rh2 += '<div class="edit-box" style="margin-bottom:12px">';
@@ -855,6 +851,41 @@ function doRebaecha(id){
   db.ref('cards/'+id).update({status:'확정'}).then(function(){
     rebTarget=null;selectedCard=null;
   });
+}
+
+function copyKakao(id, nick) {
+  var el = document.createElement('textarea');
+  el.value = nick;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  // 복사 피드백
+  var btn = event.target;
+  var orig = btn.textContent;
+  btn.textContent = '✅복사됨';
+  btn.style.background = '#c8e6c9';
+  setTimeout(function(){ btn.textContent = orig; btn.style.background = '#fff9c4'; }, 1500);
+}
+
+function openDriverKakao(id) {
+  var r = allData.find(function(x){ return x.id === id; });
+  if (!r || !r.driverKakao) {
+    alert('기사 카톡ID가 없어요. 배차완료 후 사용 가능해요.');
+    return;
+  }
+  window.open('kakaotalk://launch', '_blank');
+  // 카카오톡 오픈채팅 or 친구 검색은 정책상 직접열기 불가
+  // 대신 기사 카톡ID 복사
+  var el = document.createElement('textarea');
+  el.value = r.driverKakao;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  alert('기사 카톡ID 복사됨: ' + r.driverKakao + '\n카톡 검색창에 붙여넣으세요!');
 }
 
 function setBaechaDate(v) {
