@@ -520,11 +520,22 @@ function renderBaecha(container) {
   // 왼쪽 - 카드 목록
   var L = document.createElement('div'); L.className = 't2-left';
   var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div>';
+  // 오늘 날짜의 마지막 번호 계산
+  var _usedNums = [];
+  allData.forEach(function(r) {
+    if (r.baechaNum && r.rideDate === baechaDateFilter) _usedNums.push(r.baechaNum);
+  });
+  var _lastNum = _usedNums.length > 0 ? Math.max.apply(null, _usedNums) + 1 : baechaNumStart;
+  var _suggestNum = _usedNums.length > 0 ? _lastNum : baechaNumStart;
+
   lh += '<div class="date-filter">';
   lh += '<label>날짜:</label>';
-  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')" >전체</button>';
+  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')">전체</button>';
   lh += '<input type="date" value="'+esc(baechaDateFilter)+'" onchange="setBaechaDate(this.value)">';
-  lh += '<span class="date-cnt" id="baecha-cnt"></span>';
+  lh += '<span style="margin-left:8px;font-size:10px;color:#888;flex-shrink:0">시작번호:</span>';
+  lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
+  lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
+  if (_usedNums.length > 0) lh += '<span style="font-size:10px;color:#2e7d32;margin-left:4px">마지막: '+Math.max.apply(null,_usedNums)+'번</span>';
   lh += '</div>';
   lh += '<div class="t2-list">';
   if (list.length === 0) { lh += '<div class="empty-msg">확정된 예약 없음</div>'; }
@@ -534,7 +545,8 @@ function renderBaecha(container) {
       var dm = driverMap[r.id] || {};
       var isOn = selectedCard && selectedCard.id === r.id;
       lh += '<div class="bc-row'+(isOn?' on':'')+'" onclick="selBaecha(\''+r.id+'\')">';
-      lh += '<div class="bc-num">'+num+'</div>';
+      var _bNum = r.baechaNum || '';
+      lh += '<div class="bc-num" style="background:'+(_bNum?'#1a2a4a':'#888')+'">'+ (_bNum||'-') +'</div>';
       lh += '<div class="bc-label">'+esc(cardLabel(r));
       if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
       lh += '</div>';
@@ -1077,7 +1089,8 @@ function doBaechaCard(id){
     driverKakao:dm.kakao||'',
     driverPhone:dm.driverPhone||'',
     driverVehicleType:dm.driverVehicle||'',
-    driverVehicleNum:dm.driverVehicleNum||''
+    driverVehicleNum:dm.driverVehicleNum||'',
+    baechaNum: null
   });
 }
 
@@ -1218,6 +1231,33 @@ function openDriverKakao(id) {
     copyText(driverName, null);
     alert('기사 목록에 전화번호가 없어요.\n이름이 복사됐으니 카톡에서 검색해주세요: ' + driverName);
   }
+}
+
+function doNumbering() {
+  var inp = document.getElementById('baecha-num-input');
+  var startNum = inp ? parseInt(inp.value) : baechaNumStart;
+  if (isNaN(startNum) || startNum < 1) { alert('올바른 시작 번호를 입력해주세요'); return; }
+  if (!baechaDateFilter) { alert('날짜를 먼저 선택해주세요'); return; }
+
+  var list = allData.filter(function(r) {
+    if (r.status !== '확정') return false;
+    if (r.rideDate !== baechaDateFilter) return false;
+    if (r.baechaNum) return false; // 이미 번호 있는 건 제외
+    return true;
+  }).sort(function(a,b) {
+    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+
+  if (list.length === 0) { alert('넘버링할 카드가 없어요 (이미 다 번호가 있거나 해당 날짜 카드 없음)'); return; }
+
+  var updates = {};
+  list.forEach(function(r, i) {
+    updates['cards/' + r.id + '/baechaNum'] = startNum + i;
+  });
+  db.ref().update(updates).then(function() {
+    baechaNumStart = startNum + list.length;
+    alert(list.length + '개 카드에 ' + startNum + '~' + (startNum + list.length - 1) + '번 부여 완료!');
+  });
 }
 
 function setBaechaDate(v) {
