@@ -173,6 +173,19 @@ table.cal th:last-child{color:#1565c0}
 .btn-all-date.on{background:#1a2a4a;color:#FFD700;border-color:#1a2a4a;font-weight:700}
 .date-cnt{font-size:10px;color:#888;margin-left:4px}
 /* 기사목록 */
+.drv-paste-box{background:#fff;border:2px dashed #FFD700;border-radius:8px;padding:12px;margin-bottom:12px}
+.drv-paste-title{font-size:11px;font-weight:700;color:#c8880a;margin-bottom:6px}
+.drv-paste-ta{width:100%;height:80px;padding:7px;border:1px solid #ddd;border-radius:5px;font-size:11px;font-family:inherit;resize:none;outline:none}
+.drv-paste-ta:focus{border-color:#c8880a}
+.drv-preview{background:#f9f9f9;border:1px solid #eee;border-radius:5px;padding:8px;margin-top:6px;font-size:11px;color:#333;display:none}
+.drv-preview-row{display:flex;gap:6px;margin-bottom:3px;align-items:center}
+.drv-preview-label{color:#888;min-width:50px;font-size:10px}
+.drv-preview-val{font-weight:700;color:#1a2a4a}
+.drv-preview-inp{flex:1;padding:3px 6px;border:1px solid #ddd;border-radius:3px;font-size:11px;font-family:inherit;outline:none}
+.btn-drv-confirm{width:100%;padding:7px;background:#1a2a4a;color:#FFD700;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;margin-top:7px}
+.drv-autocomplete{position:absolute;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:999;max-height:150px;overflow-y:auto;min-width:120px}
+.drv-autocomplete-item{padding:6px 10px;cursor:pointer;font-size:12px;color:#333}
+.drv-autocomplete-item:hover{background:#eef2ff;color:#1a2a4a}
 .drv-list-wrap{flex:1;overflow-y:auto;padding:14px;background:#f5f5f5}
 .drv-list-card{background:#fff;border-radius:8px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .drv-add-form{background:#fff;border-radius:8px;padding:14px;margin-bottom:14px;border:2px solid #FFD700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -798,6 +811,88 @@ function renderDriverList(container) {
   container.appendChild(wrap);
 }
 
+function parseDrvCard() {
+  var text = (document.getElementById('drv-paste-ta')||{}).value||'';
+  if (!text.trim()) { document.getElementById('drv-preview').style.display='none'; return; }
+
+  var name='', phone='', vehicle='', vehicleNum='';
+
+  // 이름 추출 (한글 2~4글자, 이름/성함 키워드 우선)
+  var nameM = text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  if (nameM) { name = nameM[1].trim(); }
+  else {
+    // 독립된 한글 이름 (2~4글자, 단독 줄 또는 공백으로 구분)
+    var nameM2 = text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m);
+    if (nameM2) name = nameM2[1].trim();
+  }
+
+  // 전화번호 추출 (010으로 시작, 점/하이픈/공백 허용)
+  var phoneM = text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
+  if (phoneM) phone = phoneM[0].replace(/[\s.\-]/g,'');
+
+  // 차량번호 추출 (지역명+숫자+한글+숫자)
+  var vnumM = text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
+  if (vnumM) vehicleNum = vnumM[0].replace(/\s/g,'');
+
+  // 차종 추출
+  var vehM = text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+
+  if (vehM) { vehicle = vehM[1].trim(); }
+  else {
+    var vehKeywords = ['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
+    for (var vi=0; vi<vehKeywords.length; vi++) {
+      if (text.toLowerCase().indexOf(vehKeywords[vi].toLowerCase()) >= 0) {
+        // 해당 키워드 포함 단어 추출
+        var vReg = new RegExp('[가-힣a-zA-Z0-9\s]*'+vehKeywords[vi]+'[가-힣a-zA-Z0-9\s(\)]*', 'i');
+        var vM2 = text.match(vReg);
+        if (vM2) { vehicle = vM2[0].trim().split('\n')[0].replace(/[^가-힣a-zA-Z0-9\s]/g,'').trim(); break; }
+
+      }
+    }
+  }
+
+  // 못 잡은 필드 경고
+  var missing = [];
+  if (!name) missing.push('이름');
+  if (!phone) missing.push('전화번호');
+  if (!vehicleNum) missing.push('차량번호');
+  if (missing.length > 0) {
+    alert('자동인식 실패: ' + missing.join(', ') + ' - 직접 입력해주세요!');
+  }
+
+  // 미리보기 표시
+  var preview = document.getElementById('drv-preview');
+  if (preview) {
+    preview.style.display = 'block';
+    document.getElementById('p-name').value = name;
+    document.getElementById('p-phone').value = phone;
+    document.getElementById('p-vehicle').value = vehicle;
+    document.getElementById('p-vnum').value = vehicleNum;
+  }
+}
+
+function confirmAddDriver() {
+  var name = (document.getElementById('p-name')||{}).value||'';
+  var phone = (document.getElementById('p-phone')||{}).value||'';
+  var vehicle = (document.getElementById('p-vehicle')||{}).value||'';
+  var vehicleNum = (document.getElementById('p-vnum')||{}).value||'';
+  if (!name.trim()) { alert('이름은 필수예요!'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+  db.ref('drivers').push({
+    name: name.trim(),
+    phone: phone,
+    vehicle: vehicle.trim(),
+    vehicleNum: vehicleNum.trim()
+  }).then(function() {
+    // 초기화
+    var ta = document.getElementById('drv-paste-ta');
+    var preview = document.getElementById('drv-preview');
+    if (ta) ta.value = '';
+    if (preview) preview.style.display = 'none';
+    alert('✅ ' + name.trim() + ' 기사님 등록됐어요!');
+  });
+}
+
 function addDriver() {
   var name = (document.getElementById('new-drv-name')||{}).value||'';
   var phone = (document.getElementById('new-drv-phone')||{}).value||'';
@@ -813,12 +908,7 @@ function delDriver(id) {
   db.ref('drivers/'+id).remove();
 }
 
-function testKakaoPhone(btn) {
-  var phone = btn.getAttribute('data-phone');
-  alert('버튼 클릭됨! 전화번호: ' + phone);
-  if (!phone) { alert('전화번호 없음'); return; }
-  location.href = 'kakaotalk://launch?p=' + phone;
-}
+
 
 function callDriver(btn) {
   var phone = btn.getAttribute('data-phone');
@@ -891,6 +981,38 @@ function doConfirm(){
     btn.disabled=false;
     btn.textContent='☑ 예약확정 → 날짜방으로';
   });
+}
+
+function updDrvAuto(inp, id) {
+  var val = inp.value.trim();
+  updDrv(id, 'driver', val);
+  var ac = document.getElementById('ac-'+id);
+  if (!ac) return;
+  if (!val) { ac.style.display='none'; return; }
+  var matches = allDrivers.filter(function(d){ return d.name && d.name.indexOf(val) >= 0; });
+  if (matches.length === 0) { ac.style.display='none'; return; }
+  ac.innerHTML = matches.map(function(d){
+    return '<div class="drv-autocomplete-item" onclick="selectDriver(' + JSON.stringify(id) + ',' + JSON.stringify(d.name) + ')">'+esc(d.name)+'</div>';
+  }).join('');
+  ac.style.display='block';
+}
+
+function selectDriver(id, name) {
+  updDrv(id, 'driver', name);
+  var inp = document.getElementById('drv-'+id);
+  if (inp) inp.value = name;
+  var ac = document.getElementById('ac-'+id);
+  if (ac) ac.style.display='none';
+  // 기사목록에서 정보 자동완성
+  var found = allDrivers.find(function(d){ return d.name === name; });
+  if (found) {
+    if (!driverMap[id]) driverMap[id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+    driverMap[id].driver = name;
+    driverMap[id].driverPhone = found.phone||'';
+    driverMap[id].driverVehicle = found.vehicle||'';
+    driverMap[id].driverVehicleNum = found.vehicleNum||'';
+  }
+  render();
 }
 
 function updDrv(id,field,val){
