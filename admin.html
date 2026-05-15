@@ -809,7 +809,7 @@ function renderDriverList(container) {
       h += '<div class="drv-phone">'+esc(d.phone||'')+'</div>';
       h += '<div style="flex:1;font-size:11px;color:#555">'+esc(d.vehicle||'')+'</div>';
       h += '<div style="font-size:11px;color:#555">'+esc(d.vehicleNum||'')+'</div>';
-      h += '<button class="btn-drv-del" onclick="delDriver('+JSON.stringify(d.id)+')">삭제</button>';
+      h += '<button class="btn-drv-del" onclick="delDriver(\'' + d.id + '\')">삭제</button>';
       h += '</div>';
     });
     h += '</div>';
@@ -1019,6 +1019,9 @@ function selectDriver(id, name) {
     driverMap[id].driverVehicle = found.vehicle||'';
     driverMap[id].driverVehicleNum = found.vehicleNum||'';
   }
+  // 해당 카드 선택해서 오른쪽 패널에 기사정보 바로 표시
+  var r = allData.find(function(x){ return x.id === id; });
+  if (r) selectedCard = r;
   render();
 }
 
