@@ -1073,6 +1073,22 @@ function doAutoMatch(){
   list.sort(function(a,b){
     return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
+  // 이미 배정된 번호 덮어쓰기 경고
+  var overwriteList = [];
+  ta.value.split('\n').forEach(function(ow){
+    var mo = ow.match(/^(\d+)[.\s]\s*(.+)/);
+    if (!mo) return;
+    var no = parseInt(mo[1]);
+    if (no >= 701 && no <= 700 + list.length) {
+      var ro = list[no - 701];
+      if (ro && driverMap[ro.id] && driverMap[ro.id].driver) {
+        overwriteList.push(no + '번: ' + driverMap[ro.id].driver + ' -> ' + mo[2].trim());
+      }
+    }
+  });
+  if (overwriteList.length > 0) {
+    if (!confirm('이미 배정된 기사가 있어요! ' + overwriteList.join(' | ') + ' 덮어쓰시겠어요?')) return;
+  }
   // 동명이인 체크
   var duplicateWarnings = [];
   ta.value.split('\n').forEach(function(line){
