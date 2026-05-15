@@ -523,32 +523,11 @@ function renderBaecha(container) {
   mh += '<div class="t2-btn-row"><button class="btn-match" onclick="doAutoMatch()">자동 매칭</button><button class="btn-reset" onclick="doResetMatch()">↩ 되돌리기</button></div>';
 
   if (selectedCard) {
-    mh += '<div class="card-preview"><div class="card-preview-title">선택된 콜카드 상세</div>';
-    mh += '<div class="card-preview-body">';
-    mh += '<b>'+esc(selectedCard.title1||'')+'</b><br>';
-    mh += esc(selectedCard.title2||'')+'<br>';
-    if (selectedCard.rideDate) mh += '출발: '+esc(selectedCard.rideDate)+' '+esc(selectedCard.rideHHMM||'')+'<br>';
-    if (selectedCard.phone) mh += '연락처: '+esc(selectedCard.phone)+'<br>';
-    if (selectedCard.name) mh += '이름: '+esc(selectedCard.name)+'<br>';
-    if (selectedCard.resNum) mh += '예약번호: '+esc(selectedCard.resNum);
-    mh += '</div></div>';
-  }
-  // 수정 모드 (당일배차방)
-  if (selectedCard && editingCard === selectedCard.id) {
-    mh += '<div class="edit-box">';
-    mh += '<div class="edit-box-title">✏️ 카드 수정</div>';
-    mh += '<div class="edit-label">꼬리 1줄 (제목)</div>';
-    mh += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(selectedCard.title1||'')+'</textarea>';
-    mh += '<div class="edit-label">꼬리 2줄 (채널)</div>';
-    mh += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(selectedCard.title2||'')+'</textarea>';
-    mh += '<div class="edit-label">카드 본문 전체</div>';
-    mh += '<textarea class="edit-ta" id="edit-body" rows="8">'+esc(selectedCard.body||'')+'</textarea>';
-    mh += '<div class="edit-btns">';
-    mh += '<button class="btn-save" onclick="saveEdit(\''+selectedCard.id+'\')" >💾 저장</button>';
-    mh += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
-    mh += '</div></div>';
-  } else if (selectedCard) {
-    mh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+selectedCard.id+'\')" >✏️ 카드 수정</button></div>';
+    var _fc = selectedCard.body || selectedCard.full || '';
+    mh += '<div style="font-size:10px;font-weight:700;color:#888;margin:8px 0 4px">📋 선택된 콜카드 전체</div>';
+    mh += '<pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.8;color:#333;background:#fff;border:1px solid #ddd;border-radius:6px;padding:9px;overflow-y:auto;font-family:Malgun Gothic,sans-serif;flex:1">'+esc(_fc)+'</pre>';
+  } else {
+    mh += '<div style="text-align:center;color:#ccc;font-size:12px;padding:30px 0">← 카드를 선택하세요</div>';
   }
   mh += '</div>';
   M.innerHTML = mh;
