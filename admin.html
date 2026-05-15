@@ -521,6 +521,9 @@ function renderBaecha(container) {
   mh += '<div class="t2-mid-body">';
   mh += '<textarea class="ta-box" id="baecha-ta" placeholder="701. 김종희&#10;702. 조재현&#10;703. 홍기조&#10;...">'+esc(baechaText)+'</textarea>';
   mh += '<div class="t2-btn-row"><button class="btn-match" onclick="doAutoMatch()">자동 매칭</button><button class="btn-reset" onclick="doResetMatch()">↩ 되돌리기</button></div>';
+  if (selectedCard) {
+    mh += '<div style="text-align:right;margin-top:4px"><button class="btn-edit" onclick="openEdit(window.currentEditId)">✏️ 카드 수정</button></div>';
+  }
 
   if (selectedCard) {
     var _fc = selectedCard.body || selectedCard.full || '';
@@ -819,8 +822,15 @@ function doAutoMatch(){
   var ta=document.getElementById('baecha-ta');
   if(!ta)return;
   baechaText=ta.value;
-  var list=allData.filter(function(r){return r.status==='확정';});
-  list.sort(function(a,b){return(a.rideHHMM||'').localeCompare(b.rideHHMM||'');});
+  // 반드시 renderBaecha와 동일한 필터+정렬 적용
+  var list=allData.filter(function(r){
+    if(r.status!=='확정') return false;
+    if(baechaDateFilter && r.rideDate!==baechaDateFilter) return false;
+    return true;
+  });
+  list.sort(function(a,b){
+    return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
   ta.value.split('\n').forEach(function(line){
     var m=line.match(/^(\d+)[.\s]\s*(.+)/);
     if(!m)return;
