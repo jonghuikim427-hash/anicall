@@ -540,7 +540,7 @@ function renderBaecha(container) {
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
       if (dm.driver) {
-        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(dm.driver,this)" title="클릭시 이름 복사">'+esc(dm.driver)+'</button>';
+        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(\'' + (dm.driver||'').replace(/'/g,'') + '\',this)" title="클릭시 이름 복사">' + esc(dm.driver) + '</button>';
       } else {
         lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
       }
@@ -1200,14 +1200,14 @@ window.onload = function() {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     db.ref('drivers').on('value', function(snapshot) {
-    allDrivers = [];
-    snapshot.forEach(function(child) {
-      var d = child.val();
-      d.id = child.key;
-      allDrivers.push(d);
+      allDrivers = [];
+      snapshot.forEach(function(child) {
+        var d = child.val();
+        d.id = child.key;
+        allDrivers.push(d);
+      });
+      if (currentTab === 5) render();
     });
-    if (currentTab === 5) render();
-  });
 
   db.ref('cards').on('value', function(snapshot) {
       allData = [];
