@@ -763,31 +763,43 @@ function renderBaecha(container) {
 // ══════════ 탭 3: 배차완료방 ══════════════════════════════
 function renderBaechaComplete(container) {
   var list = allData.filter(function(r) {
-    return r.status === '배차완료' || r.status === '재배차완료';
+    if (r.status !== '배차완료' && r.status !== '재배차완료') return false;
+    if (baechaCompleteDateFilter && r.rideDate !== baechaCompleteDateFilter) return false;
+    return true;
   }).sort(function(a,b) {
-    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+    return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
 
   var L = document.createElement('div'); L.className = 't3-left';
-  var lh = '<div class="sec-title">배차완료 카드 목록</div><div class="t3-list">';
+  var lh = '<div class="sec-title">배차완료 카드 목록</div>';
+  lh += '<div class="date-filter">';
+  lh += '<label>날짜:</label>';
+  lh += '<input type="date" value="'+baechaCompleteDateFilter+'" onchange="baechaCompleteDateFilter=this.value;render()">';
+  lh += '<button class="btn-all-date'+(baechaCompleteDateFilter===''?' on':'')+'" onclick="baechaCompleteDateFilter=\'\';render()">전체</button>';
+  lh += '</div>';
+  lh += '<div class="t3-list">';
   if (list.length === 0) { lh += '<div class="empty-msg">배차완료 없음</div>'; }
   else {
     list.forEach(function(r, idx) {
-      var num = 701 + idx;
       var isOn = selectedCard && selectedCard.id === r.id;
       lh += '<div class="bcd-row'+(isOn?' on':'')+'" onclick="selBaechaComplete(\''+r.id+'\')">';
-      lh += '<div class="bcd-num">'+num+'</div>';
-      lh += '<div class="bcd-title">'+esc((r.title1||'').split(' ').slice(0,4).join(' '))+'</div>';
+      lh += '<div class="bcd-num" style="font-size:10px">'+(r.rideHHMM?r.rideHHMM.slice(0,2)+':'+r.rideHHMM.slice(2):'-')+'</div>';
+      lh += '<div class="bcd-title">';
+      var _cw = getWarnings(r);
+      _cw.forEach(function(w){
+        lh += (w.indexOf('❗')===0?'<span style="color:#b71c1c;font-weight:700">❗</span>':'<span style="color:#e65100;font-weight:700">⚠️</span>');
+      });
+      lh += esc(cardLabel(r));
+      lh += '</div>';
       if (r.driverName) lh += '<div class="bcd-drv">· '+esc(r.driverName)+'</div>';
-      lh += '<button class="btn-bcd-ok">배차완료✓</button>';
-      lh += '<button class="btn-reb" onclick="event.stopPropagation();askReb(\''+r.id+'\')">재배차</button>';
+      lh += '<button class="btn-bcd-ok">완료✓</button>';
+      lh += '<button class="btn-reb" onclick="event.stopPropagation();askReb(\''+r.id+'\')" >재배차</button>';
       lh += '</div>';
     });
   }
   lh += '<div class="list-note">※ 실수로 완료 눌렀을 때 → [재배차] 버튼으로 되돌리기</div>';
   lh += '</div>';
   L.innerHTML = lh;
-
   // 가운데 - 폰 카드 미리보기
   var M = document.createElement('div'); M.className = 't3-mid';
   var mh = '<div class="phone-preview-title">선택된 콜카드 (조회용)</div>';
