@@ -791,7 +791,10 @@ function renderBaechaComplete(container) {
       });
       lh += esc(cardLabel(r));
       lh += '</div>';
-      if (r.driverName) lh += '<div class="bcd-drv">· '+esc(r.driverName)+'</div>';
+      if (r.driverName) {
+        var _drvDisp = r.driverHistory ? esc(r.driverHistory)+' >> '+esc(r.driverName) : esc(r.driverName);
+        lh += '<div class="bcd-drv">· '+_drvDisp+'</div>';
+      }
       lh += '<button class="btn-bcd-ok">완료✓</button>';
       lh += '<button class="btn-reb" onclick="event.stopPropagation();askReb(\''+r.id+'\')" >재배차</button>';
       lh += '</div>';
@@ -854,6 +857,20 @@ function renderBaechaComplete(container) {
     rh += '전화번호: '+esc(selectedCard.phone||'-')+'<br>';
     rh += '예약번호: '+esc(selectedCard.resNum||'-');
     rh += '</div></div>';
+
+    // 기사정보 복사 박스
+    var _drvTxt = '기사정보\n이름: '+esc(_dispPhone?selectedCard.driverName||'-':'-')+'\n전화: '+esc(_dispPhone)+'\n차종: '+esc(_dispVeh)+'\n차량번호: '+esc(_dispVNum);
+    var _drvCopyTxt = '기사정보\n이름: '+(selectedCard.driverName||'-')+'\n전화: '+_dispPhone+'\n차종: '+_dispVeh+'\n차량번호: '+_dispVNum;
+    rh += '<div class="msg-box org" style="margin-top:10px"><div class="msg-box-title">손님한테 줄 기사정보</div>';
+    rh += '<div class="msg-content" id="bcd-drv-info">'+_drvTxt+'</div>';
+    rh += '<button class="btn-copy" onclick="doCopy(\'bcd-drv-info\',\'bcd-drv-btn\',\'bcd-drv-note\')" id="bcd-drv-btn">복사</button>';
+    rh += '<span class="copy-note" id="bcd-drv-note"></span></div>';
+
+    // 재배차 안내문 박스
+    rh += '<div class="msg-box" style="margin-top:10px"><div class="msg-box-title">재배차 안내문</div>';
+    rh += '<div class="msg-content" id="bcd-reb-msg">기사님 차량문제로 재배차된 기사님 정보입니다. 기사님이 고객님께 따로 연락드릴 예정입니다.</div>';
+    rh += '<button class="btn-copy" onclick="doCopy(\'bcd-reb-msg\',\'bcd-reb-btn\',\'bcd-reb-note\')" id="bcd-reb-btn">복사</button>';
+    rh += '<span class="copy-note" id="bcd-reb-note"></span></div>';
   } else {
     rh += '<div class="empty-msg">← 카드를 선택하세요</div>';
   }
@@ -882,7 +899,7 @@ function renderCalendar(container) {
     var dow = new Date(calYear,calMonth,d).getDay();
     var isToday = dateStr2===todayStr();
     var cls='cal-cell'+(isToday?' today':'')+(dow===0?' sun':'')+(dow===6?' sat':'');
-    h+='<td class="'+cls+'">';
+    h+='<td class="'+cls+'" onclick="calDayClick(\''+dateStr2+'\')" style="cursor:pointer">';
     h+='<div class="cal-day">'+d+'</div>';
     var dayCards = allData.filter(function(r){return r.rideDate===dateStr2;});
     dayCards.slice(0,3).forEach(function(r){
@@ -1057,6 +1074,27 @@ function callDriver(btn) {
 function openDriverKakaoByPhone(phone) {
   if (!phone) { alert('전화번호가 없어요'); return; }
   location.href = 'kakaotalk://launch?p='+phone.replace(/[^0-9]/g,'');
+}
+
+function calDayClick(dateStr) {
+  var popup = document.getElementById('cal-popup');
+  if (popup) popup.remove();
+  var p = document.createElement('div');
+  p.id = 'cal-popup';
+  p.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #1a2a4a;border-radius:10px;padding:18px 22px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);text-align:center';
+  p.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a2a4a;margin-bottom:12px">'+dateStr+' 이동</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="goDateTab(2,\''+dateStr+'\');document.getElementById(\'cal-popup\').remove()" style="flex:1;padding:9px;background:#1a2a4a;color:#FFD700;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📋 배차방</button>'
+    + '<button onclick="goDateTab(3,\''+dateStr+'\');document.getElementById(\'cal-popup\').remove()" style="flex:1;padding:9px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✅ 완료방</button>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'cal-popup\').remove()" style="margin-top:8px;width:100%;padding:6px;background:#f0f0f0;border:none;border-radius:5px;cursor:pointer;font-size:11px">닫기</button>';
+  document.body.appendChild(p);
+}
+
+function goDateTab(tab, dateStr) {
+  if (tab === 2) baechaDateFilter = dateStr;
+  if (tab === 3) baechaCompleteDateFilter = dateStr;
+  go(tab);
 }
 
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
@@ -1264,7 +1302,16 @@ function askReb(id){
 }
 
 function doRebaecha(id){
-  db.ref('cards/'+id).update({status:'확정'}).then(function(){
+  var r = allData.find(function(x){ return x.id === id; });
+  var prevDriver = r ? (r.driverName || '') : '';
+  var updates = { status:'확정' };
+  // 이전 기사 이름 누적 (김종희 >> 조재현 형식)
+  if (prevDriver) {
+    var prevHistory = r.driverHistory || '';
+    updates.driverHistory = prevHistory ? prevHistory + ' >> ' + prevDriver : prevDriver;
+    updates.driverName = '';
+  }
+  db.ref('cards/'+id).update(updates).then(function(){
     rebTarget=null;selectedCard=null;
   });
 }
