@@ -1174,6 +1174,13 @@ function saveEdit(id) {
     body: newBody
   }).then(function() {
     editingCard = null;
+    // selectedCard 즉시 업데이트
+    if (selectedCard && selectedCard.id === id) {
+      selectedCard.title1 = newTitle1;
+      selectedCard.title2 = newTitle2;
+      selectedCard.tail = newTail;
+      selectedCard.body = newBody;
+    }
     render();
   });
 }
