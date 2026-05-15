@@ -1028,7 +1028,11 @@ function doConfirm(){
   var _t1 = selectedCard.title1 || '';
   var _oldT2 = selectedCard.title2 || '';
   var _newT2 = '채널>애니>' + nick;
-  var _newTail = _t1 + '\n' + _newT2;
+  // 경고줄 보존하면서 tail 재조합
+  var _warnLines = (selectedCard.tail||'').split('\n').filter(function(l){
+    return l.trim().indexOf('⚠️')===0 || l.trim().indexOf('❗')===0;
+  });
+  var _newTail = (_warnLines.length ? _warnLines.join('\n') + '\n' : '') + _t1 + '\n' + _newT2;
   // body에서 옛날 title2를 새 닉으로 교체
   var _newBody = (selectedCard.body || '').replace(_oldT2, _newT2);
   db.ref('cards/'+selectedCard.id).update({
