@@ -540,7 +540,7 @@ function renderBaecha(container) {
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
       if (dm.driver) {
-        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();openDriverKakao(\''+r.id+'\')" title="클릭시 기사 카톡 열기">'+esc(dm.driver)+'</button>';
+        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(dm.driver,this)" title="클릭시 이름 복사">'+esc(dm.driver)+'</button>';
       } else {
         lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
       }
@@ -784,25 +784,32 @@ function renderCalendar(container) {
 function renderDriverList(container) {
   var wrap = document.createElement('div'); wrap.className = 'drv-list-wrap';
   var h = '';
-  // 추가 폼
-  h += '<div class="drv-add-form">';
-  h += '<span style="font-size:12px;font-weight:700;color:#1a2a4a;flex-shrink:0">➕ 기사 추가</span>';
-  h += '<input class="drv-inp" id="new-drv-name" type="text" placeholder="이름" style="width:90px">';
-  h += '<input class="drv-inp" id="new-drv-phone" type="text" placeholder="전화번호 (숫자만)" style="width:130px">';
-  h += '<button class="btn-drv-add" onclick="addDriver()">추가</button>';
-  h += '</div>';
+
+  // 붙여넣기 파싱 박스
+  h += '<div class="drv-paste-box">';
+  h += '<div class="drv-paste-title">📋 기사 카드 붙여넣기 → 자동입력</div>';
+  h += '<textarea class="drv-paste-ta" id="drv-paste-ta" placeholder="기사 카드 내용을 붙여넣으세요..." oninput="parseDrvCard()"></textarea>';
+  h += '<div class="drv-preview" id="drv-preview">';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">이름</span><input class="drv-preview-inp" id="p-name" placeholder="이름"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">전화번호</span><input class="drv-preview-inp" id="p-phone" placeholder="전화번호"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">차종</span><input class="drv-preview-inp" id="p-vehicle" placeholder="차종"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">차량번호</span><input class="drv-preview-inp" id="p-vnum" placeholder="차량번호"></div>';
+  h += '<button class="btn-drv-confirm" onclick="confirmAddDriver()">✅ 기사 등록</button>';
+  h += '</div></div>';
+
   // 기사 목록
   var drivers = allDrivers || [];
   if (drivers.length === 0) {
-    h += '<div style="text-align:center;color:#ccc;padding:40px;font-size:13px">등록된 기사가 없어요<br>위에서 추가해주세요</div>';
+    h += '<div style="text-align:center;color:#ccc;padding:40px;font-size:13px">등록된 기사가 없어요<br>위에서 붙여넣어 추가해주세요</div>';
   } else {
     h += '<div class="drv-list-card">';
     drivers.forEach(function(d) {
       h += '<div class="drv-row">';
-      h += '<div class="drv-name">'+esc(d.name||'')+'</div>';
+      h += '<div class="drv-name" style="cursor:pointer" onclick="copyText(' + JSON.stringify(d.name||'') + ',this)" title="클릭시 이름 복사">'+esc(d.name||'')+'</div>';
       h += '<div class="drv-phone">'+esc(d.phone||'')+'</div>';
-      h += '<button class="btn-drv-call" data-phone="' + (d.phone||'').replace(/[^0-9]/g,'') + '" onclick="testKakaoPhone(this)">📞 카톡 열기</button>';
-      h += '<button class="btn-drv-del" onclick="delDriver(' + JSON.stringify(d.id) + ')">삭제</button>';
+      h += '<div style="flex:1;font-size:11px;color:#555">'+esc(d.vehicle||'')+'</div>';
+      h += '<div style="font-size:11px;color:#555">'+esc(d.vehicleNum||'')+'</div>';
+      h += '<button class="btn-drv-del" onclick="delDriver('+JSON.stringify(d.id)+')">삭제</button>';
       h += '</div>';
     });
     h += '</div>';
