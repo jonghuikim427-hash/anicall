@@ -1113,11 +1113,9 @@ function doAutoMatch(){
     var mo = ow.match(/^(\d+)[.\s]\s*(.+)/);
     if (!mo) return;
     var no = parseInt(mo[1]);
-    if (no >= 701 && no <= 700 + list.length) {
-      var ro = list[no - 701];
-      if (ro && driverMap[ro.id] && driverMap[ro.id].driver) {
-        overwriteList.push(no + '번: ' + driverMap[ro.id].driver + ' -> ' + mo[2].trim());
-      }
+    var ro = list.find(function(r){ return r.baechaNum === no; });
+    if (ro && driverMap[ro.id] && driverMap[ro.id].driver) {
+      overwriteList.push(no + '번: ' + driverMap[ro.id].driver + ' -> ' + mo[2].trim());
     }
   });
   if (overwriteList.length > 0) {
@@ -1129,12 +1127,13 @@ function doAutoMatch(){
     var m=line.match(/^(\d+)[.\s]\s*(.+)/);
     if(!m)return;
     var num=parseInt(m[1]),name=m[2].trim();
-    if(num>=701&&num<=700+list.length){
-      var r=list[num-701];
-      if(r){
-        if(!driverMap[r.id])driverMap[r.id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
-        driverMap[r.id].driver=name;
-      }
+    // baechaNum으로 매칭
+    var r = list.find(function(x){ return x.baechaNum === num; });
+    // baechaNum 없으면 기존 701+index 방식으로 폴백
+    if (!r && num>=701 && num<=700+list.length) r = list[num-701];
+    if(r){
+      if(!driverMap[r.id])driverMap[r.id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+      driverMap[r.id].driver=name;
     }
   });
   // 동명이인 경고
