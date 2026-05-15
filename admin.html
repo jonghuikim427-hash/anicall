@@ -788,7 +788,7 @@ function renderDriverList(container) {
       h += '<div class="drv-row">';
       h += '<div class="drv-name">'+esc(d.name||'')+'</div>';
       h += '<div class="drv-phone">'+esc(d.phone||'')+'</div>';
-      h += '<button class="btn-drv-call" data-phone="' + _ph + '" onclick="testKakaoPhone(this)">📞 카톡 열기</button>';
+      h += '<button class="btn-drv-call" data-phone="' + (d.phone||'').replace(/[^0-9]/g,'') + '" onclick="testKakaoPhone(this)">📞 카톡 열기</button>';
       h += '<button class="btn-drv-del" onclick="delDriver(' + JSON.stringify(d.id) + ')">삭제</button>';
       h += '</div>';
     });
