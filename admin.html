@@ -1264,6 +1264,9 @@ function genBaechaList() {
 
   list.forEach(function(r) {
     var title1 = r.title1 || '';
+    // title1 파싱 (먼저 선언)
+    var title1Parts = title1.split(' ');
+
     // 차종 추출
     var vehType = title1Parts.length >= 1 ? title1Parts[0] : '';
     var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜' : vehType === '쏠' ? '쏠라티' : '';
@@ -1289,7 +1292,6 @@ function genBaechaList() {
     var timeStr = hhmm ? hhmm.slice(0,2) + ':' + hhmm.slice(2) : '';
 
     // 출발지: title1에서 지역명 추출 (중 출 수원 26... → 수원)
-    var title1Parts = (r.title1||'').split(' ');
     var addrShort = title1Parts.length >= 3 ? title1Parts[2] : (r.address||'').split(' ')[0];
 
     // 공항
