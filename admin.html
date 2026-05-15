@@ -255,6 +255,7 @@ var editingCard = null;
 var allDrivers = [];
 var baechaDateFilter = '';
 var baechaNumStart = 31;
+var baechaSortByNum = false; // false=탑승시간순, true=번호순
 
 var TAB_HDRS = [
   '① 확정대기 최신방',
@@ -536,6 +537,7 @@ function renderBaecha(container) {
   lh += '<span style="margin-left:8px;font-size:10px;color:#888;flex-shrink:0">시작번호:</span>';
   lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
   lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
+  lh += '<button onclick="toggleBaechaSort()" style="padding:3px 10px;background:'+(baechaSortByNum?'#e65100':'#888')+';color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">'+(baechaSortByNum?'번호순':'시간순')+'</button>';
   if (_usedNums.length > 0) lh += '<span style="font-size:10px;color:#2e7d32;margin-left:4px">마지막: '+Math.max.apply(null,_usedNums)+'번</span>';
   lh += '</div>';
   lh += '<div class="t2-list">';
@@ -1231,6 +1233,11 @@ function openDriverKakao(id) {
     copyText(driverName, null);
     alert('기사 목록에 전화번호가 없어요.\n이름이 복사됐으니 카톡에서 검색해주세요: ' + driverName);
   }
+}
+
+function toggleBaechaSort() {
+  baechaSortByNum = !baechaSortByNum;
+  render();
 }
 
 function doNumbering() {
