@@ -1230,6 +1230,11 @@ window.onload = function() {
         card.id = child.key;
         allData.push(card);
       });
+      // selectedCard 실시간 갱신
+      if (selectedCard) {
+        var updated = allData.find(function(x){ return x.id === selectedCard.id; });
+        if (updated) selectedCard = updated;
+      }
       autoMoveOld();
       render();
       var el = document.getElementById('last-up');
