@@ -815,8 +815,8 @@ function delDriver(id) {
 
 function testKakaoPhone(btn) {
   var phone = btn.getAttribute('data-phone');
+  alert('버튼 클릭됨! 전화번호: ' + phone);
   if (!phone) { alert('전화번호 없음'); return; }
-  // 방법 1: launch?p= (전화번호)
   location.href = 'kakaotalk://launch?p=' + phone;
 }
 
