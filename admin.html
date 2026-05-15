@@ -646,12 +646,32 @@ function renderBaecha(container) {
   }
   M.innerHTML = mh;
 
-  // 오른쪽 - 메시지 복사 3종
+  // 오른쪽 패널
   var currentEditId = selectedCard ? selectedCard.id : '';
   window.currentEditId = currentEditId;
   var Rp = document.createElement('div'); Rp.className = 't2-right';
   var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
   var rh2 = '';
+
+  // 리스트 모드일 때 카드 전체 내용 표시
+  if (baechaListMode && selectedCard) {
+    rh2 += '<div style="font-size:11px;font-weight:700;color:#1a2a4a;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e0e0e0">📋 선택된 콜카드 전체</div>';
+    var _warns2 = warnBadges(selectedCard);
+    if (_warns2) rh2 += '<div style="margin-bottom:6px">'+_warns2+'</div>';
+    rh2 += '<div style="font-size:13px;font-weight:700;color:#1a2a4a;margin-bottom:2px">'+esc(selectedCard.title1||'')+'</div>';
+    rh2 += '<div style="font-size:11px;color:#888;margin-bottom:8px">'+esc(selectedCard.title2||'')+'</div>';
+    var _fc2 = selectedCard.body || '';
+    if (_fc2.startsWith(selectedCard.tail||'')) {
+      _fc2 = _fc2.slice((selectedCard.tail||'').length).replace(/^\n/,'');
+    }
+    rh2 += '<pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.8;color:#333;background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:9px;font-family:Malgun Gothic,sans-serif">'+esc(_fc2)+'</pre>';
+    Rp.innerHTML = rh2;
+    container.appendChild(L);
+    container.appendChild(M);
+    container.appendChild(Rp);
+    return;
+  }
+
   // 수정 모드
   if (selectedCard && editingCard === selectedCard.id) {
     rh2 += '<div class="edit-box" style="margin-bottom:12px">';
