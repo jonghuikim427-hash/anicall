@@ -620,7 +620,11 @@ function renderBaecha(container) {
   // 손님에게 줄 기사정보
   var drvInfo = '';
   if (selectedCard && dm2.driver) {
-    drvInfo = '이름: '+(dm2.driver||'')+'\n전화: '+(dm2.driverPhone||'010-xxxx-xxxx')+'\n차종: '+(dm2.driverVehicle||'-')+'\n차량번호: '+(dm2.driverVehicleNum||'-');
+  var _foundDrv = allDrivers.find(function(d){ return d.name === (dm2.driver||''); });
+    var _dPhone = dm2.driverPhone || (_foundDrv && _foundDrv.phone) || '-';
+    var _dVeh = dm2.driverVehicle || (_foundDrv && _foundDrv.vehicle) || '-';
+    var _dVNum = dm2.driverVehicleNum || (_foundDrv && _foundDrv.vehicleNum) || '-';
+    drvInfo = '이름: '+(dm2.driver||'')+'\n전화: '+_dPhone+'\n차종: '+_dVeh+'\n차량번호: '+_dVNum;
   }
 
   // 기사에게 줄 콜카드 복사
@@ -805,10 +809,10 @@ function renderDriverList(container) {
     h += '<div class="drv-list-card">';
     drivers.forEach(function(d) {
       h += '<div class="drv-row">';
-      h += '<div class="drv-name" style="cursor:pointer" onclick="copyText(' + JSON.stringify(d.name||'') + ',this)" title="클릭시 이름 복사">'+esc(d.name||'')+'</div>';
-      h += '<div class="drv-phone">'+esc(d.phone||'')+'</div>';
-      h += '<div style="flex:1;font-size:11px;color:#555">'+esc(d.vehicle||'')+'</div>';
-      h += '<div style="font-size:11px;color:#555">'+esc(d.vehicleNum||'')+'</div>';
+      h += '<div class="drv-name" style="cursor:pointer;min-width:60px" onclick="copyText(' + JSON.stringify(d.name||'') + ',this)" title="클릭시 이름 복사">'+esc(d.name||'')+'</div>';
+      h += '<div style="font-size:11px;color:#888;min-width:95px">'+esc(d.phone||'')+'</div>';
+      h += '<div style="font-size:11px;color:#555;flex:1;min-width:80px">'+esc(d.vehicle||'-')+'</div>';
+      h += '<div style="font-size:11px;color:#555;min-width:80px">'+esc(d.vehicleNum||'-')+'</div>';
       h += '<button class="btn-drv-del" onclick="delDriver(\'' + d.id + '\')">삭제</button>';
       h += '</div>';
     });
