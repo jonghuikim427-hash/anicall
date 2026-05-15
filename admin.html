@@ -172,6 +172,21 @@ table.cal th:last-child{color:#1565c0}
 .btn-all-date{padding:3px 9px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer;color:#555}
 .btn-all-date.on{background:#1a2a4a;color:#FFD700;border-color:#1a2a4a;font-weight:700}
 .date-cnt{font-size:10px;color:#888;margin-left:4px}
+/* 기사목록 */
+.drv-list-wrap{flex:1;overflow-y:auto;padding:14px;background:#f5f5f5}
+.drv-list-card{background:#fff;border-radius:8px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.drv-add-form{background:#fff;border-radius:8px;padding:14px;margin-bottom:14px;border:2px solid #FFD700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.drv-inp{padding:7px 10px;border:1px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit;outline:none}
+.drv-inp:focus{border-color:#1a2a4a}
+.btn-drv-add{padding:7px 14px;background:#1a2a4a;color:#FFD700;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer}
+.drv-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.drv-row:last-child{border-bottom:none}
+.drv-name{font-size:13px;font-weight:700;color:#1a2a4a;min-width:80px}
+.drv-phone{font-size:12px;color:#555;flex:1}
+.btn-drv-call{padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:4px;font-size:11px;cursor:pointer;font-weight:700}
+.btn-drv-call:hover{background:#c8e6c9}
+.btn-drv-del{padding:5px 8px;background:#fff;color:#e53935;border:1px solid #ef9a9a;border-radius:4px;font-size:11px;cursor:pointer}
+.btn-drv-del:hover{background:#ffebee}
 /* 배차 드라이버 입력 확장 */
 .bc-row-inputs{display:flex;gap:3px;align-items:center;flex-shrink:0}
 .bc-dphone{width:72px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
@@ -194,6 +209,7 @@ table.cal th:last-child{color:#1565c0}
     <button class="tab" onclick="go(2)">당일배차방<span class="tc" id="cnt2">0</span></button>
     <button class="tab" onclick="go(3)">배차완료방<span class="tc" id="cnt3">0</span></button>
     <button class="tab" onclick="go(4)">달력</button>
+    <button class="tab" onclick="go(5)">기사목록</button>
   </div>
   <div class="tab-hdr" id="tab-hdr">① 확정대기 최신방</div>
   <div class="main" id="main">
@@ -223,6 +239,7 @@ var rebTarget = null;
 var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
 var editingCard = null;
+var allDrivers = [];
 var baechaDateFilter = '';
 
 var TAB_HDRS = [
@@ -230,7 +247,8 @@ var TAB_HDRS = [
   '② 확정대기 오래된방 (30분+ 경과 · 24시간 후 자동삭제)',
   '③ 당일 배차방',
   '④ 당일 배차완료방',
-  '⑤ 달력'
+  '⑤ 달력',
+  '⑥ 기사목록'
 ];
 
 var db = null;
@@ -272,7 +290,8 @@ function render() {
   if (currentTab === 0 || currentTab === 1) renderConfirm(m);
   else if (currentTab === 2) renderBaecha(m);
   else if (currentTab === 3) renderBaechaComplete(m);
-  else renderCalendar(m);
+  else if (currentTab === 4) renderCalendar(m);
+  else renderDriverList(m);
 }
 
 function todayStr() {
@@ -749,6 +768,62 @@ function renderCalendar(container) {
   container.appendChild(outer);
 }
 
+function renderDriverList(container) {
+  var wrap = document.createElement('div'); wrap.className = 'drv-list-wrap';
+  var h = '';
+  // 추가 폼
+  h += '<div class="drv-add-form">';
+  h += '<span style="font-size:12px;font-weight:700;color:#1a2a4a;flex-shrink:0">➕ 기사 추가</span>';
+  h += '<input class="drv-inp" id="new-drv-name" type="text" placeholder="이름" style="width:90px">';
+  h += '<input class="drv-inp" id="new-drv-phone" type="text" placeholder="전화번호 (숫자만)" style="width:130px">';
+  h += '<button class="btn-drv-add" onclick="addDriver()">추가</button>';
+  h += '</div>';
+  // 기사 목록
+  var drivers = allDrivers || [];
+  if (drivers.length === 0) {
+    h += '<div style="text-align:center;color:#ccc;padding:40px;font-size:13px">등록된 기사가 없어요<br>위에서 추가해주세요</div>';
+  } else {
+    h += '<div class="drv-list-card">';
+    drivers.forEach(function(d) {
+      h += '<div class="drv-row">';
+      h += '<div class="drv-name">'+esc(d.name||'')+'</div>';
+      h += '<div class="drv-phone">'+esc(d.phone||'')+'</div>';
+      var _ph = (d.phone||'').replace(/[^0-9]/g,''); h += '<button class="btn-drv-call" onclick="window.open(' + JSON.stringify('kakaotalk://launch?p=' + _ph) + ')">📞 카톡 열기</button>';
+      h += '<button class="btn-drv-del" onclick="delDriver(' + JSON.stringify(d.id) + ')">삭제</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  wrap.innerHTML = h;
+  container.appendChild(wrap);
+}
+
+function addDriver() {
+  var name = (document.getElementById('new-drv-name')||{}).value||'';
+  var phone = (document.getElementById('new-drv-phone')||{}).value||'';
+  if (!name.trim()||!phone.trim()) { alert('이름과 전화번호를 입력해주세요'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+  db.ref('drivers').push({ name:name.trim(), phone:phone });
+  document.getElementById('new-drv-name').value='';
+  document.getElementById('new-drv-phone').value='';
+}
+
+function delDriver(id) {
+  if (!confirm('삭제할까요?')) return;
+  db.ref('drivers/'+id).remove();
+}
+
+function callDriver(btn) {
+  var phone = btn.getAttribute('data-phone');
+  if (!phone) { alert('전화번호 없음'); return; }
+  window.open('kakaotalk://launch?p=' + phone);
+}
+
+function openDriverKakaoByPhone(phone) {
+  if (!phone) { alert('전화번호가 없어요'); return; }
+  window.open('kakaotalk://launch?p='+phone.replace(/[^0-9]/g,''));
+}
+
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
 
@@ -916,21 +991,17 @@ function copyKakao(id, nick) {
 
 function openDriverKakao(id) {
   var r = allData.find(function(x){ return x.id === id; });
-  if (!r || !r.driverKakao) {
-    alert('기사 카톡ID가 없어요. 배차완료 후 사용 가능해요.');
-    return;
+  var driverName = r ? (r.driverName || driverMap[id] && driverMap[id].driver || '') : '';
+  if (!driverName) { alert('기사 이름이 없어요'); return; }
+  // 기사 목록에서 전화번호 찾기
+  var found = allDrivers.find(function(d){ return d.name === driverName; });
+  if (found && found.phone) {
+    window.open('kakaotalk://launch?p='+found.phone.replace(/[^0-9]/g,''));
+  } else {
+    // 이름으로 복사
+    copyText(driverName, null);
+    alert('기사 목록에 전화번호가 없어요.\n이름이 복사됐으니 카톡에서 검색해주세요: ' + driverName);
   }
-  window.open('kakaotalk://launch', '_blank');
-  // 카카오톡 오픈채팅 or 친구 검색은 정책상 직접열기 불가
-  // 대신 기사 카톡ID 복사
-  var el = document.createElement('textarea');
-  el.value = r.driverKakao;
-  el.style.cssText = 'position:fixed;top:-9999px';
-  document.body.appendChild(el);
-  el.select();
-  try { document.execCommand('copy'); } catch(e) {}
-  document.body.removeChild(el);
-  alert('기사 카톡ID 복사됨: ' + r.driverKakao + '\n카톡 검색창에 붙여넣으세요!');
 }
 
 function setBaechaDate(v) {
@@ -992,7 +1063,17 @@ window.onload = function() {
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
-    db.ref('cards').on('value', function(snapshot) {
+    db.ref('drivers').on('value', function(snapshot) {
+    allDrivers = [];
+    snapshot.forEach(function(child) {
+      var d = child.val();
+      d.id = child.key;
+      allDrivers.push(d);
+    });
+    if (currentTab === 5) render();
+  });
+
+  db.ref('cards').on('value', function(snapshot) {
       allData = [];
       snapshot.forEach(function(child) {
         var card = child.val();
