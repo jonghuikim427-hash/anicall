@@ -1,1 +1,1585 @@
 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>애니콜택시 관리자</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+body{background:#f0f0f0;font-size:13px}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.hdr{background:#1a2a4a;color:#FFD700;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr h1{font-size:15px;font-weight:700}
+.btn-rfs{background:rgba(255,215,0,0.2);border:1px solid #FFD700;color:#FFD700;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+.last-up{font-size:10px;color:rgba(255,215,0,0.7)}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e0e0e0;flex-shrink:0}
+.tab{flex:1;padding:8px 2px;text-align:center;cursor:pointer;font-size:10px;color:#888;border:none;border-bottom:3px solid transparent;background:none;font-family:inherit;line-height:1.3}
+.tab.on{color:#1a2a4a;border-bottom-color:#FFD700;font-weight:700}
+.tc{display:inline-block;background:#e0e0e0;color:#666;border-radius:10px;padding:1px 5px;font-size:9px;margin-left:2px}
+.tab.on .tc{background:#FFD700;color:#1a2a4a}
+.tab-hdr{background:#1a2a4a;color:#fff;padding:6px 14px;font-size:13px;font-weight:700;flex-shrink:0}
+.main{flex:1;display:flex;overflow:hidden}
+.t01-left{width:550px!important;min-width:400px;display:flex;flex-direction:column;border-right:1px solid #ddd;background:#f7f7f7;overflow:hidden}
+.t01-right{flex:1;display:flex;flex-direction:column;background:#fff;overflow:hidden}
+.pin-area{background:#fff;border-bottom:2px solid #e0e0e0;padding:8px;flex-shrink:0}
+.pin-title{font-size:10px;font-weight:700;color:#1a2a4a;margin-bottom:5px}
+.pin-card{border:2px solid #1a2a4a;border-radius:7px;padding:8px 10px;cursor:pointer;background:#eef2ff}
+.pin-tail{font-size:14px;font-weight:700;color:#1a2a4a;line-height:1.3;margin-bottom:3px}
+.pin-sub{font-size:10px;color:#777;line-height:1.7}
+.pin-dup{display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap}
+.pin-dup-lbl{font-size:10px;color:#aaa;flex-shrink:0}
+.dup-btn{padding:2px 7px;background:#fff3e0;border:1px solid #ffcc80;border-radius:10px;font-size:10px;color:#e65100;cursor:pointer}
+.pin-empty{text-align:center;color:#ccc;font-size:11px;padding:8px 0}
+.list-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.list-title{font-size:10px;font-weight:700;color:#888;padding:5px 9px;background:#f0f0f0;border-bottom:1px solid #e0e0e0;flex-shrink:0}
+.list-body{flex:1;overflow-y:auto}
+.lc{display:flex;align-items:center;padding:7px 9px;border-bottom:1px solid #f0f0f0;cursor:pointer;gap:5px;background:#fff;transition:background .1s}
+.lc:hover{background:#f5f7ff}
+.lc.on{background:#eef2ff;border-left:3px solid #1a2a4a}
+.lc-new{background:#e8fce8!important}
+.lc-label{flex:1;font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge-new{background:#1a2a4a;color:#FFD700;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;flex-shrink:0}
+.badge-wait{background:#e3f2fd;color:#1565c0;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0}
+.elapsed{border-radius:10px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0;white-space:nowrap}
+.e1{background:#fff3e0;color:#e65100}
+.e2{background:#fce4ec;color:#b71c1c}
+.list-note{font-size:10px;color:#aaa;text-align:center;padding:5px;border-top:1px solid #eee;flex-shrink:0}
+.rp-search{padding:7px 10px;border-bottom:1px solid #eee;flex-shrink:0}
+.rp-search input{width:100%;padding:6px 12px;border:1px solid #ccc;border-radius:20px;font-size:11px;outline:none;font-family:inherit}
+.rp-search input:focus{border-color:#1a2a4a}
+.rp-body{flex:1;overflow-y:auto;padding:12px}
+.det-title{font-size:12px;font-weight:700;color:#1a2a4a;padding-bottom:6px;border-bottom:2px solid #e0e0e0;margin-bottom:8px}
+.det-tail-line{font-size:13px;font-weight:700;color:#1a2a4a;margin-bottom:2px}
+.det-channel{font-size:11px;color:#888;margin-bottom:8px}
+.det-item{font-size:12px;color:#444;line-height:2;white-space:pre-wrap;word-break:break-all}
+.det-empty{text-align:center;color:#ccc;padding:50px 20px;font-size:13px}
+.kk-section{margin-top:12px;padding-top:10px;border-top:1px solid #eee}
+.kk-label{font-size:11px;font-weight:700;color:#1a2a4a;margin-bottom:5px}
+.kk-inp{width:100%;padding:9px 11px;border:1.5px solid #FFD700;border-radius:7px;font-size:13px;font-family:inherit;outline:none}
+.kk-inp:focus{border-color:#c8880a}
+.kk-btns{display:flex;gap:6px;margin-top:7px}
+.btn-confirm{flex:2;padding:9px;background:#1a2a4a;color:#FFD700;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-confirm:disabled{background:#ccc;color:#fff;cursor:not-allowed}
+.btn-close2{flex:1;padding:9px;background:#f0f0f0;color:#666;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer}
+/* Tab 2 */
+.t2-left{width:500px;border-right:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.t2-mid{width:360px;border-right:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden;background:#f8f8f8}
+.t2-right{flex:1;overflow-y:auto;padding:10px;background:#fff}
+.sec-title{font-size:10px;font-weight:700;color:#888;padding:6px 10px;background:#f0f0f0;border-bottom:1px solid #e0e0e0;flex-shrink:0}
+.t2-list{flex:1;overflow-y:auto}
+.bc-row{display:flex;align-items:center;padding:6px 7px;border-bottom:1px solid #f0f0f0;gap:4px;cursor:pointer;background:#fff;transition:background .1s}
+.bc-row:hover{background:#f5f7ff}
+.bc-row.on{background:#eef2ff}
+.bc-num{width:28px;height:28px;background:#1a2a4a;color:#FFD700;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.bc-label{flex:1;font-size:11px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.bc-drv{width:68px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:11px;font-family:inherit;background:#fff;text-align:center}
+.bc-drv.filled{background:#fff9c4;border-color:#f5b800;font-weight:700}
+.bc-kak{width:55px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:11px;font-family:inherit;background:#fff;text-align:center}
+.bc-done{padding:4px 8px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.t2-mid-body{flex:1;display:flex;flex-direction:column;padding:8px;overflow-y:auto}
+.ta-box{width:100%;height:90px;padding:7px;border:1px solid #ccc;border-radius:6px;font-size:11px;font-family:'Malgun Gothic',sans-serif;resize:none;outline:none}
+.ta-box:focus{border-color:#1a2a4a}
+.t2-btn-row{display:flex;gap:6px;margin-top:6px}
+.btn-match{flex:1;padding:7px;background:#1a2a4a;color:#FFD700;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-reset{flex:1;padding:7px;background:#fff;color:#555;border:1px solid #ccc;border-radius:5px;font-size:12px;cursor:pointer}
+.card-preview{margin-top:10px;background:#fff;border:1px solid #ddd;border-radius:7px;padding:9px}
+.card-preview-title{font-size:10px;font-weight:700;color:#888;margin-bottom:5px}
+.card-preview-body{font-size:11px;color:#333;line-height:1.8}
+.msg-box{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:10px}
+.msg-box-title{font-size:11px;font-weight:700;color:#555;margin-bottom:6px}
+.msg-content{font-size:11px;color:#444;line-height:1.7;padding:7px;background:#f8f8f8;border-radius:5px;white-space:pre-wrap}
+.msg-ta{width:100%;padding:7px;border:1px solid #eee;border-radius:5px;font-size:11px;font-family:inherit;resize:none;height:65px}
+.msg-box.org{border-color:#ffcc80}
+.msg-box.org .msg-box-title{color:#e65100}
+.btn-copy{margin-top:6px;padding:5px 12px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;cursor:pointer}
+.btn-copy.done{background:#22c55e;color:#fff}
+.copy-note{margin-left:8px;font-size:10px;color:#aaa}
+/* Tab 3 */
+.t3-left{width:35%;border-right:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.t3-mid{width:24%;border-right:1px solid #ddd;display:flex;flex-direction:column;overflow:hidden;padding:10px;background:#f8f8f8}
+.t3-right{flex:1;overflow-y:auto;padding:10px;background:#fff}
+.t3-list{flex:1;overflow-y:auto}
+.bcd-row{display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid #f0f0f0;cursor:pointer;gap:6px;background:#fff;transition:background .1s}
+.bcd-row:hover{background:#f5faf5}
+.bcd-row.on{background:#e8f5e9}
+.bcd-num{width:30px;height:30px;background:#2e7d32;color:#fff;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.bcd-title{flex:1;font-size:12px;font-weight:700;color:#1a2a4a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcd-drv{font-size:11px;color:#2e7d32;font-weight:700;flex-shrink:0}
+.btn-bcd-ok{padding:3px 8px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:4px;font-size:10px;cursor:default;font-weight:700;flex-shrink:0}
+.btn-reb{padding:3px 8px;background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:4px;font-size:10px;cursor:pointer;font-weight:700;flex-shrink:0}
+.btn-reb:hover{background:#ffe0b2}
+.reb-confirm{background:#fff8e1;border:2px solid #f5b800;border-radius:9px;padding:13px;margin-bottom:10px}
+.reb-confirm-title{font-size:13px;font-weight:700;color:#c8880a;margin-bottom:5px}
+.reb-confirm-sub{font-size:12px;color:#555;margin-bottom:11px;line-height:1.6}
+.reb-confirm-btns{display:flex;gap:8px}
+.btn-reb-yes{flex:1;padding:9px;background:#1a2a4a;color:#FFD700;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-reb-no{flex:1;padding:9px;background:#f0f0f0;color:#555;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.phone-preview-title{font-size:10px;font-weight:700;color:#888;margin-bottom:8px}
+.phone-card{background:#fff;border:2px solid #333;border-radius:16px;padding:14px 12px;min-height:200px;position:relative}
+.phone-card-head{width:50px;height:6px;background:#e0e0e0;border-radius:3px;margin:0 auto 14px}
+.phone-card-title{font-size:13px;font-weight:700;color:#1a2a4a;margin-bottom:6px}
+.phone-card-body{font-size:11px;color:#555;line-height:1.8;white-space:pre-wrap;word-break:break-all}
+.phone-card-empty{text-align:center;color:#ccc;font-size:11px;padding:40px 0}
+.info-box{background:#fff;border:2px solid #1a2a4a;border-radius:8px;padding:10px;margin-bottom:10px}
+.info-box-title{font-size:11px;font-weight:700;color:#1a2a4a;margin-bottom:6px}
+.info-box-body{font-size:12px;color:#333;line-height:1.9}
+.info-box.org{border-color:#ffcc80}
+.info-box.org .info-box-title{color:#e65100}
+/* Tab 4 */
+.cal-outer{flex:1;overflow-y:auto;padding:12px;background:#f5f5f5}
+.cal-wrap{background:#fff;border-radius:8px;padding:14px}
+.cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:15px;font-weight:700;color:#1a2a4a}
+.cal-nav-btn{padding:4px 11px;background:#f0f0f0;border:none;border-radius:4px;cursor:pointer;font-size:13px;margin-left:4px}
+.cal-nav-btn:hover{background:#ddd}
+table.cal{width:100%;border-collapse:collapse}
+table.cal th{text-align:center;font-size:11px;color:#888;padding:4px;font-weight:700}
+table.cal th:first-child{color:#e53935}
+table.cal th:last-child{color:#1565c0}
+.cal-cell{vertical-align:top;border:1px solid #eee;padding:4px;min-height:72px;cursor:pointer}
+.cal-cell:hover{background:#fafafa}
+.cal-cell.today{background:#fff9e6}
+.cal-day{font-size:11px;font-weight:700;color:#444}
+.cal-cell.sun .cal-day{color:#e53935}
+.cal-cell.sat .cal-day{color:#1565c0}
+.cal-entry{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:3px;padding:1px 3px;margin-top:2px}
+.cal-entry.wait{background:#bbdefb;color:#1a237e}
+.cal-entry.done{background:#c8e6c9;color:#1b5e20}
+.cal-more{font-size:10px;color:#aaa;margin-top:1px}
+.cal-legend{display:flex;gap:16px;padding-top:8px;border-top:1px solid #eee;margin-top:8px}
+.cal-leg{display:flex;align-items:center;gap:4px;font-size:11px;color:#666}
+.cal-leg-dot{width:14px;height:10px;border-radius:2px}
+.empty-msg{text-align:center;color:#ccc;font-size:12px;padding:30px 0}
+/* 수정 모드 */
+.edit-box{background:#fffde7;border:2px solid #f5b800;border-radius:8px;padding:12px;margin-top:10px}
+.edit-box-title{font-size:11px;font-weight:700;color:#c8880a;margin-bottom:8px}
+.edit-ta{width:100%;padding:7px;border:1px solid #e0c060;border-radius:5px;font-size:12px;font-family:'Malgun Gothic',sans-serif;resize:vertical;outline:none;background:#fff}
+.edit-ta:focus{border-color:#c8880a}
+.edit-label{font-size:10px;color:#888;margin-bottom:3px;margin-top:7px;font-weight:700}
+.edit-btns{display:flex;gap:6px;margin-top:9px}
+.btn-save{flex:2;padding:8px;background:#c8880a;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#a36800}
+.btn-cancel-edit{flex:1;padding:8px;background:#f0f0f0;color:#666;border:1px solid #ddd;border-radius:5px;font-size:12px;cursor:pointer}
+.btn-edit{padding:5px 12px;background:#fff8e1;color:#c8880a;border:1px solid #f5b800;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;float:right}
+.btn-edit:hover{background:#fff3cd}
+/* 날짜 필터 */
+.date-filter{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f0f0f0;border-bottom:1px solid #e0e0e0;flex-shrink:0}
+.date-filter label{font-size:10px;color:#666;font-weight:700;flex-shrink:0}
+.date-filter input[type=date]{padding:3px 6px;border:1px solid #ccc;border-radius:4px;font-size:11px;font-family:inherit;outline:none}
+.date-filter input[type=date]:focus{border-color:#1a2a4a}
+.btn-all-date{padding:3px 9px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer;color:#555}
+.btn-all-date.on{background:#1a2a4a;color:#FFD700;border-color:#1a2a4a;font-weight:700}
+.date-cnt{font-size:10px;color:#888;margin-left:4px}
+/* 기사목록 */
+.drv-paste-box{background:#fff;border:2px dashed #FFD700;border-radius:8px;padding:12px;margin-bottom:12px}
+.drv-paste-title{font-size:11px;font-weight:700;color:#c8880a;margin-bottom:6px}
+.drv-paste-ta{width:100%;height:80px;padding:7px;border:1px solid #ddd;border-radius:5px;font-size:11px;font-family:inherit;resize:none;outline:none}
+.drv-paste-ta:focus{border-color:#c8880a}
+.drv-preview{background:#f9f9f9;border:1px solid #eee;border-radius:5px;padding:8px;margin-top:6px;font-size:11px;color:#333;display:none}
+.drv-preview-row{display:flex;gap:6px;margin-bottom:3px;align-items:center}
+.drv-preview-label{color:#888;min-width:50px;font-size:10px}
+.drv-preview-val{font-weight:700;color:#1a2a4a}
+.drv-preview-inp{flex:1;padding:3px 6px;border:1px solid #ddd;border-radius:3px;font-size:11px;font-family:inherit;outline:none}
+.btn-drv-confirm{width:100%;padding:7px;background:#1a2a4a;color:#FFD700;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer;margin-top:7px}
+.drv-autocomplete{position:absolute;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:999;max-height:150px;overflow-y:auto;min-width:120px}
+.drv-autocomplete-item{padding:6px 10px;cursor:pointer;font-size:12px;color:#333}
+.drv-autocomplete-item:hover{background:#eef2ff;color:#1a2a4a}
+.drv-list-wrap{flex:1;overflow-y:auto;padding:14px;background:#f5f5f5}
+.drv-list-card{background:#fff;border-radius:8px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.drv-add-form{background:#fff;border-radius:8px;padding:14px;margin-bottom:14px;border:2px solid #FFD700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.drv-inp{padding:7px 10px;border:1px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit;outline:none}
+.drv-inp:focus{border-color:#1a2a4a}
+.btn-drv-add{padding:7px 14px;background:#1a2a4a;color:#FFD700;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer}
+.drv-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.drv-row:last-child{border-bottom:none}
+.drv-name{font-size:13px;font-weight:700;color:#1a2a4a;min-width:80px}
+.drv-phone{font-size:12px;color:#555;flex:1}
+.btn-drv-call{padding:5px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:4px;font-size:11px;cursor:pointer;font-weight:700}
+.btn-drv-call:hover{background:#c8e6c9}
+.btn-drv-del{padding:5px 8px;background:#fff;color:#e53935;border:1px solid #ef9a9a;border-radius:4px;font-size:11px;cursor:pointer}
+.btn-drv-del:hover{background:#ffebee}
+/* 배차 드라이버 입력 확장 */
+.bc-row-inputs{display:flex;gap:3px;align-items:center;flex-shrink:0}
+.bc-dphone{width:72px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
+.bc-dvtype{width:45px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
+.bc-dvnum{width:58px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <h1>🚖 애니콜택시 관리자</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="last-up" id="last-up"></span>
+      <button class="btn-rfs" onclick="manualRefresh()">↺ 새로고침</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="go(0)">확정대기 최신<span class="tc" id="cnt0">0</span></button>
+    <button class="tab" onclick="go(1)">확정대기 오래된거<span class="tc" id="cnt1">0</span></button>
+    <button class="tab" onclick="go(2)">당일배차방<span class="tc" id="cnt2">0</span></button>
+    <button class="tab" onclick="go(3)">배차완료방<span class="tc" id="cnt3">0</span></button>
+    <button class="tab" onclick="go(4)">달력</button>
+    <button class="tab" onclick="go(5)">기사목록</button>
+  </div>
+  <div class="tab-hdr" id="tab-hdr">① 확정대기 최신방</div>
+  <div class="main" id="main">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px">🔥 Firebase 연결 중...</div>
+  </div>
+</div>
+
+<script>
+// ── Firebase 설정 ──────────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyAYaOtA5ztXwUz-ZfSyQAvUt65Oe-GvmWE",
+  authDomain: "anicall-taxi.firebaseapp.com",
+  databaseURL: "https://anicall-taxi-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "anicall-taxi",
+  storageBucket: "anicall-taxi.firebasestorage.app",
+  messagingSenderId: "1043913713685",
+  appId: "1:1043913713685:web:e1ee0e61fd3f3f2332461c"
+};
+// ── 상태 ──────────────────────────────────────────────────
+var allData = [];
+var currentTab = 0;
+var selectedCard = null;
+var searchQuery = '';
+var driverMap = {};   // {id: {driver, kakao, driverPhone, driverVehicle, driverVehicleNum}}
+var baechaText = '';
+var rebTarget = null;
+var calYear = new Date().getFullYear();
+var calMonth = new Date().getMonth();
+var editingCard = null;
+var allDrivers = [];
+var baechaDateFilter = '';
+var baechaNumStart = 31;
+var baechaSortByNum = false; // false=탑승시간순, true=번호순
+var baechaListMode = null; // null=일반, 'view'=리스트보기, 'edit'=편집, 'final'=최종
+var baechaListText = ''; // 리스트 텍스트
+
+var TAB_HDRS = [
+  '① 확정대기 최신방',
+  '② 확정대기 오래된방 (30분+ 경과 · 24시간 후 자동삭제)',
+  '③ 당일 배차방',
+  '④ 당일 배차완료방',
+  '⑤ 달력',
+  '⑥ 기사목록'
+];
+
+var db = null;
+
+function manualRefresh() {
+  var el = document.getElementById('last-up');
+  if (el) el.textContent = '갱신됨 · ' + new Date().toLocaleTimeString('ko-KR');
+  render();
+}
+
+// ── 10분 경과 자동이동 ────────────────────────────────────
+function autoMoveOld() {
+  var now = Date.now();
+  allData.forEach(function(r) {
+    if (r.status !== '대기') return;
+    var t = r.createdAt || 0;
+    if ((now - t) > 30 * 60 * 1000) {
+      db.ref('cards/' + r.id).update({ status: '대기_오래됨' });
+    }
+  });
+}
+
+// ── 탭 전환 ───────────────────────────────────────────────
+function go(n) {
+  currentTab = n;
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.className = 'tab' + (i === n ? ' on' : '');
+  });
+  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null; copiedState = {}; baechaListMode = null;
+  render();
+}
+
+// ── 렌더 ──────────────────────────────────────────────────
+function render() {
+  updateCounts();
+  document.getElementById('tab-hdr').textContent = TAB_HDRS[currentTab];
+  var m = document.getElementById('main');
+  m.innerHTML = '';
+  if (currentTab === 0 || currentTab === 1) renderConfirm(m);
+  else if (currentTab === 2) renderBaecha(m);
+  else if (currentTab === 3) renderBaechaComplete(m);
+  else if (currentTab === 4) renderCalendar(m);
+  else renderDriverList(m);
+}
+
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + p2(d.getMonth()+1) + '-' + p2(d.getDate());
+}
+function p2(n) { return n < 10 ? '0'+n : ''+n; }
+
+function updateCounts() {
+  var c = [0,0,0,0];
+  var today = todayStr();
+  allData.forEach(function(r) {
+    if (r.status === '대기') c[0]++;
+    else if (r.status === '대기_오래됨') c[1]++;
+    else if (r.status === '확정') c[2]++;
+    else if (r.status === '배차완료' || r.status === '재배차완료') c[3]++;
+  });
+  for (var i = 0; i < 4; i++) {
+    var el = document.getElementById('cnt' + i);
+    if (el) el.textContent = c[i];
+  }
+}
+
+// ── 유틸 ──────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getWarnings(r) {
+  var warns = [];
+  var tail = r.tail || '';
+  tail.split('\n').forEach(function(line) {
+    var t = line.trim();
+    if (t.indexOf('⚠️') === 0 || t.indexOf('❗') === 0) warns.push(t);
+  });
+  return warns;
+}
+
+function warnBadges(r) {
+  var warns = getWarnings(r);
+  if (!warns.length) return '';
+  return warns.map(function(w){
+    var isUrgent = w.indexOf('❗') === 0;
+    var bg = isUrgent ? '#fce4ec' : '#fff3e0';
+    var color = isUrgent ? '#b71c1c' : '#e65100';
+    return '<span style="background:'+bg+';color:'+color+';border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;margin-right:2px">'+esc(w)+'</span>';
+  }).join('');
+}
+
+function cardLabel(r) { return r.title1 || r.resNum || '(카드)'; }
+
+function fmtElapsed(ts) {
+  if (!ts) return '';
+  var diff = Math.floor((Date.now() - ts) / 60000);
+  return diff < 60 ? diff + '분 경과' : Math.floor(diff/60) + '시간 경과';
+}
+
+function elClass(ts) {
+  if (!ts) return 'e1';
+  return Math.floor((Date.now()-ts)/60000) >= 60 ? 'e2' : 'e1';
+}
+
+function getDups(r) {
+  if (!r.phone) return [];
+  return allData.filter(function(x) { return x.phone === r.phone && x.id !== r.id; });
+}
+
+// ══════════ 탭 0/1: 확정대기 ══════════════════════════════
+function renderConfirm(container) {
+  var isOld = (currentTab === 1);
+  var status = isOld ? '대기_오래됨' : '대기';
+  var q = searchQuery.toLowerCase();
+  var list = allData.filter(function(r) {
+    if (r.status !== status) return false;
+    if (!q) return true;
+    return (r.resNum||'').toLowerCase().includes(q)||
+           (r.name||'').toLowerCase().includes(q)||
+           (r.phone||'').includes(q)||
+           (r.title1||'').toLowerCase().includes(q);
+  }).sort(function(a,b) {
+    return isOld ? (a.createdAt-b.createdAt) : (b.createdAt-a.createdAt);
+  });
+
+  var L = document.createElement('div'); L.className = 't01-left';
+  var lh = '';
+
+  // 고정 카드
+  lh += '<div class="pin-area"><div class="pin-title">📌 선택된 카드 (클릭 시 여기로 뛰어올라옴)</div>';
+  if (selectedCard) {
+    var sc = selectedCard, dups = getDups(sc);
+    lh += '<div class="pin-card" onclick="selCard(\''+sc.id+'\')">';
+    var _pw = warnBadges(sc);
+    if (_pw) lh += '<div style="margin-bottom:3px">'+_pw+'</div>';
+    lh += '<div class="pin-tail">'+esc(sc.title1||'')+'</div>';
+    lh += '<div class="pin-sub">'+esc(sc.title2||'')+' | 예약번호: '+esc(sc.resNum||'')+'</div>';
+    lh += '<div class="pin-dup"><span class="pin-dup-lbl">중복카드:</span>';
+    if (dups.length > 0) {
+      dups.slice(0,3).forEach(function(d,i) {
+        lh += '<button class="dup-btn" onclick="event.stopPropagation();selCard(\''+d.id+'\')">중복카드'+(i+1)+'</button>';
+      });
+    } else { lh += '<span style="font-size:10px;color:#ccc;padding:0 4px">없음</span>'; }
+    lh += '</div></div>';
+  } else { lh += '<div class="pin-empty">카드를 클릭하면 여기에 고정됩니다</div>'; }
+  lh += '</div>';
+
+  // 카드 목록
+  lh += '<div class="list-area"><div class="list-title">▼ 대기 중인 카드 목록'+(isOld?' (경과시간 표시)':'')+'</div>';
+  lh += '<div class="list-body">';
+  if (list.length === 0) { lh += '<div class="empty-msg">📭 예약 없음</div>'; }
+  else {
+    list.forEach(function(r, idx) {
+      var isOn = selectedCard && selectedCard.id === r.id;
+      var isNew = !isOld && idx === 0;
+      lh += '<div class="lc'+(isOn?' on':'')+(isNew?' lc-new':'')+'" onclick="selCard(\''+r.id+'\')">';
+      lh += '<div class="lc-label">';
+      var _warns = getWarnings(r);
+      _warns.forEach(function(w){
+        lh += (w.indexOf('❗')===0
+          ? '<span style="color:#b71c1c;font-weight:700">❗</span>'
+          : '<span style="color:#e65100;font-weight:700">⚠️</span>');
+      });
+      lh += esc(cardLabel(r));
+      if (r.name) lh += ' <span style="color:#1565c0;font-size:10px;font-weight:700">· '+esc(r.name)+'</span>';
+      lh += '</div>';
+      if (isNew) lh += '<span class="badge-new">NEW</span>';
+      if (isOld) lh += '<span class="elapsed '+elClass(r.createdAt)+'">'+fmtElapsed(r.createdAt)+'</span>';
+      else lh += '<span class="badge-wait">대기</span>';
+      lh += '</div>';
+    });
+  }
+  lh += '</div>';
+  lh += '<div class="list-note">'+(isOld?'※ 24시간 경과 → 자동삭제':'※ 30분 경과 → 오래된 방으로 자동이동')+'</div>';
+  lh += '</div>';
+  L.innerHTML = lh;
+
+  // 오른쪽
+  var R = document.createElement('div'); R.className = 't01-right';
+  var rh = '<div class="rp-search"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호 검색" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)"></div>';
+  rh += '<div class="rp-body">';
+
+  if (selectedCard) {
+    var c = selectedCard;
+    rh += '<div class="det-title">선택된 콜카드 상세 (확정 이기창)</div>';
+
+    // 짐 확인 요약
+    if (c.cargo !== undefined || c.cabin !== undefined) {
+      rh += '<div style="background:#f9f9f9;border-radius:5px;padding:6px 8px;font-size:12px;color:#555;margin-bottom:7px">';
+      if (c.cargo !== undefined && c.cabin !== undefined) {
+        rh += '짐확인: 화물 '+esc(c.cargo||'0')+'개 · 기내 '+esc(c.cabin||'0')+'개<br>';
+      }
+      if (c.pax) rh += '인원확인: '+esc(c.pax)+'명';
+      rh += '</div>';
+    }
+
+    var _dw = warnBadges(c);
+    if (_dw) rh += '<div style="margin-bottom:6px">'+_dw+'</div>';
+    rh += '<div class="det-tail-line">'+esc(c.title1||'')+'</div>';
+    rh += '<div class="det-channel">'+esc(c.title2||'')+'</div>';
+
+    // 카드 본문
+    var bodyText = c.body || c.full || '';
+    // tail 부분 제거
+    if (bodyText.startsWith((c.tail||''))) {
+      bodyText = bodyText.slice((c.tail||'').length).replace(/^\n/,'');
+    }
+    rh += '<pre class="det-item">'+esc(bodyText)+'</pre>';
+
+    // 카카오닉 입력
+    rh += '<div class="kk-section">';
+    rh += '<div class="kk-label">☑ 카카오톡 닉네임 입력</div>';
+    rh += '<input class="kk-inp" id="kk-inp" type="text" placeholder="카톡 닉네임 입력 (필수)" oninput="onKkInput(this.value)">';
+    rh += '<div class="kk-btns">';
+    rh += '<button class="btn-confirm" id="btn-confirm" onclick="doConfirm()" disabled>☑ 예약확정 → 날짜방으로</button>';
+    rh += '<button class="btn-close2" onclick="selectedCard=null;render()">닫기</button>';
+    rh += '</div></div>';
+    // 수정 버튼
+    rh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+c.id+'\')" >✏️ 카드 수정</button></div>';
+    // 수정 모드
+    if (editingCard === c.id) {
+      rh += '<div class="edit-box">';
+      rh += '<div class="edit-box-title">✏️ 카드 수정</div>';
+      rh += '<div class="edit-label">꼬리 1줄 (제목)</div>';
+      rh += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(c.title1||'')+'</textarea>';
+      rh += '<div class="edit-label">꼬리 2줄 (채널)</div>';
+      rh += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(c.title2||'')+'</textarea>';
+      rh += '<div class="edit-label">카드 본문 전체</div>';
+      rh += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(c.body||'')+'</textarea>';
+      rh += '<div class="edit-btns">';
+      rh += '<button class="btn-save" onclick="saveEdit(\''+c.id+'\')" >💾 저장</button>';
+      rh += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
+      rh += '</div></div>';
+    }
+  } else {
+    rh += '<div class="det-empty">← 카드를 클릭하면 상세 정보가 표시됩니다</div>';
+  }
+  rh += '</div>';
+  R.innerHTML = rh;
+  container.appendChild(L);
+  container.appendChild(R);
+}
+
+// ══════════ 탭 2: 당일배차방 ═══════════════════════════════
+function renderBaecha(container) {
+  var today = todayStr();
+  var list = allData.filter(function(r) {
+    if (r.status !== '확정') return false;
+    if (baechaDateFilter && r.rideDate !== baechaDateFilter) return false;
+    return true;
+  }).sort(function(a,b) {
+    if (baechaSortByNum) {
+      if (a.baechaNum && b.baechaNum) return a.baechaNum - b.baechaNum;
+      if (a.baechaNum) return -1;
+      if (b.baechaNum) return 1;
+    }
+    return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+
+  // 왼쪽 - 카드 목록
+  var L = document.createElement('div'); L.className = 't2-left';
+  var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div>';
+  // 오늘 날짜의 마지막 번호 계산
+  var _usedNums = [];
+  allData.forEach(function(r) {
+    if (r.baechaNum && r.rideDate === baechaDateFilter) _usedNums.push(r.baechaNum);
+  });
+  var _lastNum = _usedNums.length > 0 ? Math.max.apply(null, _usedNums) + 1 : baechaNumStart;
+  var _suggestNum = _usedNums.length > 0 ? _lastNum : baechaNumStart;
+
+  lh += '<div class="date-filter">';
+  lh += '<label>날짜:</label>';
+  lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')">전체</button>';
+  lh += '<input type="date" value="'+esc(baechaDateFilter)+'" onchange="setBaechaDate(this.value)">';
+  lh += '<span style="margin-left:8px;font-size:10px;color:#888;flex-shrink:0">시작번호:</span>';
+  lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
+  lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
+  lh += '<button onclick="toggleBaechaSort()" style="padding:3px 10px;background:'+(baechaSortByNum?'#e65100':'#888')+';color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">'+(baechaSortByNum?'번호순':'시간순')+'</button>';
+  if (baechaDateFilter) lh += '<button onclick="genBaechaList()" style="padding:3px 10px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">📋 리스트생성</button>';
+  if (_usedNums.length > 0) lh += '<span style="font-size:10px;color:#2e7d32;margin-left:4px">마지막: '+Math.max.apply(null,_usedNums)+'번</span>';
+  lh += '</div>';
+  lh += '<div class="t2-list">';
+  if (list.length === 0) { lh += '<div class="empty-msg">확정된 예약 없음</div>'; }
+  else {
+    list.forEach(function(r, idx) {
+      var num = 701 + idx;
+      var dm = driverMap[r.id] || {};
+      var isOn = selectedCard && selectedCard.id === r.id;
+      lh += '<div class="bc-row'+(isOn?' on':'')+'" onclick="selBaecha(\''+r.id+'\')">';
+      var _bNum = r.baechaNum || '';
+      lh += '<div class="bc-num" style="background:'+(_bNum?'#1a2a4a':'#888')+'">'+ (_bNum||'-') +'</div>';
+      lh += '<div class="bc-label">';
+      var _bwarn = getWarnings(r);
+      _bwarn.forEach(function(w){
+        lh += (w.indexOf('❗')===0 ? '<span style="color:#b71c1c;font-weight:700">❗</span>' : '<span style="color:#e65100;font-weight:700">⚠️</span>');
+      });
+      lh += esc(cardLabel(r));
+      if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
+      lh += '</div>';
+      lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
+      if (dm.driver) {
+        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(\'' + (dm.driver||'').replace(/'/g,'') + '\',this)" title="클릭시 이름 복사">' + esc(dm.driver) + '</button>';
+      } else {
+        lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
+      }
+      var _custNick = r.kakaoNick || '';
+      if (_custNick) {
+        lh += '<button class="bc-kak" style="background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;cursor:pointer" onclick="event.stopPropagation();copyText(\''+_custNick.replace(/'/g,'').replace(/"/g,'')+'\'  ,this)" title="클릭시 복사">'+esc(_custNick)+'</button>';
+      } else {
+        lh += '<button class="bc-kak" style="background:#f5f5f5;color:#bbb;cursor:default;border:1px solid #eee">카톡닉</button>';
+      }
+      lh += '</div>';
+      if (dm.driver) {
+        lh += '<button class="bc-done" style="cursor:default;opacity:0.8" onclick="event.stopPropagation()">기사배정</button>';
+      }
+      lh += '</div>';
+    });
+  }
+  lh += '</div>';
+  L.innerHTML = lh;
+
+  // 가운데 패널
+  var M = document.createElement('div'); M.className = 't2-mid';
+  var mh = '';
+
+  if (baechaListMode === 'view' || baechaListMode === 'edit' || baechaListMode === 'final') {
+    // 리스트 모드
+    mh += '<div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">';
+    mh += '<span>📋 배차 리스트</span>';
+    mh += '<button onclick="baechaListMode=null;render()" style="padding:2px 7px;background:#f0f0f0;border:1px solid #ddd;border-radius:3px;font-size:10px;cursor:pointer">✕ 닫기</button>';
+    mh += '</div>';
+    mh += '<div style="display:flex;gap:4px;padding:6px 8px;background:#f9f9f9;border-bottom:1px solid #eee;flex-shrink:0">';
+    if (baechaListMode !== 'final') {
+      mh += '<button onclick="sortBaechaList()" style="padding:4px 8px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">🔀 정렬</button>';
+      mh += '<button onclick="setBaechaFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">완료</button>';
+    } else {
+      mh += '<button onclick="setBaechaView()" style="padding:4px 8px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer">← 수정</button>';
+      mh += '<button onclick="copyBaechaListFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">📋 복사</button>';
+    }
+    mh += '</div>';
+
+    // 리스트 아이템 - 항상 편집 가능
+    mh += '<div style="flex:1;overflow-y:auto;padding:8px" id="baecha-list-items">';
+    var _items = parseBaechaListItems(baechaListText);
+    _items.forEach(function(item, idx) {
+      var _numMatch = item.match(/^(\d+)\./);
+      var _num = _numMatch ? parseInt(_numMatch[1]) : null;
+      var _isSelected = selectedCard && _num && allData.find(function(r){ return r.baechaNum === _num && r.id === selectedCard.id; });
+      var _lines = item.trim().split('\n').length;
+      mh += '<div style="display:flex;gap:4px;margin-bottom:4px;align-items:flex-start">';
+      // 번호 버튼 (클릭하면 카드 선택)
+      if (_num) {
+        mh += '<button onclick="selectByBaechaNum('+_num+')" style="padding:3px 7px;background:'+(_isSelected?'#1a2a4a':'#e0e0e0')+';color:'+(_isSelected?'#FFD700':'#555')+';border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:2px">'+_num+'</button>';
+      }
+      // 편집 가능 textarea
+      mh += '<textarea data-idx="'+idx+'" onchange="updateListItem('+idx+',this.value)" style="flex:1;padding:5px 7px;border:1px solid '+(_isSelected?'#1a2a4a':'#e0e0e0')+';border-radius:4px;font-size:11px;font-family:Malgun Gothic,sans-serif;resize:none;outline:none;line-height:1.8;background:'+(_isSelected?'#eef2ff':'#fff')+'" rows="'+(_lines||2)+'">'+esc(item.trim())+'</textarea>';
+      mh += '</div>';
+    });
+    mh += '</div>';
+  } else {
+    // 일반 모드
+    mh += '<div class="sec-title">배차결과 입력란 (기사 목록 붙여넣기)</div>';
+    mh += '<div class="t2-mid-body">';
+    mh += '<textarea class="ta-box" id="baecha-ta" placeholder="701. 김종희&#10;702. 조재현&#10;703. 홍기조&#10;...">'+esc(baechaText)+'</textarea>';
+    mh += '<div class="t2-btn-row"><button class="btn-match" onclick="doAutoMatch()">자동 매칭</button><button class="btn-reset" onclick="doResetMatch()">↩ 되돌리기</button></div>';
+    if (selectedCard) {
+      mh += '<div style="text-align:right;margin-top:4px"><button class="btn-edit" onclick="openEdit(window.currentEditId)">✏️ 카드 수정</button></div>';
+    }
+    if (selectedCard) {
+      var _fc = selectedCard.body || selectedCard.full || '';
+      mh += '<div style="font-size:10px;font-weight:700;color:#888;margin:8px 0 4px">📋 선택된 콜카드 전체</div>';
+      mh += '<pre style="white-space:pre-wrap;word-break:break-all;font-size:11px;line-height:1.8;color:#333;background:#fff;border:1px solid #ddd;border-radius:6px;padding:9px;overflow-y:auto;font-family:Malgun Gothic,sans-serif;flex:1">'+esc(_fc)+'</pre>';
+    } else {
+      mh += '<div style="text-align:center;color:#ccc;font-size:12px;padding:30px 0">← 카드를 선택하세요</div>';
+    }
+    mh += '</div>';
+  }
+  M.innerHTML = mh;
+
+  // 오른쪽 - 메시지 복사 3종
+  var currentEditId = selectedCard ? selectedCard.id : '';
+  window.currentEditId = currentEditId;
+  var Rp = document.createElement('div'); Rp.className = 't2-right';
+  var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
+  var rh2 = '';
+  // 수정 모드
+  if (selectedCard && editingCard === selectedCard.id) {
+    rh2 += '<div class="edit-box" style="margin-bottom:12px">';
+    rh2 += '<div class="edit-box-title">✏️ 카드 수정</div>';
+    rh2 += '<div class="edit-label">꼬리 1줄 (제목)</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(selectedCard.title1||'')+'</textarea>';
+    rh2 += '<div class="edit-label">꼬리 2줄 (채널)</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(selectedCard.title2||'')+'</textarea>';
+    rh2 += '<div class="edit-label">카드 본문 전체</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(selectedCard.body||'')+'</textarea>';
+    rh2 += '<div class="edit-btns">';
+    rh2 += '<button class="btn-save" onclick="saveEdit(currentEditId)">💾 저장</button>';
+    rh2 += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
+    rh2 += '</div></div>';
+    Rp.innerHTML = rh2;
+    container.appendChild(L);
+    container.appendChild(M);
+    container.appendChild(Rp);
+    return;
+  }
+
+  // 기사에게 줄 콜카드 (꼬리 없는 카드)
+  var driverCard = '';
+  if (selectedCard) {
+    var bodyText2 = selectedCard.body || selectedCard.full || '';
+    if (bodyText2.startsWith(selectedCard.tail||'')) {
+      bodyText2 = bodyText2.slice((selectedCard.tail||'').length).replace(/^\n/,'');
+    }
+    driverCard = bodyText2;
+  }
+
+  // 손님에게 줄 기사정보
+  var drvInfo = '';
+  if (selectedCard && dm2.driver) {
+  var _foundDrv = allDrivers.find(function(d){ return d.name === (dm2.driver||''); });
+    var _dPhone = dm2.driverPhone || (_foundDrv && _foundDrv.phone) || '-';
+    var _dVeh = dm2.driverVehicle || (_foundDrv && _foundDrv.vehicle) || '-';
+    var _dVNum = dm2.driverVehicleNum || (_foundDrv && _foundDrv.vehicleNum) || '-';
+    drvInfo = '이름: '+(dm2.driver||'')+'\n전화: '+_dPhone+'\n차종: '+_dVeh+'\n차량번호: '+_dVNum;
+  }
+
+  var _cid = selectedCard ? selectedCard.id : '';
+  var _cs = copiedState[_cid] || {dc:false, dex:false, di:false, cu:false};
+  var _allCopied = _cs.dc && _cs.dex && _cs.di && _cs.cu;
+
+  // 기사에게 줄 콜카드 복사
+  if (!_cs.dc) {
+    rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드 (꼬리 제거)</div>';
+    rh2 += '<div class="msg-content" id="msg-driver-card">'+esc(driverCard||(selectedCard?'카드 선택됨':'카드를 선택하세요'))+'</div>';
+    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-driver-card\',\'dc\',\''+_cid+'\')">복사</button></div>';
+  }
+
+  // 기사에게 보낼 추가 메시지
+  if (!_cs.dex) {
+    rh2 += '<div class="msg-box"><div class="msg-box-title">기사에게 보낼 추가 메시지</div>';
+    rh2 += '<textarea class="msg-ta" id="msg-drv-extra">★안녕하세요     인천공항택시예약센터입니다\n저희 콜을 수행해주셔서 감사합니다\n손님과 전화통화 꼭 부탁드립니다\n★전화통화시 손님에게 날짜, 시간 체크 확인 꼭 부탁드립니다\n★오전. 오후 확인 필수입니다.\n고객님께 현금요구 및 기타 불편사항 접수시 저희 콜은 배차 제한될수있으니 친절히 잘부탁드립니다\n항상 건강하시고 안전운전 하세요\n \n✈️인천공항센터(SKY LINE)🛩\n79422743213 카카오뱅크\n☎센터대표전화 : 1877 2282</textarea>';
+    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-extra\',\'dex\',\''+_cid+'\')">복사</button></div>';
+  }
+
+  // 손님한테 줄 기사정보
+  if (!_cs.di) {
+    rh2 += '<div class="msg-box org"><div class="msg-box-title">손님한테 줄 기사정보 복사</div>';
+    rh2 += '<div class="msg-content" id="msg-drv-info">기사정보\n'+esc(drvInfo||(selectedCard?'기사 배정 후 자동입력':'카드를 선택하세요'))+'</div>';
+    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-info\',\'di\',\''+_cid+'\')">복사</button></div>';
+  }
+
+  // 손님 안내 문자
+  if (!_cs.cu) {
+    rh2 += '<div class="msg-box"><div class="msg-box-title">손님 안내 문자 복사</div>';
+    rh2 += '<div class="msg-content" id="msg-cust">배정된 기사님 정보입니다.\n기사님이 따로 연락드릴겁니다.\n감사합니다</div>';
+    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-cust\',\'cu\',\''+_cid+'\')">복사</button></div>';
+  }
+
+  // 4개 다 복사 완료 → 배차완료 버튼
+  if (_allCopied && selectedCard && dm2.driver) {
+    rh2 += '<button style="width:100%;padding:14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px" onclick="doBaechaCard(\''+_cid+'\')">✅ 배차완료</button>';
+  } else if (selectedCard && dm2.driver) {
+    var _doneCount = [_cs.dc,_cs.dex,_cs.di,_cs.cu].filter(Boolean).length;
+    rh2 += '<div style="text-align:center;color:#aaa;font-size:11px;margin-top:10px;padding:8px;background:#f9f9f9;border-radius:5px">복사 '+_doneCount+'/4 완료 → 모두 복사하면 배차완료 버튼이 나타납니다</div>';
+  }
+
+  Rp.innerHTML = rh2;
+  container.appendChild(L);
+  container.appendChild(M);
+  container.appendChild(Rp);
+}
+
+// ══════════ 탭 3: 배차완료방 ══════════════════════════════
+function renderBaechaComplete(container) {
+  var list = allData.filter(function(r) {
+    return r.status === '배차완료' || r.status === '재배차완료';
+  }).sort(function(a,b) {
+    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+
+  var L = document.createElement('div'); L.className = 't3-left';
+  var lh = '<div class="sec-title">배차완료 카드 목록</div><div class="t3-list">';
+  if (list.length === 0) { lh += '<div class="empty-msg">배차완료 없음</div>'; }
+  else {
+    list.forEach(function(r, idx) {
+      var num = 701 + idx;
+      var isOn = selectedCard && selectedCard.id === r.id;
+      lh += '<div class="bcd-row'+(isOn?' on':'')+'" onclick="selBaechaComplete(\''+r.id+'\')">';
+      lh += '<div class="bcd-num">'+num+'</div>';
+      lh += '<div class="bcd-title">'+esc((r.title1||'').split(' ').slice(0,4).join(' '))+'</div>';
+      if (r.driverName) lh += '<div class="bcd-drv">· '+esc(r.driverName)+'</div>';
+      lh += '<button class="btn-bcd-ok">배차완료✓</button>';
+      lh += '<button class="btn-reb" onclick="event.stopPropagation();askReb(\''+r.id+'\')">재배차</button>';
+      lh += '</div>';
+    });
+  }
+  lh += '<div class="list-note">※ 실수로 완료 눌렀을 때 → [재배차] 버튼으로 되돌리기</div>';
+  lh += '</div>';
+  L.innerHTML = lh;
+
+  // 가운데 - 폰 카드 미리보기
+  var M = document.createElement('div'); M.className = 't3-mid';
+  var mh = '<div class="phone-preview-title">선택된 콜카드 (조회용)</div>';
+  if (selectedCard) {
+    if (rebTarget && rebTarget.id === selectedCard.id) {
+      mh += '<div class="reb-confirm">';
+      mh += '<div class="reb-confirm-title">⚠️ 재배차 확인</div>';
+      mh += '<div class="reb-confirm-sub">정말 재배차 하시겠습니까?<br>'+esc(selectedCard.title1||'')+'</div>';
+      mh += '<div class="reb-confirm-btns">';
+      mh += '<button class="btn-reb-yes" onclick="doRebaecha(\''+selectedCard.id+'\')">네 → 배차방으로</button>';
+      mh += '<button class="btn-reb-no" onclick="rebTarget=null;render()">아니요</button>';
+      mh += '</div></div>';
+    }
+    var bodyText3 = selectedCard.body || selectedCard.full || '';
+    if (bodyText3.startsWith(selectedCard.tail||'')) {
+      bodyText3 = bodyText3.slice((selectedCard.tail||'').length).replace(/^\n/,'');
+    }
+    mh += '<div class="phone-card">';
+    mh += '<div class="phone-card-head"></div>';
+    mh += '<div class="phone-card-title">'+esc(selectedCard.title1||'')+'</div>';
+    mh += '<div class="phone-card-body">'+esc(bodyText3)+'</div>';
+    if (selectedCard.driverName) {
+      mh += '<div style="margin-top:8px;font-size:11px;color:#2e7d32;font-weight:700;border-top:1px dashed #a5d6a7;padding-top:6px">기사: '+esc(selectedCard.driverName)+'</div>';
+    }
+    mh += '</div>';
+  } else {
+    mh += '<div class="phone-card-empty">← 카드 선택</div>';
+  }
+  M.innerHTML = mh;
+
+  // 오른쪽 - 기사/손님 정보
+  var Rp = document.createElement('div'); Rp.className = 't3-right';
+  var rh = '';
+  if (selectedCard) {
+    rh += '<div class="info-box"><div class="info-box-title">기사 정보</div>';
+    rh += '<div class="info-box-body">';
+    rh += '이름: '+esc(selectedCard.driverName||'-')+'<br>';
+    rh += '전화번호: '+esc(selectedCard.driverPhone||'-')+'<br>';
+    rh += '차량종류: '+esc(selectedCard.driverVehicleType||'-')+'<br>';
+    rh += '차량번호: '+esc(selectedCard.driverVehicleNum||'-');
+    rh += '</div></div>';
+
+    rh += '<div class="info-box org"><div class="info-box-title">손님 정보</div>';
+    rh += '<div class="info-box-body">';
+    rh += '채널: '+esc(selectedCard.channel||'-')+'<br>';
+    rh += '카톡닉: '+esc(selectedCard.kakaoNick||'-')+'<br>';
+    rh += '전화번호: '+esc(selectedCard.phone||'-')+'<br>';
+    rh += '예약번호: '+esc(selectedCard.resNum||'-');
+    rh += '</div></div>';
+  } else {
+    rh += '<div class="empty-msg">← 카드를 선택하세요</div>';
+  }
+  Rp.innerHTML = rh;
+  container.appendChild(L);
+  container.appendChild(M);
+  container.appendChild(Rp);
+}
+
+// ══════════ 탭 4: 달력 ════════════════════════════════════
+function renderCalendar(container) {
+  var outer = document.createElement('div'); outer.className = 'cal-outer';
+  var wrap = document.createElement('div'); wrap.className = 'cal-wrap';
+  var monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  var h = '<div class="cal-top"><div class="cal-title">'+calYear+'년 '+monthNames[calMonth]+'</div>';
+  h += '<div><button class="cal-nav-btn" onclick="calPrev()">◀</button><button class="cal-nav-btn" onclick="calNext()">▶</button></div></div>';
+  h += '<table class="cal"><tr>';
+  ['일','월','화','수','목','금','토'].forEach(function(d){h+='<th>'+d+'</th>';});
+  h += '</tr><tr>';
+  var firstDay = new Date(calYear,calMonth,1).getDay();
+  var lastDate = new Date(calYear,calMonth+1,0).getDate();
+  var col = 0;
+  for (var i=0;i<firstDay;i++){h+='<td class="cal-cell"></td>';col++;}
+  for (var d=1;d<=lastDate;d++) {
+    var dateStr2 = calYear+'-'+p2(calMonth+1)+'-'+p2(d);
+    var dow = new Date(calYear,calMonth,d).getDay();
+    var isToday = dateStr2===todayStr();
+    var cls='cal-cell'+(isToday?' today':'')+(dow===0?' sun':'')+(dow===6?' sat':'');
+    h+='<td class="'+cls+'">';
+    h+='<div class="cal-day">'+d+'</div>';
+    var dayCards = allData.filter(function(r){return r.rideDate===dateStr2;});
+    dayCards.slice(0,3).forEach(function(r){
+      var isDone=r.status==='배차완료'||r.status==='재배차완료';
+      h+='<div class="cal-entry '+(isDone?'done':'wait')+'">'+esc(r.title1?r.title1.split(' ').slice(0,3).join(' '):'')+'</div>';
+    });
+    if(dayCards.length>3)h+='<div class="cal-more">+'+(dayCards.length-3)+'개</div>';
+    h+='</td>';
+    col++;
+    if(col===7&&d<lastDate){h+='</tr><tr>';col=0;}
+  }
+  h+='</tr></table>';
+  h+='<div class="cal-legend">';
+  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#bbdefb"></div>배차대기</div>';
+  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#c8e6c9"></div>기사매칭완료</div>';
+  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#fff9e6;border:1px solid #ffe082"></div>오늘</div>';
+  h+='</div>';
+  wrap.innerHTML = h;
+  outer.appendChild(wrap);
+  container.appendChild(outer);
+}
+
+function renderDriverList(container) {
+  var wrap = document.createElement('div'); wrap.className = 'drv-list-wrap';
+  var h = '';
+
+  // 붙여넣기 파싱 박스
+  h += '<div class="drv-paste-box">';
+  h += '<div class="drv-paste-title">📋 기사 카드 붙여넣기 → 자동입력</div>';
+  h += '<textarea class="drv-paste-ta" id="drv-paste-ta" placeholder="기사 카드 내용을 붙여넣으세요..." oninput="parseDrvCard()"></textarea>';
+  h += '<div class="drv-preview" id="drv-preview">';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">이름</span><input class="drv-preview-inp" id="p-name" placeholder="이름"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">전화번호</span><input class="drv-preview-inp" id="p-phone" placeholder="전화번호"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">차종</span><input class="drv-preview-inp" id="p-vehicle" placeholder="차종"></div>';
+  h += '<div class="drv-preview-row"><span class="drv-preview-label">차량번호</span><input class="drv-preview-inp" id="p-vnum" placeholder="차량번호"></div>';
+  h += '<button class="btn-drv-confirm" onclick="confirmAddDriver()">✅ 기사 등록</button>';
+  h += '</div></div>';
+
+  // 기사 목록
+  var drivers = allDrivers || [];
+  if (drivers.length === 0) {
+    h += '<div style="text-align:center;color:#ccc;padding:40px;font-size:13px">등록된 기사가 없어요<br>위에서 붙여넣어 추가해주세요</div>';
+  } else {
+    h += '<div class="drv-list-card">';
+    drivers.forEach(function(d) {
+      h += '<div class="drv-row">';
+      h += '<div class="drv-name" style="cursor:pointer;min-width:60px" onclick="copyText(' + JSON.stringify(d.name||'') + ',this)" title="클릭시 이름 복사">'+esc(d.name||'')+'</div>';
+      h += '<div style="font-size:11px;color:#888;min-width:95px">'+esc(d.phone||'')+'</div>';
+      h += '<div style="font-size:11px;color:#555;flex:1;min-width:80px">'+esc(d.vehicle||'-')+'</div>';
+      h += '<div style="font-size:11px;color:#555;min-width:80px">'+esc(d.vehicleNum||'-')+'</div>';
+      h += '<button class="btn-drv-del" onclick="delDriver(\'' + d.id + '\')">삭제</button>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  wrap.innerHTML = h;
+  container.appendChild(wrap);
+}
+
+function parseDrvCard() {
+  var text = (document.getElementById('drv-paste-ta')||{}).value||'';
+  if (!text.trim()) { document.getElementById('drv-preview').style.display='none'; return; }
+
+  var name='', phone='', vehicle='', vehicleNum='';
+
+  // 이름 추출 (한글 2~4글자, 이름/성함 키워드 우선)
+  var nameM = text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  if (nameM) { name = nameM[1].trim(); }
+  else {
+    // 독립된 한글 이름 (2~4글자, 단독 줄 또는 공백으로 구분)
+    var nameM2 = text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m);
+    if (nameM2) name = nameM2[1].trim();
+  }
+
+  // 전화번호 추출 (010으로 시작, 점/하이픈/공백 허용)
+  var phoneM = text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
+  if (phoneM) phone = phoneM[0].replace(/[\s.\-]/g,'');
+
+  // 차량번호 추출 (지역명+숫자+한글+숫자)
+  var vnumM = text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
+  if (vnumM) vehicleNum = vnumM[0].replace(/\s/g,'');
+
+  // 차종 추출
+  var vehM = text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+
+  if (vehM) { vehicle = vehM[1].trim(); }
+  else {
+    var vehKeywords = ['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
+    for (var vi=0; vi<vehKeywords.length; vi++) {
+      if (text.toLowerCase().indexOf(vehKeywords[vi].toLowerCase()) >= 0) {
+        // 해당 키워드 포함 단어 추출
+        var vReg = new RegExp('[가-힣a-zA-Z0-9\s]*'+vehKeywords[vi]+'[가-힣a-zA-Z0-9\s(\)]*', 'i');
+        var vM2 = text.match(vReg);
+        if (vM2) { vehicle = vM2[0].trim().split('\n')[0].replace(/[^가-힣a-zA-Z0-9\s]/g,'').trim(); break; }
+
+      }
+    }
+  }
+
+  // 못 잡은 필드 경고
+  var missing = [];
+  if (!name) missing.push('이름');
+  if (!phone) missing.push('전화번호');
+  if (!vehicleNum) missing.push('차량번호');
+  if (missing.length > 0) {
+    alert('자동인식 실패: ' + missing.join(', ') + ' - 직접 입력해주세요!');
+  }
+  // 동명이인 경고
+  if (name) {
+    var sameCount = allDrivers.filter(function(d){ return d.name === name; }).length;
+    if (sameCount > 0) {
+    alert('동명이인 주의! 기사목록에 [' + name + '] 이름이 이미 ' + sameCount + '명 있어요. 중복 등록 확인해주세요!');
+    }
+  }
+
+  // 미리보기 표시
+  var preview = document.getElementById('drv-preview');
+  if (preview) {
+    preview.style.display = 'block';
+    document.getElementById('p-name').value = name;
+    document.getElementById('p-phone').value = phone;
+    document.getElementById('p-vehicle').value = vehicle;
+    document.getElementById('p-vnum').value = vehicleNum;
+  }
+}
+
+function confirmAddDriver() {
+  var name = (document.getElementById('p-name')||{}).value||'';
+  var phone = (document.getElementById('p-phone')||{}).value||'';
+  var vehicle = (document.getElementById('p-vehicle')||{}).value||'';
+  var vehicleNum = (document.getElementById('p-vnum')||{}).value||'';
+  if (!name.trim()) { alert('이름은 필수예요!'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+  db.ref('drivers').push({
+    name: name.trim(),
+    phone: phone,
+    vehicle: vehicle.trim(),
+    vehicleNum: vehicleNum.trim()
+  }).then(function() {
+    // 초기화
+    var ta = document.getElementById('drv-paste-ta');
+    var preview = document.getElementById('drv-preview');
+    if (ta) ta.value = '';
+    if (preview) preview.style.display = 'none';
+    alert('✅ ' + name.trim() + ' 기사님 등록됐어요!');
+  });
+}
+
+function addDriver() {
+  var name = (document.getElementById('new-drv-name')||{}).value||'';
+  var phone = (document.getElementById('new-drv-phone')||{}).value||'';
+  if (!name.trim()||!phone.trim()) { alert('이름과 전화번호를 입력해주세요'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+  db.ref('drivers').push({ name:name.trim(), phone:phone });
+  document.getElementById('new-drv-name').value='';
+  document.getElementById('new-drv-phone').value='';
+}
+
+function delDriver(id) {
+  if (!confirm('삭제할까요?')) return;
+  db.ref('drivers/'+id).remove();
+}
+
+
+
+function callDriver(btn) {
+  var phone = btn.getAttribute('data-phone');
+  if (!phone) { alert('전화번호 없음'); return; }
+  location.href = 'kakaotalk://launch?p=' + phone;
+}
+
+function openDriverKakaoByPhone(phone) {
+  if (!phone) { alert('전화번호가 없어요'); return; }
+  location.href = 'kakaotalk://launch?p='+phone.replace(/[^0-9]/g,'');
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
+
+// ── 액션 함수 ─────────────────────────────────────────────
+function onSearch(v){searchQuery=v;selectedCard=null;render();}
+
+function selCard(id){
+  var r=allData.find(function(x){return x.id===id;});
+  if(!r)return;
+  selectedCard=(selectedCard&&selectedCard.id===id)?null:r;
+  render();
+}
+
+function selBaecha(id){
+  var r=allData.find(function(x){return x.id===id;});
+  if(!r)return;
+  if (selectedCard && selectedCard.id !== id) {
+    // 다른 카드 선택 시 복사상태 초기화
+    copiedState = {};
+  }
+  selectedCard=(selectedCard&&selectedCard.id===id)?null:r;
+  render();
+}
+
+function selBaechaComplete(id){
+  var r=allData.find(function(x){return x.id===id;});
+  if(!r)return;
+  selectedCard=(selectedCard&&selectedCard.id===id)?null:r;
+  rebTarget=null;
+  render();
+}
+
+function onKkInput(v){
+  var b=document.getElementById('btn-confirm');
+  if(b)b.disabled=!v.trim();
+}
+
+function doConfirm(){
+  var inp=document.getElementById('kk-inp');
+  if(!inp||!inp.value.trim())return;
+  var nick=inp.value.trim();
+  if(!selectedCard)return;
+  var btn=document.getElementById('btn-confirm');
+  btn.disabled=true; btn.textContent='처리 중...';
+  var _t1 = selectedCard.title1 || '';
+  var _oldT2 = selectedCard.title2 || '';
+  var _newT2 = '채널>애니>' + nick;
+  // 경고줄 보존하면서 tail 재조합
+  var _warnLines = (selectedCard.tail||'').split('\n').filter(function(l){
+    return l.trim().indexOf('⚠️')===0 || l.trim().indexOf('❗')===0;
+  });
+  var _newTail = (_warnLines.length ? _warnLines.join('\n') + '\n' : '') + _t1 + '\n' + _newT2;
+  // body에서 옛날 title2를 새 닉으로 교체
+  var _newBody = (selectedCard.body || '').replace(_oldT2, _newT2);
+  db.ref('cards/'+selectedCard.id).update({
+    status:'확정',
+    kakaoNick:nick,
+    title2:_newT2,
+    tail:_newTail,
+    body:_newBody,
+    confirmedAt:Date.now()
+  }).then(function(){
+    selectedCard=null;
+  }).catch(function(e){
+    alert('오류: '+e.message);
+    btn.disabled=false;
+    btn.textContent='☑ 예약확정 → 날짜방으로';
+  });
+}
+
+function updDrvAuto(inp, id) {
+  var val = inp.value.trim();
+  updDrv(id, 'driver', val);
+  var ac = document.getElementById('ac-'+id);
+  if (!ac) return;
+  if (!val) { ac.style.display='none'; return; }
+  var matches = allDrivers.filter(function(d){ return d.name && d.name.indexOf(val) >= 0; });
+  if (matches.length === 0) { ac.style.display='none'; return; }
+  ac.innerHTML = matches.map(function(d){
+    return '<div class="drv-autocomplete-item" onclick="selectDriver(' + JSON.stringify(id) + ',' + JSON.stringify(d.name) + ')">'+esc(d.name)+'</div>';
+  }).join('');
+  ac.style.display='block';
+}
+
+function selectDriver(id, name) {
+  updDrv(id, 'driver', name);
+  var inp = document.getElementById('drv-'+id);
+  if (inp) inp.value = name;
+  var ac = document.getElementById('ac-'+id);
+  if (ac) ac.style.display='none';
+  // 기사목록에서 정보 자동완성
+  var found = allDrivers.find(function(d){ return d.name === name; });
+  if (found) {
+    if (!driverMap[id]) driverMap[id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+    driverMap[id].driver = name;
+    driverMap[id].driverPhone = found.phone||'';
+    driverMap[id].driverVehicle = found.vehicle||'';
+    driverMap[id].driverVehicleNum = found.vehicleNum||'';
+  }
+  // 해당 카드 선택해서 오른쪽 패널에 기사정보 바로 표시
+  var r = allData.find(function(x){ return x.id === id; });
+  if (r) selectedCard = r;
+  render();
+}
+
+function updDrv(id,field,val){
+  if(!driverMap[id])driverMap[id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+  driverMap[id][field]=val;
+  if(field==='driver'){
+    var di=document.getElementById('drv-'+id);
+    if(di)di.className='bc-drv'+(val?' filled':'');
+  }
+  if(selectedCard&&selectedCard.id===id)render();
+}
+
+function doBaechaCard(id){
+  var r=allData.find(function(x){return x.id===id;});
+  if(!r)return;
+  var dm=driverMap[id]||{};
+  if(!dm.driver){alert('기사 이름을 입력해주세요.');return;}
+  db.ref('cards/'+id).update({
+    status:'배차완료',
+    driverName:dm.driver||'',
+    driverKakao:dm.kakao||'',
+    driverPhone:dm.driverPhone||'',
+    driverVehicleType:dm.driverVehicle||'',
+    driverVehicleNum:dm.driverVehicleNum||'',
+    baechaNum: null
+  });
+}
+
+function doAutoMatch(){
+  var ta=document.getElementById('baecha-ta');
+  if(!ta)return;
+  baechaText=ta.value;
+  var list=allData.filter(function(r){
+    if(r.status!=='확정') return false;
+    if(baechaDateFilter && r.rideDate!==baechaDateFilter) return false;
+    return true;
+  });
+  list.sort(function(a,b){
+    return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+  // 이미 배정된 번호 덮어쓰기 경고
+  var overwriteList = [];
+  ta.value.split('\n').forEach(function(ow){
+    var mo = ow.match(/^(\d+)[.\s]\s*(.+)/);
+    if (!mo) return;
+    var no = parseInt(mo[1]);
+    var ro = list.find(function(r){ return r.baechaNum === no; });
+    if (ro && driverMap[ro.id] && driverMap[ro.id].driver) {
+      overwriteList.push(no + '번: ' + driverMap[ro.id].driver + ' -> ' + mo[2].trim());
+    }
+  });
+  if (overwriteList.length > 0) {
+    if (!confirm('이미 배정된 기사가 있어요! ' + overwriteList.join(' | ') + ' 덮어쓰시겠어요?')) return;
+  }
+  // 동명이인 체크
+  var duplicateWarnings = [];
+  ta.value.split('\n').forEach(function(line){
+    var m=line.match(/^(\d+)[.\s]\s*(.+)/);
+    if(!m)return;
+    var num=parseInt(m[1]),name=m[2].trim();
+    // baechaNum으로 매칭
+    var r = list.find(function(x){ return x.baechaNum === num; });
+    // baechaNum 없으면 기존 701+index 방식으로 폴백
+    if (!r && num>=701 && num<=700+list.length) r = list[num-701];
+    if(r){
+      if(!driverMap[r.id])driverMap[r.id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+      driverMap[r.id].driver=name;
+    }
+  });
+  // 동명이인 경고
+  duplicateWarnings = [];
+  Object.keys(driverMap).forEach(function(id) {
+    var name = driverMap[id] && driverMap[id].driver;
+    if (!name) return;
+    var count = allDrivers.filter(function(d){ return d.name === name; }).length;
+    if (count > 1) {
+      duplicateWarnings.push(name + ' (' + count + '명)');
+    }
+  });
+  if (duplicateWarnings.length > 0) {
+    alert('동명이인 주의! 기사목록에 같은 이름이 여러 명이에요: ' + duplicateWarnings.join(', '));
+  }
+  render();
+}
+
+function doResetMatch(){
+  if(!confirm('매칭을 초기화할까요?'))return;
+  driverMap={};baechaText='';render();
+}
+
+function askReb(id){
+  var r=allData.find(function(x){return x.id===id;});
+  if(!r)return;
+  rebTarget=r;selectedCard=r;render();
+}
+
+function doRebaecha(id){
+  db.ref('cards/'+id).update({status:'확정'}).then(function(){
+    rebTarget=null;selectedCard=null;
+  });
+}
+
+function doCopyBaecha(elId, key, cardId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  var text = el.tagName === 'TEXTAREA' ? el.value : el.innerText;
+  var done = function() {
+    if (!copiedState[cardId]) copiedState[cardId] = {dc:false,dex:false,di:false,cu:false};
+    copiedState[cardId][key] = true;
+    render();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function(){ fbCopy(text, done); });
+  } else {
+    fbCopy(text, done);
+  }
+}
+
+function copyText(text, btn) {
+  var el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  if (btn) {
+    var orig = btn.textContent;
+    var origBg = btn.style.background;
+    btn.textContent = '✅복사됨';
+    btn.style.background = '#c8e6c9';
+    setTimeout(function(){ btn.textContent = orig; btn.style.background = origBg; }, 1500);
+  }
+}
+
+function copyKakao(id, nick) {
+  var el = document.createElement('textarea');
+  el.value = nick;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  // 복사 피드백
+  var btn = event.target;
+  var orig = btn.textContent;
+  btn.textContent = '✅복사됨';
+  btn.style.background = '#c8e6c9';
+  setTimeout(function(){ btn.textContent = orig; btn.style.background = '#fff9c4'; }, 1500);
+}
+
+function openDriverKakao(id) {
+  var r = allData.find(function(x){ return x.id === id; });
+  var driverName = r ? (r.driverName || driverMap[id] && driverMap[id].driver || '') : '';
+  if (!driverName) { alert('기사 이름이 없어요'); return; }
+  // 기사 목록에서 전화번호 찾기
+  var found = allDrivers.find(function(d){ return d.name === driverName; });
+  if (found && found.phone) {
+    location.href = 'kakaotalk://launch?p='+found.phone.replace(/[^0-9]/g,'');
+  } else {
+    // 이름으로 복사
+    copyText(driverName, null);
+    alert('기사 목록에 전화번호가 없어요.\n이름이 복사됐으니 카톡에서 검색해주세요: ' + driverName);
+  }
+}
+
+function genBaechaList() {
+  var list = allData.filter(function(r) {
+    return r.status === '확정' && r.rideDate === baechaDateFilter && r.baechaNum;
+  }).sort(function(a,b){ return a.baechaNum - b.baechaNum; });
+
+  if (list.length === 0) { alert('넘버링된 카드가 없어요!'); return; }
+
+  // 날짜 표시
+  var d = new Date(baechaDateFilter);
+  var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  var lines = ['✈️ ' + dateLabel, ''];
+
+  list.forEach(function(r) {
+    var title1 = r.title1 || '';
+    // title1 파싱 (먼저 선언)
+    var title1Parts = title1.split(' ');
+
+    // 차종 추출
+    var vehType = title1Parts.length >= 1 ? title1Parts[0] : '';
+    var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜' : vehType === '쏠' ? '쏠라티' : '';
+
+    // 배차타입 추출 (G우선, EQ배차)
+    var dtype = '';
+    if (title1.indexOf('G우선') >= 0) dtype = 'G우선';
+    else if (title1.indexOf('EQ배차') >= 0) dtype = 'EQ배차';
+
+    // 확정금액 추출
+    var confirmed = '';
+    var body = r.body || '';
+    var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
+    if (confMatch) confirmed = confMatch[0].replace(/\s/g,'');
+
+    // ⚠️ 특이사항 체크
+    var warns = getWarnings(r);
+    var hasSpecial = warns.length > 0 || (r.carseat && r.carseat.trim()) || (r.waypoint && r.waypoint.trim()) || (r.picket && r.picket.trim());
+    var warnMark = hasSpecial ? ' ⚠️' : '';
+
+    // 시간
+    var hhmm = r.rideHHMM || '';
+    var timeStr = hhmm ? hhmm.slice(0,2) + ':' + hhmm.slice(2) : '';
+
+    // 출발지: title1에서 지역명 추출 (중 출 수원 26... → 수원)
+    var addrShort = title1Parts.length >= 3 ? title1Parts[2] : (r.address||'').split(' ')[0];
+
+    // 공항
+    var airport = r.airport || 'T1';
+    var airportShort = airport.replace('인천공항','').trim() || airport;
+
+    // 방향
+    var dir = title1.indexOf(' 입 ') >= 0 || title1.startsWith('중 입') || title1.startsWith('대 입') || title1.startsWith('버 입') ? 'in' : 'out';
+
+    // 윗줄
+    var line1 = r.baechaNum + '. ' + (vehLabel ? vehLabel + ' ' : '') + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark;
+    // 아랫줄
+    var line2 = dir === 'out'
+      ? timeStr + ' ' + addrShort + ' → ' + airportShort
+      : timeStr + ' ' + airportShort + ' → ' + addrShort;
+
+    lines.push(line1.trim());
+    lines.push(line2.trim());
+    lines.push('');
+  });
+
+  baechaListText = lines.join('\n');
+  baechaListMode = 'view';
+  selectedCard = null;
+  render();
+}
+
+function updateListItem(idx, newVal) {
+  var items = parseBaechaListItems(baechaListText);
+  items[idx] = newVal;
+  baechaListText = items.join('\n\n');
+}
+
+function setBaechaFinal() { baechaListMode = 'final'; render(); }
+function setBaechaView() { baechaListMode = 'view'; render(); }
+
+function parseBaechaListItems(text) {
+  // 리스트 텍스트를 개별 아이템으로 파싱
+  var items = [];
+  var lines = text.split('\n');
+  var current = '';
+  lines.forEach(function(line) {
+    if (line.match(/^\d+\./) && current.trim()) {
+      items.push(current.trim());
+      current = line + '\n';
+    } else {
+      current += line + '\n';
+    }
+  });
+  if (current.trim()) items.push(current.trim());
+  return items;
+}
+
+function selectByBaechaNum(num) {
+  if (!num) return;
+  var r = allData.find(function(x){ return x.baechaNum === num; });
+  if (r) { selectedCard = r; render(); }
+}
+
+function setBaechaListEdit() {
+  baechaListMode = 'edit';
+  render();
+  setTimeout(function(){
+    var ta = document.getElementById('baecha-list-ta');
+    if (ta) ta.focus();
+  }, 100);
+}
+
+function sortBaechaList() {
+  var items = parseBaechaListItems(baechaListText);
+  // 각 아이템의 타입 결정
+  var groups = {out:[], in:[], large:[], col:[], solar:[], etc:[]};
+  items.forEach(function(item) {
+    var numMatch = item.match(/^(\d+)\./);
+    if (!numMatch) return;
+    var num = parseInt(numMatch[1]);
+    var r = allData.find(function(x){ return x.baechaNum === num; });
+    var veh = r ? (r.title1||'').split(' ')[0] : '';
+    var dir = r ? ((r.title1||'').indexOf(' 입 ') >= 0 || (r.title1||'').startsWith('중 입') || (r.title1||'').startsWith('대 입') || (r.title1||'').startsWith('콜 입') || (r.title1||'').startsWith('쏠 입') ? 'in' : 'out') : 'out';
+    if (veh === '대') groups.large.push(item);
+    else if (veh === '콜') groups.col.push(item);
+    else if (veh === '쏠') groups.solar.push(item);
+    else if (dir === 'out') groups.out.push(item);
+    else groups.in.push(item);
+  });
+
+  var d = new Date(baechaDateFilter);
+  var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+  var result = ['✈️ ' + dateLabel, ''];
+
+  var addGroup = function(label, arr) {
+    if (!arr.length) return;
+    result.push('〓〓〓' + label + '〓〓〓');
+    result.push('');
+    arr.forEach(function(item){ result.push(item); result.push(''); });
+  };
+
+  addGroup('출국', groups.out);
+  addGroup('입국', groups.in);
+  addGroup('대형', groups.large);
+  addGroup('콜', groups.col);
+  addGroup('쏠라티', groups.solar);
+
+  baechaListText = result.join('\n');
+  render();
+}
+
+function copyBaechaListFinal() {
+  var el = document.createElement('textarea');
+  el.value = baechaListText;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  alert('배차 리스트 복사됐어요!\n카카오 배차방에 붙여넣기 하세요!');
+}
+
+function toggleBaechaSort() {
+  baechaSortByNum = !baechaSortByNum;
+  render();
+}
+
+function doNumbering() {
+  var inp = document.getElementById('baecha-num-input');
+  var startNum = inp ? parseInt(inp.value) : baechaNumStart;
+  if (isNaN(startNum) || startNum < 1) { alert('올바른 시작 번호를 입력해주세요'); return; }
+  if (!baechaDateFilter) { alert('날짜를 먼저 선택해주세요'); return; }
+
+  var list = allData.filter(function(r) {
+    if (r.status !== '확정') return false;
+    if (r.rideDate !== baechaDateFilter) return false;
+    if (r.baechaNum) return false; // 이미 번호 있는 건 제외
+    return true;
+  }).sort(function(a,b) {
+    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+
+  if (list.length === 0) { alert('넘버링할 카드가 없어요 (이미 다 번호가 있거나 해당 날짜 카드 없음)'); return; }
+
+  var updates = {};
+  list.forEach(function(r, i) {
+    updates['cards/' + r.id + '/baechaNum'] = startNum + i;
+  });
+  db.ref().update(updates).then(function() {
+    baechaNumStart = startNum + list.length;
+    alert(list.length + '개 카드에 ' + startNum + '~' + (startNum + list.length - 1) + '번 부여 완료!');
+  });
+}
+
+function setBaechaDate(v) {
+  baechaDateFilter = v;
+  render();
+}
+
+function openEdit(id) {
+  editingCard = id;
+  render();
+}
+
+function saveEdit(id) {
+  var t1 = document.getElementById('edit-title1');
+  var t2 = document.getElementById('edit-title2');
+  var body = document.getElementById('edit-body');
+  if (!t1 || !body) return;
+  var newTitle1 = t1.value.trim();
+  var newTitle2 = t2 ? t2.value.trim() : '';
+  var newBody = body.value;
+  // tail 재조합
+  var newTail = newTitle1 + (newTitle2 ? '\n' + newTitle2 : '');
+  db.ref('cards/'+id).update({
+    title1: newTitle1,
+    title2: newTitle2,
+    tail: newTail,
+    body: newBody
+  }).then(function() {
+    editingCard = null;
+    // selectedCard 즉시 업데이트
+    if (selectedCard && selectedCard.id === id) {
+      selectedCard.title1 = newTitle1;
+      selectedCard.title2 = newTitle2;
+      selectedCard.tail = newTail;
+      selectedCard.body = newBody;
+    }
+    render();
+  });
+}
+
+function doCopy(elId,btnId,noteId){
+  var el=document.getElementById(elId);
+  if(!el)return;
+  var text=el.tagName==='TEXTAREA'?el.value:el.innerText;
+  var btn=document.getElementById(btnId);
+  var note=document.getElementById(noteId);
+  var done=function(){
+    if(btn){btn.className='btn-copy done';btn.textContent='복사됨✓';}
+    if(note)note.textContent='→ 복사후 사라짐';
+    setTimeout(function(){if(btn){btn.className='btn-copy';btn.textContent='복사';}if(note)note.textContent='';},2000);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){fbCopy(text,done);});
+  }else{fbCopy(text,done);}
+}
+
+function fbCopy(text,cb){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.cssText='position:fixed;top:-9999px;left:-9999px';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');cb();}catch(e){}
+  document.body.removeChild(ta);
+}
+
+window.onload = function() {
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    db.ref('drivers').on('value', function(snapshot) {
+      allDrivers = [];
+      snapshot.forEach(function(child) {
+        var d = child.val();
+        d.id = child.key;
+        allDrivers.push(d);
+      });
+      if (currentTab === 5) render();
+    });
+
+  db.ref('cards').on('value', function(snapshot) {
+      allData = [];
+      snapshot.forEach(function(child) {
+        var card = child.val();
+        card.id = child.key;
+        allData.push(card);
+      });
+      // selectedCard 실시간 갱신
+      if (selectedCard) {
+        var updated = allData.find(function(x){ return x.id === selectedCard.id; });
+        if (updated) selectedCard = updated;
+      }
+      autoMoveOld();
+      render();
+      var el = document.getElementById('last-up');
+      if (el) el.textContent = '실시간 · ' + new Date().toLocaleTimeString('ko-KR');
+    });
+  } catch(e) {
+    document.getElementById('main').innerHTML = '<div style="padding:40px;color:#e05555">❌ Firebase 연결 실패: ' + e.message + '</div>';
+  }
+};
+</script>
+</body>
+</html>
