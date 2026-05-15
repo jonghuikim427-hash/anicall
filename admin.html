@@ -516,6 +516,11 @@ function renderBaecha(container) {
     if (baechaDateFilter && r.rideDate !== baechaDateFilter) return false;
     return true;
   }).sort(function(a,b) {
+    if (baechaSortByNum) {
+      if (a.baechaNum && b.baechaNum) return a.baechaNum - b.baechaNum;
+      if (a.baechaNum) return -1;
+      if (b.baechaNum) return 1;
+    }
     return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
 
