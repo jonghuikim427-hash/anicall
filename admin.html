@@ -416,7 +416,7 @@ function renderConfirm(container) {
            (r.phone||'').includes(q)||
            (r.title1||'').toLowerCase().includes(q);
   }).sort(function(a,b) {
-    return isOld ? (a.createdAt-b.createdAt) : (b.createdAt-a.createdAt);
+    return (b.createdAt-a.createdAt);
   });
 
   var L = document.createElement('div'); L.className = 't01-left';
