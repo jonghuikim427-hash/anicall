@@ -374,9 +374,11 @@ function elClass(ts) {
 
 function getDups(r) {
   if (!r.resNum) return [];
-  // 예약번호 기준 중복 찾기, 생성시간 최신순 정렬
+  // 예약번호 + 이름 기준 중복 찾기, 생성시간 최신순 정렬
   return allData.filter(function(x) {
-    return x.resNum === r.resNum && x.id !== r.id &&
+    return x.resNum === r.resNum &&
+           (x.name||'') === (r.name||'') &&
+           x.id !== r.id &&
            (x.status === '대기' || x.status === '대기_오래됨');
   }).sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
 }
@@ -530,7 +532,10 @@ function renderConfirm(container) {
           rh += '<span style="font-size:10px;color:#2e7d32;margin-right:6px">✅ 완전 동일</span>';
           rh += '<button onclick="deleteDupCard(\'' + d.id + '\',' + isLatestDup + ')" style="padding:3px 8px;background:#e53935;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">삭제</button>';
         } else {
-          rh += '<span style="font-size:10px;color:#e65100;margin-right:6px">⚠️ 내용 다름 → 채널 확인</span>';
+          rh += '<span style="font-size:10px;color:#e65100;display:block;margin-bottom:5px">⚠️ 내용 다름 → 채널 확인</span>';
+          var _dupBody = (d.body||'');
+          if (_dupBody.startsWith(d.tail||'')) _dupBody = _dupBody.slice((d.tail||'').length).replace(/^\n/,'');
+          rh += '<pre style="font-size:10px;color:#555;background:#f9f9f9;border:1px solid #eee;border-radius:4px;padding:6px;max-height:120px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;margin-bottom:5px">'+esc(_dupBody)+'</pre>';
           rh += '<button onclick="deleteDupCard(\'' + d.id + '\',' + isLatestDup + ')" style="padding:3px 8px;background:#e53935;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">삭제</button>';
         }
         rh += '</div>';
