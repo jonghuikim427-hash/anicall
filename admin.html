@@ -295,7 +295,7 @@ function go(n) {
   document.querySelectorAll('.tab').forEach(function(t, i) {
     t.className = 'tab' + (i === n ? ' on' : '');
   });
-  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null; copiedState = {}; baechaListMode = null; baechaCompleteDateFilter = todayStr();
+  selectedCard = null; searchQuery = ''; rebTarget = null; editingCard = null; copiedState = {}; baechaListMode = null;
   render();
 }
 
@@ -901,7 +901,7 @@ function renderCalendar(container) {
     var cls='cal-cell'+(isToday?' today':'')+(dow===0?' sun':'')+(dow===6?' sat':'');
     h+='<td class="'+cls+'" onclick="calDayClick(\''+dateStr2+'\')" style="cursor:pointer">';
     h+='<div class="cal-day">'+d+'</div>';
-    var dayCards = allData.filter(function(r){return r.rideDate===dateStr2;});
+    var dayCards = allData.filter(function(r){ return r.rideDate===dateStr2 && (r.status==='확정'||r.status==='배차완료'||r.status==='재배차완료'); });
     dayCards.slice(0,3).forEach(function(r){
       var isDone=r.status==='배차완료'||r.status==='재배차완료';
       h+='<div class="cal-entry '+(isDone?'done':'wait')+'">'+esc(r.title1?r.title1.split(' ').slice(0,3).join(' '):'')+'</div>';
@@ -1079,10 +1079,26 @@ function openDriverKakaoByPhone(phone) {
 function calDayClick(dateStr) {
   var popup = document.getElementById('cal-popup');
   if (popup) popup.remove();
+
+  var dayCards = allData.filter(function(r){
+    return r.rideDate === dateStr && (r.status==='확정'||r.status==='배차완료'||r.status==='재배차완료');
+  });
+  var total = dayCards.length;
+  var done = dayCards.filter(function(r){ return r.status==='배차완료'||r.status==='재배차완료'; }).length;
+  var waiting = total - done;
+
+  var d = new Date(dateStr);
+  var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+
   var p = document.createElement('div');
   p.id = 'cal-popup';
-  p.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #1a2a4a;border-radius:10px;padding:18px 22px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);text-align:center';
-  p.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a2a4a;margin-bottom:12px">'+dateStr+' 이동</div>'
+  p.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #1a2a4a;border-radius:10px;padding:18px 22px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);text-align:center;min-width:220px';
+  p.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a2a4a;margin-bottom:8px">'+dateLabel+'</div>'
+    + '<div style="font-size:12px;color:#555;margin-bottom:12px;line-height:1.8">'
+    + '총 <b>'+total+'</b>개 &nbsp;|&nbsp; '
+    + '<span style="color:#1565c0">미배차 <b>'+waiting+'</b>개</span> &nbsp;|&nbsp; '
+    + '<span style="color:#2e7d32">배차완료 <b>'+done+'</b>개</span>'
+    + '</div>'
     + '<div style="display:flex;gap:8px">'
     + '<button onclick="goDateTab(2,\''+dateStr+'\');document.getElementById(\'cal-popup\').remove()" style="flex:1;padding:9px;background:#1a2a4a;color:#FFD700;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">📋 배차방</button>'
     + '<button onclick="goDateTab(3,\''+dateStr+'\');document.getElementById(\'cal-popup\').remove()" style="flex:1;padding:9px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">✅ 완료방</button>'
