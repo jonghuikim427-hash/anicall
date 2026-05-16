@@ -373,8 +373,32 @@ function elClass(ts) {
 }
 
 function getDups(r) {
-  if (!r.phone) return [];
-  return allData.filter(function(x) { return x.phone === r.phone && x.id !== r.id; });
+  if (!r.resNum) return [];
+  // 예약번호 기준 중복 찾기, 생성시간 최신순 정렬
+  return allData.filter(function(x) {
+    return x.resNum === r.resNum && x.id !== r.id &&
+           (x.status === '대기' || x.status === '대기_오래됨');
+  }).sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+}
+
+function cardsIdentical(a, b) {
+  // 두 카드가 완전 동일한지 비교 (phone, name, rideDate, rideHHMM, address 기준)
+  return (a.phone||'') === (b.phone||'') &&
+         (a.name||'') === (b.name||'') &&
+         (a.rideDate||'') === (b.rideDate||'') &&
+         (a.rideHHMM||'') === (b.rideHHMM||'') &&
+         (a.address||'') === (b.address||'');
+}
+
+function deleteDupCard(id, isLatest) {
+  if (isLatest) {
+    if (!confirm('최신 카드를 삭제하려고 합니다! 정말 삭제하시겠어요?')) return;
+  } else {
+    if (!confirm('이 카드를 삭제할까요?')) return;
+  }
+  db.ref('cards/'+id).remove().then(function(){
+    if (selectedCard && selectedCard.id === id) selectedCard = null;
+  });
 }
 
 // ══════════ 탭 0/1: 확정대기 ══════════════════════════════
@@ -476,6 +500,43 @@ function renderConfirm(container) {
       bodyText = bodyText.slice((c.tail||'').length).replace(/^\n/,'');
     }
     rh += '<pre class="det-item">'+esc(bodyText)+'</pre>';
+
+    // 중복카드 표시
+    var dups2 = getDups(c);
+    // 현재 카드 포함 전체 목록에서 최신 카드 찾기
+    var allDupCards = [c].concat(dups2).sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    var latestCard = allDupCards[0];
+    var isCurrentLatest = latestCard.id === c.id;
+
+    if (dups2.length > 0) {
+      rh += '<div style="background:#fff3e0;border:2px solid #ffcc80;border-radius:8px;padding:10px;margin-bottom:10px">';
+      rh += '<div style="font-size:11px;font-weight:700;color:#e65100;margin-bottom:8px">⚠️ 중복카드 '+dups2.length+'개 발견</div>';
+
+      // 현재 카드 (최신이면 상단 고정)
+      rh += '<div style="background:'+(isCurrentLatest?'#fff8e1':'#fff')+';border:1px solid '+(isCurrentLatest?'#f5b800':'#ddd')+';border-radius:5px;padding:8px;margin-bottom:6px">';
+      rh += '<div style="font-size:10px;color:#888;margin-bottom:3px">'+(isCurrentLatest?'📌 최신 카드':'📌 현재 카드')+'</div>';
+      rh += '<div style="font-size:11px;color:#333;margin-bottom:5px">'+esc(c.title1||'')+'</div>';
+      rh += '<button onclick="deleteDupCard(\'' + c.id + '\',' + (isCurrentLatest?'true':'false') + ')" style="padding:3px 8px;background:#e53935;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">삭제</button>';
+      rh += '</div>';
+
+      // 중복 카드들
+      dups2.forEach(function(d) {
+        var identical = cardsIdentical(c, d);
+        var isLatestDup = latestCard.id === d.id;
+        rh += '<div style="background:#fff;border:1px solid #ddd;border-radius:5px;padding:8px;margin-bottom:5px">';
+        rh += '<div style="font-size:10px;color:#888;margin-bottom:3px">'+(isLatestDup?'📌 최신 카드':'중복 카드')+' · '+new Date(d.createdAt||0).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+'</div>';
+        rh += '<div style="font-size:11px;color:#333;margin-bottom:5px">'+esc(d.title1||'')+'</div>';
+        if (identical) {
+          rh += '<span style="font-size:10px;color:#2e7d32;margin-right:6px">✅ 완전 동일</span>';
+          rh += '<button onclick="deleteDupCard(\'' + d.id + '\',' + isLatestDup + ')" style="padding:3px 8px;background:#e53935;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">삭제</button>';
+        } else {
+          rh += '<span style="font-size:10px;color:#e65100;margin-right:6px">⚠️ 내용 다름 → 채널 확인</span>';
+          rh += '<button onclick="deleteDupCard(\'' + d.id + '\',' + isLatestDup + ')" style="padding:3px 8px;background:#e53935;color:#fff;border:none;border-radius:3px;font-size:10px;cursor:pointer">삭제</button>';
+        }
+        rh += '</div>';
+      });
+      rh += '</div>';
+    }
 
     // 카카오닉 입력
     rh += '<div class="kk-section">';
