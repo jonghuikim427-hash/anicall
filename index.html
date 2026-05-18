@@ -285,6 +285,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
 // ── 대형/콜밴/쏠라티 요금표 (시+동 2단계 구조) ──────────
 const LARGE_FARE_BY_CITY = {
@@ -939,6 +941,83 @@ function tmpLoad(){
 
 let _tmpRestoreData = null;
 let _lastFareText = '';
+// ── Firebase 초기화 ─────────────────────────────────────
+var _fbApp = null;
+var _fbDb = null;
+try {
+  var _fbConfig = {
+    apiKey: "AIzaSyAYaOtA5ztXwUz-ZfSyQAvUt65Oe-GvmWE",
+    authDomain: "anicall-taxi.firebaseapp.com",
+    databaseURL: "https://anicall-taxi-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "anicall-taxi",
+    storageBucket: "anicall-taxi.firebasestorage.app",
+    messagingSenderId: "1043913713685",
+    appId: "1:1043913713685:web:e1ee0e61fd3f3f2332461c"
+  };
+  _fbApp = firebase.initializeApp(_fbConfig);
+  _fbDb = firebase.database();
+} catch(e) { console.warn('Firebase init error:', e); }
+
+function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalBag, addr, airport, flight, fareText) {
+  try {
+    if (!_fbDb) return;
+    var tail = (extra.tail||'').trim();
+    var tailLines = tail.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    var title1 = '', title2 = '';
+    for (var ti = 0; ti < tailLines.length; ti++) {
+      var tl = tailLines[ti];
+      if (tl.indexOf('채널>') === 0) { title2 = tl; }
+      else if (!title1 && tl.indexOf('⚠️') !== 0 && tl.indexOf('❗') !== 0 && tl.length > 8) { title1 = tl; }
+    }
+    if (!title1) title1 = tailLines[0]||'';
+    if (!title2) { for (var ti2=0;ti2<tailLines.length;ti2++){if(tailLines[ti2]!==title1){title2=tailLines[ti2];break;}} }
+    var rideDate='', rideHHMM='';
+    if (dateV) {
+      var dt=new Date(dateV);
+      if (!isNaN(dt)) {
+        rideDate=dt.getFullYear()+'-'+(dt.getMonth()+1<10?'0':'')+(dt.getMonth()+1)+'-'+(dt.getDate()<10?'0':'')+dt.getDate();
+        rideHHMM=(dt.getHours()<10?'0':'')+dt.getHours()+(dt.getMinutes()<10?'0':'')+dt.getMinutes();
+      }
+    }
+    var vehLabel=veh==='large'?'대형':veh==='van'?'콜':veh==='solar'?'쏠라티':'중형';
+    var cardData = {
+      title1: title1,
+      title2: title2,
+      tail: tail,
+      body: buildCallCard(extra),
+      full: buildCallCard(extra),
+      channel: '애니',
+      kakaoId: extra.kakaoId||'',
+      rideDate: rideDate,
+      rideHHMM: rideHHMM,
+      phone: (extra.phone||'').replace(/-/g,''),
+      name: extra.name||'',
+      resNum: extra.resNum||'',
+      fare: fareText||'',
+      address: addr||'',
+      airport: airport||'',
+      vehicle: vehLabel,
+      pax: String(pax||''),
+      cabin: String(cabin||0),
+      cargo: String(cargo||0),
+      golf: String(golf||0),
+      bagTotal: String(totalBag||0),
+      carseat: extra.carseat||'',
+      picket: extra.picket||'',
+      request: extra.request||'',
+      waypoint: extra.waypoint||'',
+      status: '대기',
+      createdAt: Date.now(),
+      kakaoNick: '',
+      driverName: '',
+      driverPhone: '',
+      driverVehicleType: '',
+      driverVehicleNum: '',
+      driverKakao: ''
+    };
+    _fbDb.ref('cards').push(cardData);
+  } catch(e) { console.warn('Firebase write error:', e); }
+}
 function showTmpPopup(timeStr, data){
   _tmpRestoreData = data;
   const bg = document.createElement('div');
@@ -1822,6 +1901,10 @@ function openExtra(){
     const bg = document.querySelector('.modal-bg');
     if(bg) document.body.removeChild(bg);
     try {
+      const _airportVal1 = document.getElementById('sel-airport') ? document.getElementById('sel-airport').value : '';
+      const _detail1 = (document.getElementById('inp-detail')||{}).value||'';
+      const _addrFull1 = (addr + (_detail1 ? ' ' + _detail1 : '')).trim();
+      writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalBag, _addrFull1, _airportVal1, document.getElementById('inp-flight').value||'', _lastFareText||'');
       const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeMX0KphAfO6uB0EQUXVQlsDTqNTFOVU_qmHoISnXoeF6dmPp6R2o-dJAkeDXyXBujng/exec';
       const _d2 = dateV ? new Date(dateV) : new Date();
       const _dt = _d2.getFullYear()+'-'+String(_d2.getMonth()+1).padStart(2,'0')+'-'+String(_d2.getDate()).padStart(2,'0')+' '+String(_d2.getHours()).padStart(2,'0')+':'+String(_d2.getMinutes()).padStart(2,'0');
@@ -1983,6 +2066,13 @@ function confirmExtra(){
   const callCardFull = extra.tail + buildCallCard(extra);
 
   try {
+    const _pax2 = parseInt(document.getElementById('inp-pax').textContent)||0;
+    const _cabin2 = parseInt(document.getElementById('inp-cabin').textContent||0);
+    const _cargo2 = parseInt(document.getElementById('inp-cargo').textContent||0);
+    const _golf2 = parseInt(document.getElementById('inp-golf').textContent||0);
+    const _total2 = _cabin2+_cargo2+_golf2;
+    const _tab2 = typeof currentTab !== 'undefined' ? currentTab : '';
+    writeToFirebase(extra, document.getElementById('inp-date').value, _tab2, document.getElementById('sel-veh').value, _pax2, _cabin2, _cargo2, _golf2, _total2, addr, airportVal, document.getElementById('inp-flight').value||'', _lastFareText||'');
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeMX0KphAfO6uB0EQUXVQlsDTqNTFOVU_qmHoISnXoeF6dmPp6R2o-dJAkeDXyXBujng/exec';
     const p = new URLSearchParams({
       resNum  : extra.resNum    || '',
