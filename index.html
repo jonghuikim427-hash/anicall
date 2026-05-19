@@ -1619,7 +1619,7 @@ async function calculate(){
   }
   if(currentTab==='입국'){
     const flightVal = document.getElementById('inp-flight').value.trim();
-    if(flightVal && !/^[A-Z][A-Z0-9][0-9]{3,4}$/.test(flightVal)){
+    if(flightVal && !/^[A-Z][A-Z0-9][0-9]{1,4}$/.test(flightVal)){
       return pop('항공편명을 다시 한번 확인해주세요\n예: KE123, OZ4567, 7C890');
     }
   }
@@ -1662,7 +1662,7 @@ async function calculate(){
       btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       return;
     }
-    if(!/^[A-Z][A-Z0-9][0-9]{3,4}$/.test(flight)){
+    if(!/^[A-Z][A-Z0-9][0-9]{1,4}$/.test(flight)){
       el.classList.add('shake');
       el.style.borderColor='rgba(255,80,80,0.6)';
       setTimeout(()=>{el.classList.remove('shake');el.style.borderColor='';},600);
