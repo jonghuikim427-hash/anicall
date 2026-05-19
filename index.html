@@ -1785,7 +1785,7 @@ async function calculate(){
           if (veh === 'medium') distKm = _wpDist;
 
           // 미터기 지역 여부 확인 (확정요금 지역만 추가요금)
-          const _isFixedFare = await getLargeFareAsync(addr, veh);
+          const _isFixedFare = await getLargeFareAsync(selectedAddr ? selectedAddr.display : '', veh);
           const _isFixed = veh !== 'medium' || _isFixedFare !== null;
           if (_isFixed) {
             // 확정요금 지역: 경유 개수 × 단가
