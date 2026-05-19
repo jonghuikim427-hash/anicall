@@ -220,7 +220,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     <!-- 항공편명 (입국만) -->
     <div class="field" id="field-flight" style="display:none;order:6">
       <label class="lbl">✈️ 항공편명 <span style="color:#f5b800">(필수)</span></label>
-      <input class="inp" id="inp-flight" placeholder="예: KE123, OZ456" autocomplete="off" oninput="tmpScheduleSave()">
+      <input class="inp" id="inp-flight" placeholder="예: KE123, OZ456" autocomplete="off" oninput="onFlightInput(this)">
     </div>
 
     <!-- 짐 정보 -->
@@ -1299,6 +1299,14 @@ function tmpDismiss(){
   if(bg) bg.remove();
 }
 
+// 항공편명 입력 핸들러 (자동 대문자)
+function onFlightInput(el){
+  const pos = el.selectionStart;
+  el.value = el.value.toUpperCase();
+  el.setSelectionRange(pos, pos);
+  tmpScheduleSave();
+}
+
 // 입력 변경시 자동저장 (debounce 500ms)
 let _tmpTimer = null;
 function tmpScheduleSave(){
@@ -1609,6 +1617,12 @@ async function calculate(){
   if(currentTab==='입국' && !document.getElementById('inp-flight').value.trim()){
     return pop('항공편명을 입력해주세요');
   }
+  if(currentTab==='입국'){
+    const flightVal = document.getElementById('inp-flight').value.trim();
+    if(flightVal && !/^[A-Z][A-Z0-9][0-9]{1,4}$/.test(flightVal)){
+      return pop('항공편명을 다시 한번 확인해주세요\n예: KE123, OZ4567, 7C890');
+    }
+  }
   // ────────────────────────────────────────────────────────
 
   // 주소 없을 때 자동 검색
@@ -1637,14 +1651,22 @@ async function calculate(){
     selectedAddr = found;
   }
 
-  // 입국 탭: 항공편명 필수
+  // 입국 탭: 항공편명 필수 + 형식 검증
   if(currentTab === '입국'){
     const flight = document.getElementById('inp-flight').value.trim();
+    const el = document.getElementById('inp-flight');
     if(!flight){
-      const el = document.getElementById('inp-flight');
       el.classList.add('shake');
       el.style.borderColor='rgba(255,80,80,0.6)';
       setTimeout(()=>{el.classList.remove('shake');el.style.borderColor='';},600);
+      btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
+      return;
+    }
+    if(!/^[A-Z][A-Z0-9][0-9]{1,4}$/.test(flight)){
+      el.classList.add('shake');
+      el.style.borderColor='rgba(255,80,80,0.6)';
+      setTimeout(()=>{el.classList.remove('shake');el.style.borderColor='';},600);
+      pop('항공편명을 다시 한번 확인해주세요\n예: KE123, OZ4567, 7C890');
       btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
       return;
     }
