@@ -1738,7 +1738,7 @@ async function calculate(){
     if(!tmapData.features||!tmapData.features.length) throw new Error('경로 없음');
 
     const summary = tmapData.features[0].properties;
-    const distKm  = summary.totalDistance / 1000;
+    let distKm  = summary.totalDistance / 1000;
     const durMin  = Math.round(summary.totalTime / 60);
     const toll    = summary.totalFare || 0;
 
