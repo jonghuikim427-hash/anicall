@@ -1728,7 +1728,7 @@ async function calculate(){
     const _wpCount0 = getWaypointAddrs().length;
     const _wpAdd0 = _wpCount0 * 5000;
     btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
-    showFixedFare({...fixedFare, amount: fixedFare.amount + _wpAdd0, wpFareAdd: _wpAdd0, wpCount: _wpCount0}, depName, arrName);
+    showFixedFare({region: fixedFare.region, isSurcharge: fixedFare.isSurcharge, amount: fixedFare.amount + _wpAdd0, wpFareAdd: _wpAdd0, wpCount: _wpCount0}, depName, arrName);
     showMap([], dep, arr, depName, arrName, 0, -1);
     return;
   }
