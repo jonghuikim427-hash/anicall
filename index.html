@@ -625,6 +625,10 @@ const LARGE_FARE_BY_CITY = {
 };
 
 // 대형/콜밴/쏠라티 요금 조회 (할증 없음 - 무조건 확정)
+async function getLargeFareAsync(addrDisplay, veh) {
+  try { return getLargeFare(addrDisplay, veh); } catch(e) { return null; }
+}
+
 function getLargeFare(addrDisplay, veh){
   // 1단계: 시/군 먼저 찾기
   const cityKeys = Object.keys(LARGE_FARE_BY_CITY).sort((a,b) => b.length - a.length);
@@ -1095,10 +1099,15 @@ async function searchWpAddr(idx, q) {
   } catch(e) {}
 }
 
-function selectWpAddr(idx, addr) {
-  _waypointAddrs[idx] = addr;
-  var inp = document.getElementById('wp-inp-'+idx);
-  if (inp) inp.value = addr;
+function selectWpAddr(idx, display, place) {
+  var combined = display;
+  var inpEl = document.getElementById('wp-inp-'+idx);
+  if (inpEl) {
+    var userInput = inpEl.value.trim();
+    if (userInput && userInput !== display) combined = display + ' (' + userInput + ')';
+    inpEl.value = combined;
+  }
+  _waypointAddrs[idx] = combined;
   hideWpAc(idx);
 }
 
@@ -1757,11 +1766,18 @@ async function calculate(){
           if (_lastD.features && _lastD.features[0]) _wpDist += _lastD.features[0].properties.totalDistance / 1000;
           _wpExtraKm = Math.max(0, _wpDist - distKm);
 
-          // 경유지 기본 추가요금 (개수 기준)
-          const _wpBaseFare = _wps.length * (veh === 'medium' ? 5000 : 10000);
-          // 추가거리 15km 초과 시 추가
-          const _wpDistFare = _wpExtraKm > 15 ? (veh === 'medium' ? 5000 : 10000) : 0;
-          _wpFareAdd = _wpBaseFare + _wpDistFare;
+          // 미터기 지역 여부 확인 (확정요금 지역만 추가요금)
+          const _isFixedFare = await getLargeFareAsync(addr, veh);
+          const _isFixed = veh !== 'medium' || _isFixedFare !== null;
+          if (_isFixed) {
+            // 확정요금 지역: 경유 개수 × 단가
+            const _wpUnitFare = veh === 'medium' ? 5000 : 10000;
+            const _wpBaseFare = _wps.length * _wpUnitFare;
+            // 추가거리 15km 초과 시 추가
+            const _wpDistFare = _wpExtraKm > 15 ? _wpUnitFare : 0;
+            _wpFareAdd = _wpBaseFare + _wpDistFare;
+          }
+          // 미터기 지역 중형: 추가요금 없음 (거리로 자동 반영됨)
         }
       } catch(e) { console.warn('경유지 계산 오류:', e); }
     }
