@@ -1746,6 +1746,7 @@ async function calculate(){
     const _wps = getWaypointAddrs();
     let _wpExtraKm = 0;
     let _wpFareAdd = 0;
+    let _wpAllCoords = [];
     if (_wps.length > 0) {
       try {
         btn.textContent = '📍 경유지 계산 중...';
@@ -1761,7 +1762,6 @@ async function calculate(){
         if (_wpCoords.length > 0) {
           // 경유지 포함 경로: dep → wp1 → wp2 → ... → arr
           let _wpDist = 0;
-          let _wpAllCoords = [];
           let _prevPt = dep;
           for (const _wpc of _wpCoords) {
             const _wr = await fetch(`/api/route?type=route&startX=${_prevPt.lng}&startY=${_prevPt.lat}&endX=${_wpc.lng}&endY=${_wpc.lat}`);
