@@ -1088,13 +1088,21 @@ async function searchWpAddr(idx, q) {
     var ac = document.getElementById('wp-ac-'+idx);
     if (!ac) return;
     var docs = (data.documents||[]).slice(0,5);
-    if (!docs.length) { ac.style.display='none'; return; }
-    ac.innerHTML = docs.map(function(d,i){
+    if (!docs.length) { ac.innerHTML='<div class="ac-msg">주소를 찾을 수 없어요</div>'; ac.style.display='block'; return; }
+    ac.innerHTML = '';
+    ac.style.display = 'block';
+    docs.forEach(function(d) {
       var display = d.road_address_name || d.address_name || d.place_name || '';
       var sub = d.place_name || '';
       var div = document.createElement('div');
-    }).join('');
-    ac.style.display = 'block';
+      div.className = 'ac-item';
+      div.innerHTML = '<div class="ac-main">'+display+'</div>'+(sub?'<div class="ac-sub">'+sub+'</div>':'');
+      div.addEventListener('mousedown', (function(di){ return function(e){
+        e.preventDefault();
+        selectWpAddr(idx, di, '');
+      }; })(display));
+      ac.appendChild(div);
+    });
   } catch(e) {}
 }
 
