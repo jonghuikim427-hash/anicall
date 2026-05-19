@@ -202,7 +202,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
       <div class="ac" id="ac-list-long"></div>
     </div>
 
-    <div class="row2" style="order:4">
+    <div class="row2" style="order:7">
       <div class="field w2">
         <label class="lbl">탑승 일시</label>
         <input class="inp" type="datetime-local" id="inp-date" style="font-size:12px" onchange="clearResult();tmpScheduleSave()">
@@ -224,7 +224,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     </div>
 
     <!-- 짐 정보 -->
-    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px;margin-top:0;order:6">
+    <div class="row3" style="display:flex;gap:7px;margin-bottom:9px;margin-top:0;order:8">
       <div class="field" style="flex:1;margin-bottom:0">
         <label class="lbl" style="font-size:9px;letter-spacing:0">화물용 캐리어(대)</label>
         <div class="stepper">
@@ -251,7 +251,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
       </div>
     </div>
 
-    <div class="field" style="order:7">
+    <div class="field" style="order:9">
       <label class="lbl">차량 종류</label>
       <div class="csel-wrap">
         <div class="csel" id="csel-veh" onclick="toggleCsel('veh')">
@@ -810,9 +810,9 @@ function switchTab(t){
     fLong.style.display  = 'none';
     fFlight.style.display= 'block';
     fAp.style.order      = '2';
-    fAddr.style.order    = '5';
-    fDetail.style.order  = '6';
-    fFlight.style.order  = '7';
+    fAddr.style.order    = '4';
+    fDetail.style.order  = '5';
+    fFlight.style.order  = '6';
     fLong.style.order    = '99';
     var _wpS = document.getElementById('waypoint-section');
     if(_wpS) _wpS.style.order = '3';
