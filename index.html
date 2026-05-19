@@ -1722,9 +1722,11 @@ async function calculate(){
   const checkAddr = currentTab === '입국' ? selectedAddr.display : selectedAddr.display;
   const fixedFare = getFixedFare(checkAddr, hhmm);
   const _hasWp = getWaypointAddrs().length > 0;
-  if(fixedFare && !_hasWp){
+  if(fixedFare){
+    const _wpCount0 = getWaypointAddrs().length;
+    const _wpAdd0 = _wpCount0 * 5000;
     btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
-    showFixedFare(fixedFare, depName, arrName);
+    showFixedFare({...fixedFare, amount: fixedFare.amount + _wpAdd0, wpFareAdd: _wpAdd0, wpCount: _wpCount0}, depName, arrName);
     showMap([], dep, arr, depName, arrName, 0, -1);
     return;
   }
@@ -1868,7 +1870,7 @@ function getTimeRange(distKm){
   return '약 80분~';
 }
 
-function showFixedFare({region, amount, isSurcharge}, depName, arrName){
+function showFixedFare({region, amount, isSurcharge, wpFareAdd, wpCount}, depName, arrName){
   _lastFareText = `확정 ${amount.toLocaleString()}원`;
   const label = isSurcharge ? '🌙 야간요금' : '☀️ 일반요금';
   document.getElementById('result-wrap').innerHTML = `
@@ -1879,6 +1881,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
         ${isSurcharge ? `<span class="nb" style="background:#7c3aed">🌙 야간요금</span>` : ''}
       </div>
       <div class="em">💳 카드결제 가능</div>
+      ${wpFareAdd > 0 ? `<div class="bd"><div class="br"><span class="k">경유 추가요금 (${wpCount}개)</span><span class="v">+${wpFareAdd.toLocaleString()}원</span></div></div>` : ''}
       <div class="nt">※ 실제 요금은 위 금액으로 정산됩니다.</div>
       <div class="btn-row">
         <button class="kbtn sub" onclick="openChatInquiry()">💬 채팅 문의</button>
