@@ -1761,16 +1761,25 @@ async function calculate(){
         if (_wpCoords.length > 0) {
           // 경유지 포함 경로: dep → wp1 → wp2 → ... → arr
           let _wpDist = 0;
+          let _wpAllCoords = [];
           let _prevPt = dep;
           for (const _wpc of _wpCoords) {
             const _wr = await fetch(`/api/route?type=route&startX=${_prevPt.lng}&startY=${_prevPt.lat}&endX=${_wpc.lng}&endY=${_wpc.lat}`);
             const _wd = await _wr.json();
-            if (_wd.features && _wd.features[0]) _wpDist += _wd.features[0].properties.totalDistance / 1000;
+            if (_wd.features && _wd.features[0]) {
+              _wpDist += _wd.features[0].properties.totalDistance / 1000;
+              const _seg = _wd.features.filter(f=>f.geometry&&f.geometry.type==='LineString').flatMap(f=>f.geometry.coordinates.map(c=>[c[1],c[0]]));
+              _wpAllCoords = _wpAllCoords.concat(_seg);
+            }
             _prevPt = _wpc;
           }
           const _lastR = await fetch(`/api/route?type=route&startX=${_prevPt.lng}&startY=${_prevPt.lat}&endX=${arr.lng}&endY=${arr.lat}`);
           const _lastD = await _lastR.json();
-          if (_lastD.features && _lastD.features[0]) _wpDist += _lastD.features[0].properties.totalDistance / 1000;
+          if (_lastD.features && _lastD.features[0]) {
+            _wpDist += _lastD.features[0].properties.totalDistance / 1000;
+            const _lastSeg = _lastD.features.filter(f=>f.geometry&&f.geometry.type==='LineString').flatMap(f=>f.geometry.coordinates.map(c=>[c[1],c[0]]));
+            _wpAllCoords = _wpAllCoords.concat(_lastSeg);
+          }
           _wpExtraKm = Math.max(0, _wpDist - distKm);
           // 미터기 계산용으로 distKm 업데이트 (경유지 포함 거리로)
           if (veh === 'medium') distKm = _wpDist;
@@ -1833,7 +1842,8 @@ async function calculate(){
 
     totalFare += _wpFareAdd;
     showResult({depName, arrName, distKm, baseFare: m.base, distFare, toll, totalFare, nightMult, veh, surchargeKm, wpFareAdd: _wpFareAdd, wpExtraKm: _wpExtraKm, wpCount: _wps.length});
-    showMap(coords, dep, arr, depName, arrName, distKm, exitIdx);
+    const _mapCoords = (_wps.length > 0 && typeof _wpAllCoords !== 'undefined' && _wpAllCoords.length > 0) ? _wpAllCoords : coords;
+    showMap(_mapCoords, dep, arr, depName, arrName, distKm, exitIdx);
 
   } catch(e){
     console.error('경로 오류:', e);
