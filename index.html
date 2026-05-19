@@ -162,8 +162,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
       <button class="tab on" id="tab-out" onclick="switchTab('출국')">🛫 출국</button>
       <span class="tab-arrow">⇄</span>
       <button class="tab" id="tab-in" onclick="switchTab('입국')">🛬 입국</button>
-      <span class="tab-arrow">⇄</span>
-      <button class="tab long" id="tab-long" onclick="switchTab('장거리')">🚗<br><span style="white-space:nowrap">전국장거리</span></button>
+      <span class="tab-arrow" style="display:none">⇄</span>
+      <button class="tab long" id="tab-long" onclick="switchTab('장거리')" style="display:none">🚗<br><span style="white-space:nowrap">전국장거리</span></button>
     </div>
 
     <div class="field" id="field-addr" style="order:2">
@@ -174,6 +174,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     </div>
     <div class="field" id="field-detail" style="order:3;margin-top:-4px">
       <input class="inp" id="inp-detail" placeholder="상세주소 (동/호수/건물명 등)" autocomplete="off" oninput="tmpScheduleSave()">
+    </div>
+    <div id="waypoint-section" style="order:3;margin-top:4px;margin-bottom:0">
+      <div id="waypoint-list"></div>
+      <button id="btn-add-waypoint" onclick="addWaypoint()" style="padding:7px 14px;background:linear-gradient(135deg,#f5b800,#ffdd57);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#1a1a1a;cursor:pointer;margin-bottom:6px">+ 경유지 추가</button>
     </div>
 
     <div class="field" id="field-airport" style="order:4">
@@ -527,12 +531,103 @@ const LARGE_FARE_BY_CITY = {
   '청주시': { '_default': [26,20,39] },
   '충주시': { '_default': [26,20,36] },
   '청원구': { '_default': [26,20,36] },
+
+  // ── 경남 ─────────────────────────────────────────────────
+  '경상남도 고성': { '_default': [64,38,70] }, // 강원 고성군과 구별
+  '거제시':    { '_default': [70,48,75] },
+  '거창군':    { '_default': [52,44,60] },
+  '김해시':    { '_default': [67,47,70] },
+  '마산':      { '_default': [65,45,70] },
+  '밀양시':    { '_default': [62,40,65] },
+  '부산광역시': { '_default': [68,49,75] },
+  '사천시':    { '_default': [62,41,65] },
+  '삼천포':    { '_default': [62,41,70] },
+  '산청군':    { '_default': [55,36,60] },
+  '양산시':    { '_default': [65,48,70] },
+  '울산광역시': { '_default': [65,46,70] },
+  '의령군':    { '_default': [55,41,65] },
+  '진주시':    { '_default': [59,44,65] },
+  '진해':      { '_default': [65,46,70] },
+  '창녕군':    { '_default': [58,39,65] },
+  '창원시':    { '_default': [65,46,65] },
+  '통영시':    { '_default': [67,45,70] },
+  '하동군':    { '_default': [59,44,65] },
+  '함안군':    { '_default': [65,44,70] },
+  '함양군':    { '_default': [50,34,60] },
+  '합천군':    { '_default': [58,40,65] },
+  '남해군':    { '_default': [65,45,70] },
+
+  // ── 경북 ─────────────────────────────────────────────────
+  '경산시':    { '_default': [53,37,60] },
+  '경주시':    { '_default': [60,43,65] },
+  '고령군':    { '_default': [55,38,60] },
+  '구미시':    { '_default': [47,33,55] },
+  '군위군':    { '_default': [48,34,55] },
+  '김천시':    { '_default': [45,30,55] },
+  '대구광역시': { '_default': [50,36,60] },
+  '문경시':    { '_default': [37,26,47] },
+  '봉화군':    { '_default': [43,30,50] },
+  '상주시':    { '_default': [40,28,50] },
+  '안동시':    { '_default': [45,32,55] },
+  '영덕군':    { '_default': [58,40,55] },
+  '영양군':    { '_default': [57,37,65] },
+  '영주시':    { '_default': [40,28,65] },
+  '영천시':    { '_default': [53,39,60] },
+  '예천군':    { '_default': [43,30,50] },
+  '울진군':    { '_default': [55,38,60] },
+  '의성군':    { '_default': [48,34,55] },
+  '청도군':    { '_default': [58,38,65] },
+  '청송군':    { '_default': [53,36,60] },
+  '칠곡군':    { '_default': [50,33,55] },
+  '성주군':    { '_default': [50,33,55] },
+  '포항시':    { '_default': [60,45,65] },
+
+  // ── 전남 ─────────────────────────────────────────────────
+  '광주광역시': { '_default': [50,36,60] }, // 경기 광주시와 구별
+  '강진군':    { '_default': [65,45,70] },
+  '고흥군':    { '_default': [65,48,70] },
+  '곡성군':    { '_default': [50,35,60] },
+  '광양시':    { '_default': [60,38,65] },
+  '구례군':    { '_default': [50,36,60] },
+  '나주시':    { '_default': [55,38,65] },
+  '담양군':    { '_default': [53,36,60] },
+  '목포시':    { '_default': [63,42,65] },
+  '무안군':    { '_default': [57,38,65] },
+  '보성군':    { '_default': [65,42,70] },
+  '순천시':    { '_default': [60,38,65] },
+  '신안군':    { '_default': [60,42,65] },
+  '여수시':    { '_default': [60,42,65] },
+  '영광군':    { '_default': [53,35,60] },
+  '영암군':    { '_default': [60,41,65] },
+  '완도군':    { '_default': [70,49,75] },
+  '장성군':    { '_default': [52,35,60] },
+  '장흥군':    { '_default': [64,43,70] },
+  '진도군':    { '_default': [68,46,70] },
+  '함평군':    { '_default': [57,38,60] },
+  '해남군':    { '_default': [67,45,70] },
+  '화순군':    { '_default': [57,38,65] },
+
+  // ── 전북 ─────────────────────────────────────────────────
+  '고창군':    { '_default': [49,33,55] },
+  '군산시':    { '_default': [43,26,50] },
+  '김제시':    { '_default': [45,28,50] },
+  '남원시':    { '_default': [49,33,55] },
+  '무주군':    { '_default': [45,28,50] },
+  '부안군':    { '_default': [45,30,55] },
+  '순창군':    { '_default': [50,34,55] },
+  '완주군':    { '_default': [40,28,50] },
+  '익산시':    { '_default': [38,27,50] },
+  '임실군':    { '_default': [45,31,55] },
+  '장수군':    { '_default': [47,32,55] },
+  '전주시':    { '_default': [40,28,50] },
+  '정읍시':    { '_default': [45,31,55] },
+  '진안군':    { '_default': [45,31,55] },
 };
 
 // 대형/콜밴/쏠라티 요금 조회 (할증 없음 - 무조건 확정)
 function getLargeFare(addrDisplay, veh){
   // 1단계: 시/군 먼저 찾기
-  const cityKeys = Object.keys(LARGE_FARE_BY_CITY);
+  const cityKeys = Object.keys(LARGE_FARE_BY_CITY).sort((a,b) => b.length - a.length);
   const city = cityKeys.find(c => addrDisplay.includes(c));
   if(!city) return null;
 
@@ -939,8 +1034,88 @@ function tmpLoad(){
   } catch(e){ tmpClear(); }
 }
 
+// ── 경유지 ─────────────────────────────────────────────
+var _waypointCount = 0;
+var _waypointAddrs = [];
+
+function addWaypoint() {
+  if (_waypointCount >= 3) return;
+  _waypointCount++;
+  _waypointAddrs.push('');
+  renderWaypoints();
+}
+
+function removeWaypoint(idx) {
+  _waypointCount--;
+  _waypointAddrs.splice(idx, 1);
+  renderWaypoints();
+}
+
+function renderWaypoints() {
+  var list = document.getElementById('waypoint-list');
+  var btn = document.getElementById('btn-add-waypoint');
+  if (!list) return;
+  list.innerHTML = '';
+  for (var i = 0; i < _waypointCount; i++) {
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center';
+    div.innerHTML = '<div style="position:relative;flex:1">'
+      + '<input class="inp" id="wp-inp-'+i+'" placeholder="경유지 '+(i+1)+' 주소" autocomplete="off" value="'+(_waypointAddrs[i]||'')+'" oninput="onWpInput('+i+',this.value)" onblur="hideWpAc('+i+')" style="font-size:12px">'
+      + '<div class="ac" id="wp-ac-'+i+'"></div>'
+      + '</div>'
+      + '<button onclick="removeWaypoint('+i+')" style="padding:5px 10px;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;font-size:11px;color:#dc2626;cursor:pointer;flex-shrink:0">✕</button>';
+    list.appendChild(div);
+  }
+  if (btn) btn.style.display = _waypointCount >= 3 ? 'none' : 'inline-block';
+}
+
+var _wpTimers = {};
+function onWpInput(idx, val) {
+  _waypointAddrs[idx] = val;
+  clearTimeout(_wpTimers[idx]);
+  if (val.length < 2) { hideWpAc(idx); return; }
+  _wpTimers[idx] = setTimeout(function(){ searchWpAddr(idx, val); }, 400);
+}
+
+async function searchWpAddr(idx, q) {
+  try {
+    var res = await fetch('/api/route?type=address&query='+encodeURIComponent(q));
+    var data = await res.json();
+    var ac = document.getElementById('wp-ac-'+idx);
+    if (!ac) return;
+    var docs = (data.documents||[]).slice(0,5);
+    if (!docs.length) { ac.style.display='none'; return; }
+    ac.innerHTML = docs.map(function(d,i){
+      return '<div class="ac-item" onmousedown="selectWpAddr('+idx+',''+d.address_name.replace(/'/g,"\'")+'')">'
+        + '<div class="ac-main">'+d.address_name+'</div>'
+        + (d.road_address_name ? '<div class="ac-sub">'+d.road_address_name+'</div>' : '')
+        + '</div>';
+    }).join('');
+    ac.style.display = 'block';
+  } catch(e) {}
+}
+
+function selectWpAddr(idx, addr) {
+  _waypointAddrs[idx] = addr;
+  var inp = document.getElementById('wp-inp-'+idx);
+  if (inp) inp.value = addr;
+  hideWpAc(idx);
+}
+
+function hideWpAc(idx) {
+  setTimeout(function(){
+    var ac = document.getElementById('wp-ac-'+idx);
+    if (ac) ac.style.display = 'none';
+  }, 200);
+}
+
+function getWaypointAddrs() {
+  return _waypointAddrs.filter(function(a){ return a && a.trim(); });
+}
+
 let _tmpRestoreData = null;
 let _lastFareText = '';
+
 // ── Firebase 초기화 ─────────────────────────────────────
 var _fbApp = null;
 var _fbDb = null;
@@ -963,6 +1138,7 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
     if (!_fbDb) return;
     var tail = (extra.tail||'').trim();
     var tailLines = tail.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    // ⚠️ 경고줄 제외하고 실제 꼬리줄 추출
     var title1 = '', title2 = '';
     for (var ti = 0; ti < tailLines.length; ti++) {
       var tl = tailLines[ti];
@@ -971,6 +1147,8 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
     }
     if (!title1) title1 = tailLines[0]||'';
     if (!title2) { for (var ti2=0;ti2<tailLines.length;ti2++){if(tailLines[ti2]!==title1){title2=tailLines[ti2];break;}} }
+    
+    // rideDate, rideHHMM
     var rideDate='', rideHHMM='';
     if (dateV) {
       var dt=new Date(dateV);
@@ -979,7 +1157,9 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
         rideHHMM=(dt.getHours()<10?'0':'')+dt.getHours()+(dt.getMinutes()<10?'0':'')+dt.getMinutes();
       }
     }
-    var vehLabel=veh==='large'?'대형':veh==='van'?'콜':veh==='solar'?'쏠라티':'중형';
+    
+    var vehLabel=veh==='large'?'대형':veh==='van'?'콜밴':veh==='solar'?'쏠라티':'중형';
+    
     var cardData = {
       title1: title1,
       title2: title2,
@@ -990,7 +1170,7 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
       kakaoId: extra.kakaoId||'',
       rideDate: rideDate,
       rideHHMM: rideHHMM,
-      phone: (extra.phone||'').replace(/-/g,''),
+      phone: extra.phone||'',
       name: extra.name||'',
       resNum: extra.resNum||'',
       fare: fareText||'',
@@ -1018,6 +1198,7 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
     _fbDb.ref('cards').push(cardData);
   } catch(e) { console.warn('Firebase write error:', e); }
 }
+// ────────────────────────────────────────────────────────
 function showTmpPopup(timeStr, data){
   _tmpRestoreData = data;
   const bg = document.createElement('div');
@@ -1545,6 +1726,46 @@ async function calculate(){
     const durMin  = Math.round(summary.totalTime / 60);
     const toll    = summary.totalFare || 0;
 
+    // ── 경유지 추가거리 계산 ──────────────────────────────
+    const _wps = getWaypointAddrs();
+    let _wpExtraKm = 0;
+    let _wpFareAdd = 0;
+    if (_wps.length > 0) {
+      try {
+        btn.textContent = '📍 경유지 계산 중...';
+        // 경유지 좌표 획득
+        const _wpCoords = [];
+        for (const _wpa of _wps) {
+          const _gr = await fetch('/api/route?type=address&query=' + encodeURIComponent(_wpa));
+          const _gd = await _gr.json();
+          if (_gd.documents && _gd.documents[0]) {
+            _wpCoords.push({ lat: parseFloat(_gd.documents[0].y), lng: parseFloat(_gd.documents[0].x) });
+          }
+        }
+        if (_wpCoords.length > 0) {
+          // 경유지 포함 경로: dep → wp1 → wp2 → ... → arr
+          let _wpDist = 0;
+          let _prevPt = dep;
+          for (const _wpc of _wpCoords) {
+            const _wr = await fetch(`/api/route?type=route&startX=${_prevPt.lng}&startY=${_prevPt.lat}&endX=${_wpc.lng}&endY=${_wpc.lat}`);
+            const _wd = await _wr.json();
+            if (_wd.features && _wd.features[0]) _wpDist += _wd.features[0].properties.totalDistance / 1000;
+            _prevPt = _wpc;
+          }
+          const _lastR = await fetch(`/api/route?type=route&startX=${_prevPt.lng}&startY=${_prevPt.lat}&endX=${arr.lng}&endY=${arr.lat}`);
+          const _lastD = await _lastR.json();
+          if (_lastD.features && _lastD.features[0]) _wpDist += _lastD.features[0].properties.totalDistance / 1000;
+          _wpExtraKm = Math.max(0, _wpDist - distKm);
+
+          // 경유지 기본 추가요금 (개수 기준)
+          const _wpBaseFare = _wps.length * (veh === 'medium' ? 5000 : 10000);
+          // 추가거리 15km 초과 시 추가
+          const _wpDistFare = _wpExtraKm > 15 ? (veh === 'medium' ? 5000 : 10000) : 0;
+          _wpFareAdd = _wpBaseFare + _wpDistFare;
+        }
+      } catch(e) { console.warn('경유지 계산 오류:', e); }
+    }
+
     // 경로 좌표 (지도용 + 시계외할증 계산용)
     const coords = tmapData.features
       .filter(f => f.geometry && f.geometry.type === 'LineString')
@@ -1585,7 +1806,8 @@ async function calculate(){
       totalFare = baseFareNight + distFare + toll;
     }
 
-    showResult({depName, arrName, distKm, baseFare: m.base, distFare, toll, totalFare, nightMult, veh, surchargeKm});
+    totalFare += _wpFareAdd;
+    showResult({depName, arrName, distKm, baseFare: m.base, distFare, toll, totalFare, nightMult, veh, surchargeKm, wpFareAdd: _wpFareAdd, wpExtraKm: _wpExtraKm, wpCount: _wps.length});
     showMap(coords, dep, arr, depName, arrName, distKm, exitIdx);
 
   } catch(e){
@@ -1626,7 +1848,7 @@ function showFixedFare({region, amount, isSurcharge}, depName, arrName){
   if(IS_BOOKING) setTimeout(()=>openExtra(), 100);
 }
 
-function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm}){
+function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm,wpFareAdd,wpCount}){
   _lastFareText = `예상 ${totalFare.toLocaleString()}~${(totalFare+3000).toLocaleString()}원`;
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
@@ -1643,6 +1865,7 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         <div class="br"><span class="k">거리요금 (${distKm.toFixed(1)}km)</span><span class="v">${(baseFare + distFare).toLocaleString()}원</span></div>
         ${surchargeKm>0?`<div class="br"><span class="k" style="color:#fc8181">└ 시계외구간 ${surchargeKm.toFixed(1)}km (×1.2)</span><span class="v" style="color:#fc8181">포함</span></div>`:''}
         <div class="br"><span class="k">통행료</span><span class="v">+${toll.toLocaleString()}원</span></div>
+        ${wpFareAdd > 0 ? `<div class="br"><span class="k">경유 추가요금 (${wpCount}개)</span><span class="v">+${wpFareAdd.toLocaleString()}원</span></div>` : ''}
         <div class="br tot"><span class="k">예상요금</span><span class="v">${totalFare.toLocaleString()}원 ~ ${(totalFare+3000).toLocaleString()}원</span></div>
       </div>
       <div class="nt">※ 실제 요금은 미터기+통행료로 정산됩니다. 사고·정체 구간 발생 시 요금은 소폭 변동될 수 있습니다.<br>야간할증: 22~23시·02~04시 +20% / 23~02시 +40%</div>
@@ -1701,9 +1924,8 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}
-📌예약번호 ${extra.resNum||''}`;
+🔹요청사항 : \${extra.request||''}\${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+📌예약번호 \${extra.resNum||''}\`;
 
   } else if(currentTab === '입국'){
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1728,9 +1950,8 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : ${extra.request||''}
-🔹경유지: ${extra.waypoint||''}
-📌예약번호 ${extra.resNum||''}`;
+🔹요청사항 : \${extra.request||''}\${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+📌예약번호 \${extra.resNum||''}\`;
 
   } else { // 장거리
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1834,8 +2055,9 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
     if(totalBag >= 5)     warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (중형선택)');
     // 경고 있으면 배차타입 제거
-    const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
-    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}`;
+    const dtypeStr = dtype ? ' ' + dtype : '';
+    const _wpSuffix = getWaypointAddrs().length > 0 ? ' 경유' : '';
+  line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}${_wpSuffix}`;
 
   } else if(veh==='large'){
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
@@ -1888,7 +2110,8 @@ function openExtra(){
     const _dateObj0 = dateV ? new Date(dateV) : new Date();
     const _resMMDD  = String(_dateObj0.getMonth()+1).padStart(2,'0') + String(_dateObj0.getDate()).padStart(2,'0');
     const resNum0   = _resMMDD + phoneDigits.slice(-4);
-    const extra = { phone: phone.replace(/-/g,''), name, resNum: resNum0, request, carseat, picket, kakaoId, waypoint };
+    const wps = getWaypointAddrs();
+    const extra = { phone: phone.replace(/-/g,''), name, resNum: resNum0, request, carseat, picket, kakaoId, waypoint: wps.join(', '), waypoints: wps };
     const tab = currentTab;
     const veh = document.getElementById('sel-veh').value;
     const pax = parseInt(document.getElementById('inp-pax').textContent)||0;
@@ -1905,42 +2128,6 @@ function openExtra(){
       const _detail1 = (document.getElementById('inp-detail')||{}).value||'';
       const _addrFull1 = (addr + (_detail1 ? ' ' + _detail1 : '')).trim();
       writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalBag, _addrFull1, _airportVal1, document.getElementById('inp-flight').value||'', _lastFareText||'');
-      const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeMX0KphAfO6uB0EQUXVQlsDTqNTFOVU_qmHoISnXoeF6dmPp6R2o-dJAkeDXyXBujng/exec';
-      const _d2 = dateV ? new Date(dateV) : new Date();
-      const _dt = _d2.getFullYear()+'-'+String(_d2.getMonth()+1).padStart(2,'0')+'-'+String(_d2.getDate()).padStart(2,'0')+' '+String(_d2.getHours()).padStart(2,'0')+':'+String(_d2.getMinutes()).padStart(2,'0');
-      const _vl = veh==='large'?'대형':veh==='van'?'콜밴':'중형';
-      const airportVal = document.getElementById('sel-airport') ? document.getElementById('sel-airport').value : '';
-      const _cabinV2 = parseInt(document.getElementById('inp-cabin').textContent||0);
-      const _cargoV2 = parseInt(document.getElementById('inp-cargo').textContent||0);
-      const _golfV2  = parseInt(document.getElementById('inp-golf').textContent||0);
-      const _detail2 = (document.getElementById('inp-detail')||{}).value||'';
-      const _addrFull2 = (addr + (_detail2 ? ' ' + _detail2 : '')).trim();
-      const _p = new URLSearchParams({
-        resNum  : extra.resNum||'',
-        channel : '애니',
-        tab     : tab||'',
-        address : _addrFull2||'',
-        datetime: _dt,
-        airport : airportVal||'',
-        flight  : document.getElementById('inp-flight').value||'',
-        vehicle : _vl,
-        pax     : String(pax||''),
-        cabin   : String(_cabinV2),
-        cargo   : String(_cargoV2),
-        golf    : String(_golfV2),
-        bagTotal: String(totalBag||''),
-        name    : extra.name||'',
-        phone   : extra.phone||'',
-        request : extra.request||'',
-        carseat : extra.carseat||'',
-        picket  : extra.picket||'',
-        kakaoId : extra.kakaoId||'',
-        waypoint: extra.waypoint||'',
-        tail    : extra.tail||'',
-        fare    : _lastFareText||'',
-      });
-      const _imgB = new Image();
-      _imgB.src = SCRIPT_URL + '?' + _p.toString();
     } catch(e) {}
     openKakao(extra);
     return;
@@ -2026,7 +2213,7 @@ function confirmExtra(){
   const resNum  = resMMDD + phoneDigits.slice(-4);
 
   const extra = {
-    phone: phoneDigits,
+    phone: phoneDigits.replace(/([0-9]{3})([0-9]{4})([0-9]{4})/,'$1-$2-$3'),
     name,
     resNum,
     carseat  : document.getElementById('ex-carseat').value.trim(),
@@ -2073,28 +2260,6 @@ function confirmExtra(){
     const _total2 = _cabin2+_cargo2+_golf2;
     const _tab2 = typeof currentTab !== 'undefined' ? currentTab : '';
     writeToFirebase(extra, document.getElementById('inp-date').value, _tab2, document.getElementById('sel-veh').value, _pax2, _cabin2, _cargo2, _golf2, _total2, addr, airportVal, document.getElementById('inp-flight').value||'', _lastFareText||'');
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeMX0KphAfO6uB0EQUXVQlsDTqNTFOVU_qmHoISnXoeF6dmPp6R2o-dJAkeDXyXBujng/exec';
-    const p = new URLSearchParams({
-      resNum  : extra.resNum    || '',
-      channel : '애니',
-      address : addr            || '',
-      datetime: datetimeStr     || '',
-      airport : airportVal      || '',
-      vehicle : vehLabel        || '',
-      pax     : String(pax)     || '',
-      cargo   : String(totalBag)|| '',
-      name    : extra.name      || '',
-      phone   : extra.phone     || '',
-      request : extra.request   || '',
-      carseat : extra.carseat   || '',
-      picket  : extra.picket    || '',
-      kakaoId : extra.kakaoId   || '',
-      waypoint: extra.waypoint  || '',
-      tail    : extra.tail      || '',
-    });
-    // callCard는 URL 길이 제한으로 별도 처리 안 함 (tail + 전체 내용)
-    const _img = new Image();
-    _img.src = SCRIPT_URL + '?' + p.toString();
   } catch(e) {}
   // ─────────────────────────────────────────────
 
@@ -2140,7 +2305,7 @@ function openChatInquiry(isLongDist){
   }
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
-  const dtypeStr = warns.length > 0 ? '' : (dtype ? ' ' + dtype : '');
+  const dtypeStr = dtype ? ' ' + dtype : '';
   const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
   const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
 
