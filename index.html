@@ -797,9 +797,11 @@ function switchTab(t){
     fFlight.style.display= 'none';
     fAddr.style.order    = '2';
     fDetail.style.order  = '3';
-    fAp.style.order      = '4';
+    fAp.style.order      = '5';
     fLong.style.order    = '99';
     fFlight.style.order  = '99';
+    var _wpS = document.getElementById('waypoint-section');
+    if(_wpS) _wpS.style.order = '4';
     document.getElementById('lbl-addr').textContent = '출발지 주소';
     document.getElementById('lbl-ap').textContent   = '도착 공항';
 
@@ -812,6 +814,8 @@ function switchTab(t){
     fDetail.style.order  = '6';
     fFlight.style.order  = '7';
     fLong.style.order    = '99';
+    var _wpS = document.getElementById('waypoint-section');
+    if(_wpS) _wpS.style.order = '3';
     document.getElementById('lbl-addr').textContent = '도착지 주소';
     document.getElementById('lbl-ap').textContent   = '출발 공항';
 
