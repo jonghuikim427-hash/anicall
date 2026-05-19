@@ -2215,8 +2215,8 @@ function openExtra(){
         <input class="extra-inp" id="ex-request" placeholder="기타 요청사항">
       </div>
       <div class="extra-section">
-        <label class="extra-label">경유지</label>
-        <input class="extra-inp" id="ex-waypoint" placeholder="경유지 주소">
+        <label style="display:none" class="extra-label">경유지</label>
+        <input style="display:none" class="extra-inp" id="ex-waypoint" placeholder="경유지 주소">
       </div>
 
       <div class="modal-btns" style="margin-top:16px">
@@ -2265,7 +2265,8 @@ function confirmExtra(){
     picket   : document.getElementById('ex-picket').value.trim(),
     kakaoId  : document.getElementById('ex-kakao').value.trim(),
     request  : document.getElementById('ex-request').value.trim(),
-    waypoint : document.getElementById('ex-waypoint').value.trim(),
+    waypoint : getWaypointAddrs().join(', '),
+    waypoints: getWaypointAddrs(),
   };
 
   // 짐 계산
