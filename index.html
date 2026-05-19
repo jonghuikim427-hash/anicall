@@ -1086,7 +1086,7 @@ async function searchWpAddr(idx, q) {
     var docs = (data.documents||[]).slice(0,5);
     if (!docs.length) { ac.style.display='none'; return; }
     ac.innerHTML = docs.map(function(d,i){
-      return '<div class="ac-item" onmousedown="selectWpAddr('+idx+',''+d.address_name.replace(/'/g,"\'")+'')">'
+      var _safeAddr = d.address_name.replace(/"/g,'&quot;'); return '<div class="ac-item" onmousedown="selectWpAddr(' + idx + ', this.getAttribute(\'data-addr\'))" data-addr="' + _safeAddr + '">' 
         + '<div class="ac-main">'+d.address_name+'</div>'
         + (d.road_address_name ? '<div class="ac-sub">'+d.road_address_name+'</div>' : '')
         + '</div>';
@@ -1924,8 +1924,8 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : \${extra.request||''}\${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
-📌예약번호 \${extra.resNum||''}\`;
+🔹요청사항 : ${extra.request||''}${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+📌예약번호 ${extra.resNum||''}`;
 
   } else if(currentTab === '입국'){
     const detail = document.getElementById('inp-detail').value.trim();
@@ -1950,8 +1950,8 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : \${extra.request||''}\${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
-📌예약번호 \${extra.resNum||''}\`;
+🔹요청사항 : ${extra.request||''}${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+📌예약번호 ${extra.resNum||''}`;
 
   } else { // 장거리
     const detail = document.getElementById('inp-detail').value.trim();
