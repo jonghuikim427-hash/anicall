@@ -1983,8 +1983,8 @@ function buildCallCard(extra){
 1️⃣입국일자 : ${dateStr}
 2️⃣비행기 도착시간(오전/오후) : ${timeStr}
 3️⃣도착공항 (인천공항 t1,t2) : ${apName}
-🌟비행기 편명 : ${flight}
-4️⃣목적지 주소 : ${to}${extra.waypoints && extra.waypoints.length ? '\n' + extra.waypoints.map(function(w,i){return '🔹경유지'+(i+1)+' : '+w;}).join('\n') : ''}
+🌟비행기 편명 : ${flight}${extra.waypoints && extra.waypoints.length ? '\n' + extra.waypoints.map(function(w,i){return '🔹경유지'+(i+1)+' : '+w;}).join('\n') : ''}
+4️⃣목적지 주소 : ${to}
 5️⃣탑승인원 : ${pax}
 6️⃣기내용 케리어(개수) : ${cabin}
 7️⃣화물용 케리어(개수) : ${cargo}
@@ -2095,14 +2095,14 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   // 차종별 line1 설정
   let line1 = '';
 
+  const _wpSuffix = getWaypointAddrs().length > 0 ? ' 경유' : '';
+
   if(veh==='medium'){
     const dtype = getDispatchType(pax, totalBag);
     if(totalBag >= 5)     warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (중형선택)');
-    // 경고 있으면 배차타입 제거
     const dtypeStr = dtype ? ' ' + dtype : '';
-    const _wpSuffix = getWaypointAddrs().length > 0 ? ' 경유' : '';
-  line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}${_wpSuffix}`;
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}${_wpSuffix}`;
 
   } else if(veh==='large'){
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${_wpSuffix}`;
