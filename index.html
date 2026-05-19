@@ -1772,6 +1772,8 @@ async function calculate(){
           const _lastD = await _lastR.json();
           if (_lastD.features && _lastD.features[0]) _wpDist += _lastD.features[0].properties.totalDistance / 1000;
           _wpExtraKm = Math.max(0, _wpDist - distKm);
+          // 미터기 계산용으로 distKm 업데이트 (경유지 포함 거리로)
+          if (veh === 'medium') distKm = _wpDist;
 
           // 미터기 지역 여부 확인 (확정요금 지역만 추가요금)
           const _isFixedFare = await getLargeFareAsync(addr, veh);
