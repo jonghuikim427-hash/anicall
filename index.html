@@ -1957,7 +1957,7 @@ function buildCallCard(extra){
 
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
-3️⃣출발지주소 : ${from}
+3️⃣출발지주소 : ${from}${extra.waypoints && extra.waypoints.length ? '\n' + extra.waypoints.map(function(w,i){return '🔹경유지'+(i+1)+' : '+w;}).join('\n') : ''}
 4️⃣목적지(인천공항 t1,t2): ${apName}
 5️⃣탑승인원 : ${pax}
 6️⃣기내용 케리어(개수) : ${cabin}
@@ -1984,7 +1984,7 @@ function buildCallCard(extra){
 2️⃣비행기 도착시간(오전/오후) : ${timeStr}
 3️⃣도착공항 (인천공항 t1,t2) : ${apName}
 🌟비행기 편명 : ${flight}
-4️⃣목적지 주소 : ${to}
+4️⃣목적지 주소 : ${to}${extra.waypoints && extra.waypoints.length ? '\n' + extra.waypoints.map(function(w,i){return '🔹경유지'+(i+1)+' : '+w;}).join('\n') : ''}
 5️⃣탑승인원 : ${pax}
 6️⃣기내용 케리어(개수) : ${cabin}
 7️⃣화물용 케리어(개수) : ${cargo}
@@ -2007,7 +2007,7 @@ function buildCallCard(extra){
 1️⃣출발일자 : ${dateStr}
 2️⃣택시탑승시간(오전/오후) : ${timeStr}
 3️⃣출발지주소 : ${from}
-4️⃣목적지 주소 : ${to}
+4️⃣목적지 주소 : ${to}${extra.waypoints && extra.waypoints.length ? '\n' + extra.waypoints.map(function(w,i){return '🔹경유지'+(i+1)+' : '+w;}).join('\n') : ''}
 5️⃣탑승인원 : ${pax}
 6️⃣기내용 케리어(개수) : ${cabin}
 7️⃣화물용 케리어(개수) : ${cargo}
@@ -2071,7 +2071,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   const vehCode = getVehCode(veh);
   const name = extra.name || '';
   const p = parseInt(pax);
-  const hasExtra = !!(extra.carseat||extra.picket||extra.kakaoId||extra.request||extra.waypoint);
+  const hasExtra = !!(extra.carseat||extra.picket||extra.kakaoId||extra.request);
 
   // 경고 메시지 배열 (중복 가능)
   const warns = [];
