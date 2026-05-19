@@ -2559,7 +2559,16 @@ function showMap(coords, dep, arr, depName, arrName, distKm, exitIdx){
 
     addMarker(dep.lat,dep.lng,'출','#3b82f6',depName);
     addMarker(arr.lat,arr.lng,'착','#ef4444',arrName);
-    leafMap.fitBounds(mainLine.getBounds(),{padding:[18,18]});
+    try {
+      const _bounds = mainLine.getBounds();
+      if (_bounds && _bounds.isValid()) {
+        leafMap.fitBounds(_bounds, {padding:[18,18]});
+      } else {
+        leafMap.setView([dep.lat, dep.lng], 11);
+      }
+    } catch(e) {
+      leafMap.setView([dep.lat, dep.lng], 11);
+    }
   },100);
 }
 
