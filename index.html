@@ -175,12 +175,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     <div class="field" id="field-detail" style="order:3;margin-top:-4px">
       <input class="inp" id="inp-detail" placeholder="상세주소 (동/호수/건물명 등)" autocomplete="off" oninput="tmpScheduleSave()">
     </div>
-    <div id="waypoint-section" style="order:3;margin-top:4px;margin-bottom:0">
+    <div id="waypoint-section" style="order:4;margin-top:4px;margin-bottom:0">
       <div id="waypoint-list"></div>
       <button id="btn-add-waypoint" onclick="addWaypoint()" style="padding:7px 14px;background:linear-gradient(135deg,#f5b800,#ffdd57);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#1a1a1a;cursor:pointer;margin-bottom:6px">+ 경유지 추가</button>
     </div>
 
-    <div class="field" id="field-airport" style="order:4">
+    <div class="field" id="field-airport" style="order:5">
       <label class="lbl" id="lbl-ap">도착 공항</label>
       <div class="csel-wrap">
         <div class="csel" id="csel-ap" onclick="toggleCsel('ap')">
@@ -218,7 +218,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
     </div>
 
     <!-- 항공편명 (입국만) -->
-    <div class="field" id="field-flight" style="display:none;order:5">
+    <div class="field" id="field-flight" style="display:none;order:6">
       <label class="lbl">✈️ 항공편명 <span style="color:#f5b800">(필수)</span></label>
       <input class="inp" id="inp-flight" placeholder="예: KE123, OZ456" autocomplete="off" oninput="tmpScheduleSave()">
     </div>
@@ -1969,7 +1969,7 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : ${extra.request||''}${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+🔹요청사항 : ${extra.request||''}
 📌예약번호 ${extra.resNum||''}`;
 
   } else if(currentTab === '입국'){
@@ -1995,7 +1995,7 @@ function buildCallCard(extra){
 🔹카시트대여 (콜밴,대형 1만원) : ${extra.carseat||''}
 🔹외국인 피켓 픽업 서비스요청 : ${extra.picket||''}
 🔹카카오톡 ID : ${extra.kakaoId||''}
-🔹요청사항 : ${extra.request||''}${extra.waypoints && extra.waypoints.length ? extra.waypoints.map(function(w,i){return '\n🔹경유지'+(i+1)+': '+w;}).join('') : ''}
+🔹요청사항 : ${extra.request||''}
 📌예약번호 ${extra.resNum||''}`;
 
   } else { // 장거리
@@ -2105,18 +2105,18 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}${_wpSuffix}`;
 
   } else if(veh==='large'){
-    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${_wpSuffix}`;
     if(p >= 10)           warns.push('⚠️ 인원 확인요망');
     else if(p>=8||totalBag>=6) warns.push('⚠️ 인원/짐 확인요망');
     if(p >= 5 && p < 5)  {} // 정상 범위
 
   } else if(veh==='van'){
-    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${_wpSuffix}`;
     warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (콜밴선택)');
 
   } else if(veh==='solar'){
-    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}`;
+    line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${_wpSuffix}`;
     if(p < 10)            warns.push('⚠️ 인원 확인요망');
   }
 
