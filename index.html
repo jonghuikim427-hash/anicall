@@ -1384,7 +1384,7 @@ function showBookingFields(){
     </div>
     <div>
       <label class="lbl" style="font-size:9.5px">경유지</label>
-      <input class="inp" id="bk-waypoint" placeholder="경유지 주소" autocomplete="off">
+      <input class="inp" id="bk-waypoint" placeholder="경유지 주소" autocomplete="off" style="display:none">
     </div>
   `;
   parent.insertBefore(extraDiv, errMsg);
@@ -2079,7 +2079,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   const vehCode = getVehCode(veh);
   const name = extra.name || '';
   const p = parseInt(pax);
-  const hasExtra = !!(extra.carseat||extra.picket||extra.kakaoId||extra.request);
+  const hasExtra = !!(extra.carseat||extra.picket||extra.request);
 
   // 경고 메시지 배열 (중복 가능)
   const warns = [];
