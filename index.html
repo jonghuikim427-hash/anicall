@@ -1721,10 +1721,10 @@ async function calculate(){
   // ── 확정요금 지역 체크 ───────────────────────────────────
   const checkAddr = currentTab === '입국' ? selectedAddr.display : selectedAddr.display;
   const fixedFare = getFixedFare(checkAddr, hhmm);
-  if(fixedFare){
+  const _hasWp = getWaypointAddrs().length > 0;
+  if(fixedFare && !_hasWp){
     btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
     showFixedFare(fixedFare, depName, arrName);
-    // 지도는 T-map 없이 직선으로 표시
     showMap([], dep, arr, depName, arrName, 0, -1);
     return;
   }
