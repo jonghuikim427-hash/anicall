@@ -1694,8 +1694,10 @@ async function calculate(){
     const addr2 = selectedAddr ? selectedAddr.display : '';
     const largeFare = getLargeFare(addr2, vehVal2);
     if(largeFare){
+      const _wpCount0L = getWaypointAddrs().length;
+      const _wpAdd0L = _wpCount0L * 10000;
       btn.disabled=false; btn.textContent='🔍 예상요금 확인하기';
-      showFixedFare({amount: largeFare.amount * 10000, isSurcharge: largeFare.isSurcharge}, depName, arrName);
+      showFixedFare({amount: largeFare.amount * 10000 + _wpAdd0L, isSurcharge: largeFare.isSurcharge, wpFareAdd: _wpAdd0L, wpCount: _wpCount0L}, depName, arrName);
       showMap([], dep, arr, depName, arrName, 0, -1);
       return;
     } else {
