@@ -2257,6 +2257,8 @@ function confirmExtra(){
   const resMMDD = String(dateObj.getMonth()+1).padStart(2,'0') + String(dateObj.getDate()).padStart(2,'0');
   const resNum  = resMMDD + phoneDigits.slice(-4);
 
+  const _wpsConfirm = getWaypointAddrs();
+  console.log('confirmExtra waypoints:', _wpsConfirm);
   const extra = {
     phone: phoneDigits.replace(/([0-9]{3})([0-9]{4})([0-9]{4})/,'$1-$2-$3'),
     name,
@@ -2265,8 +2267,8 @@ function confirmExtra(){
     picket   : document.getElementById('ex-picket').value.trim(),
     kakaoId  : document.getElementById('ex-kakao').value.trim(),
     request  : document.getElementById('ex-request').value.trim(),
-    waypoint : getWaypointAddrs().join(', '),
-    waypoints: getWaypointAddrs(),
+    waypoint : _wpsConfirm.join(', '),
+    waypoints: _wpsConfirm,
   };
 
   // 짐 계산
@@ -2356,7 +2358,8 @@ function openChatInquiry(isLongDist){
   const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
 
   // 손님 표시용 (꼬리 없음) / 복사용 (꼬리 있음)
-  const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:'', tail:tail };
+  const _wpsEmpty = getWaypointAddrs();
+  const emptyExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:_wpsEmpty.join(', '), waypoints:_wpsEmpty, tail:tail };
   const cardFull = buildCallCard(emptyExtra);        // 복사용 (꼬리 포함)
   const cardDisplay = buildCallCardDisplay(emptyExtra); // 손님 표시용 (꼬리 없음)
 
