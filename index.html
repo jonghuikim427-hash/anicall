@@ -1784,14 +1784,19 @@ async function calculate(){
           // 미터기 계산용으로 distKm 업데이트 (경유지 포함 거리로)
           if (veh === 'medium') distKm = _wpDist;
 
-          // 미터기 지역 여부 확인 (확정요금 지역만 추가요금)
-          const _isFixedFare = await getLargeFareAsync(selectedAddr ? selectedAddr.display : '', veh);
-          const _isFixed = veh !== 'medium' || _isFixedFare !== null;
+          // 미터기/확정요금 분기
+          const _addrDisp = selectedAddr ? selectedAddr.display : '';
+          let _isFixed = false;
+          if (veh === 'medium') {
+            // 중형: FIXED_FARE 지역 여부 확인
+            _isFixed = getFixedFare(_addrDisp, hhmm) !== null;
+          } else {
+            // 대형/콜밴/쏠라티: 항상 확정요금
+            _isFixed = true;
+          }
           if (_isFixed) {
-            // 확정요금 지역: 경유 개수 × 단가
             const _wpUnitFare = veh === 'medium' ? 5000 : 10000;
             const _wpBaseFare = _wps.length * _wpUnitFare;
-            // 추가거리 15km 초과 시 추가
             const _wpDistFare = _wpExtraKm > 15 ? _wpUnitFare : 0;
             _wpFareAdd = _wpBaseFare + _wpDistFare;
           }
