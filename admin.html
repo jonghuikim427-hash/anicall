@@ -1039,7 +1039,7 @@ function renderDriverList(container) {
       h += '<div style="font-size:11px;color:#888;min-width:95px">'+esc(d.phone||'')+'</div>';
       h += '<div style="font-size:11px;color:#555;flex:1;min-width:80px">'+esc(d.vehicle||'-')+'</div>';
       h += '<div style="font-size:11px;color:#555;min-width:80px">'+esc(d.vehicleNum||'-')+'</div>';
-      h += '<button class="btn-drv-call" onclick="editDriver('+JSON.stringify(d)+')" style="background:#fff7e0;color:#c8880a;border-color:#f5b800">수정</button>';
+      h += '<button class="btn-drv-call" onclick="editDriver(\''+d.id+'\')" style="background:#fff7e0;color:#c8880a;border-color:#f5b800">수정</button>';
       h += '<button class="btn-drv-del" onclick="delDriver(\'' + d.id + '\')">삭제</button>';
       h += '</div>';
     });
@@ -1049,15 +1049,17 @@ function renderDriverList(container) {
   container.appendChild(wrap);
 }
 
-function editDriver(d) {
-  var row = document.getElementById('drv-row-' + d.id);
+function editDriver(id) {
+  var d = allDrivers.find(function(x){ return x.id === id; });
+  if (!d) return;
+  var row = document.getElementById('drv-row-' + id);
   if (!row) return;
   row.innerHTML =
     '<input id="ed-name" value="'+esc(d.name||'')+'" style="width:60px;padding:3px 5px;border:1px solid #f5b800;border-radius:4px;font-size:11px">' +
     '<input id="ed-phone" value="'+esc(d.phone||'')+'" style="width:95px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
     '<input id="ed-vehicle" value="'+esc(d.vehicle||'')+'" style="flex:1;min-width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
     '<input id="ed-vnum" value="'+esc(d.vehicleNum||'')+'" style="width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
-    '<button class="btn-drv-call" onclick="saveDriver(\''+d.id+'\')" style="background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7">저장</button>' +
+    '<button class="btn-drv-call" onclick="saveDriver(\''+id+'\')" style="background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7">저장</button>' +
     '<button class="btn-drv-del" onclick="render()">취소</button>';
 }
 
