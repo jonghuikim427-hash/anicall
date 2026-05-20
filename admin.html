@@ -1034,11 +1034,12 @@ function renderDriverList(container) {
   } else {
     h += '<div class="drv-list-card">';
     drivers.forEach(function(d) {
-      h += '<div class="drv-row">';
+      h += '<div class="drv-row" id="drv-row-'+d.id+'">';
       h += '<div class="drv-name" style="cursor:pointer;min-width:60px" onclick="copyText(' + JSON.stringify(d.name||'') + ',this)" title="클릭시 이름 복사">'+esc(d.name||'')+'</div>';
       h += '<div style="font-size:11px;color:#888;min-width:95px">'+esc(d.phone||'')+'</div>';
       h += '<div style="font-size:11px;color:#555;flex:1;min-width:80px">'+esc(d.vehicle||'-')+'</div>';
       h += '<div style="font-size:11px;color:#555;min-width:80px">'+esc(d.vehicleNum||'-')+'</div>';
+      h += '<button class="btn-drv-call" onclick="editDriver('+JSON.stringify(d)+')" style="background:#fff7e0;color:#c8880a;border-color:#f5b800">수정</button>';
       h += '<button class="btn-drv-del" onclick="delDriver(\'' + d.id + '\')">삭제</button>';
       h += '</div>';
     });
@@ -1046,6 +1047,33 @@ function renderDriverList(container) {
   }
   wrap.innerHTML = h;
   container.appendChild(wrap);
+}
+
+function editDriver(d) {
+  var row = document.getElementById('drv-row-' + d.id);
+  if (!row) return;
+  row.innerHTML =
+    '<input id="ed-name" value="'+esc(d.name||'')+'" style="width:60px;padding:3px 5px;border:1px solid #f5b800;border-radius:4px;font-size:11px">' +
+    '<input id="ed-phone" value="'+esc(d.phone||'')+'" style="width:95px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
+    '<input id="ed-vehicle" value="'+esc(d.vehicle||'')+'" style="flex:1;min-width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
+    '<input id="ed-vnum" value="'+esc(d.vehicleNum||'')+'" style="width:80px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:11px">' +
+    '<button class="btn-drv-call" onclick="saveDriver(\''+d.id+'\')" style="background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7">저장</button>' +
+    '<button class="btn-drv-del" onclick="render()">취소</button>';
+}
+
+function saveDriver(id) {
+  var name = (document.getElementById('ed-name')||{}).value||'';
+  var phone = (document.getElementById('ed-phone')||{}).value||'';
+  var vehicle = (document.getElementById('ed-vehicle')||{}).value||'';
+  var vehicleNum = (document.getElementById('ed-vnum')||{}).value||'';
+  if (!name.trim()) { alert('이름은 필수예요!'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+  db.ref('drivers/'+id).update({
+    name: name.trim(),
+    phone: phone,
+    vehicle: vehicle.trim(),
+    vehicleNum: vehicleNum.trim()
+  }).then(function() { alert('✅ 수정됐어요!'); });
 }
 
 function parseBaechaDrv() {
