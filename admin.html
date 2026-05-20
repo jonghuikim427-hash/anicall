@@ -783,6 +783,7 @@ function renderBaecha(container) {
   var _cid = selectedCard ? selectedCard.id : '';
   var _cs = copiedState[_cid] || {dc:false, dex:false, di:false, cu:false};
   var _allCopied = _cs.dc && _cs.dex && _cs.di && _cs.cu;
+  var _hasDrvInfo = drvInfo && drvInfo.replace(/[-\n]/g,'').trim().length > 10;
 
   // 기사에게 줄 콜카드 복사
   var _cardEmpty = !driverCard.trim();
@@ -792,9 +793,15 @@ function renderBaecha(container) {
     rh2 += '<button class="btn-copy" '+ (_cardEmpty?'disabled style="opacity:0.4;cursor:not-allowed"':'')+' onclick="doCopyBaecha(\'msg-driver-card\',\'dc\',\''+_cid+'\')">복사</button></div>';
   }
 
-  // 기사에게 보낼 추가 메시지 + 기사정보 입력 박스 (나란히)
+  // 기사에게 보낼 추가 메시지
+  if (!_cs.dex) {
+    rh2 += '<div class="msg-box"><div class="msg-box-title">기사에게 보낼 추가 메시지</div>';
+    rh2 += '<textarea class="msg-ta" id="msg-drv-extra">★안녕하세요     인천공항택시예약센터입니다\n저희 콜을 수행해주셔서 감사합니다\n손님과 전화통화 꼭 부탁드립니다\n★전화통화시 손님에게 날짜, 시간 체크 확인 꼭 부탁드립니다\n★오전. 오후 확인 필수입니다.\n고객님께 현금요구 및 기타 불편사항 접수시 저희 콜은 배차 제한될수있으니 친절히 잘부탁드립니다\n항상 건강하시고 안전운전 하세요\n \n✈️인천공항센터(SKY LINE)🛩\n79422743213 카카오뱅크\n☎센터대표전화 : 1877 2282</textarea>';
+    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-extra\',\'dex\',\''+_cid+'\')">복사</button></div>';
+  }
+
+  // 손님한테 줄 기사정보 + 기사정보 입력 박스 (나란히)
   var _drvInputBox = '';
-  var _hasDrvInfo = drvInfo && drvInfo.replace(/[-\n]/g,'').trim().length > 10;
   _drvInputBox += '<div style="border:2px dashed #FFD700;border-radius:8px;padding:10px;background:#fffdf0;flex:1">';
   _drvInputBox += '<div style="font-size:11px;font-weight:700;color:#c8880a;margin-bottom:6px">🚖 기사정보 입력 → 자동반영+목록등록</div>';
   _drvInputBox += '<textarea id="bd-drv-paste" style="width:100%;height:70px;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:11px;font-family:inherit;resize:none;outline:none;box-sizing:border-box" placeholder="기사 카드 붙여넣기..." oninput="parseBaechaDrv()"></textarea>';
@@ -808,20 +815,13 @@ function renderBaecha(container) {
   _drvInputBox += '<button onclick="confirmBaechaDrv(\''+_cid+'\')" style="width:100%;padding:6px;background:#f5b800;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer">✅ 적용 + 기사목록 등록</button>';
   _drvInputBox += '</div></div>';
 
-  if (!_cs.dex) {
-    rh2 += '<div style="display:flex;gap:8px;align-items:flex-start">';
-    rh2 += '<div class="msg-box" style="flex:1;margin:0"><div class="msg-box-title">기사에게 보낼 추가 메시지</div>';
-    rh2 += '<textarea class="msg-ta" id="msg-drv-extra">★안녕하세요     인천공항택시예약센터입니다\n저희 콜을 수행해주셔서 감사합니다\n손님과 전화통화 꼭 부탁드립니다\n★전화통화시 손님에게 날짜, 시간 체크 확인 꼭 부탁드립니다\n★오전. 오후 확인 필수입니다.\n고객님께 현금요구 및 기타 불편사항 접수시 저희 콜은 배차 제한될수있으니 친절히 잘부탁드립니다\n항상 건강하시고 안전운전 하세요\n \n✈️인천공항센터(SKY LINE)🛩\n79422743213 카카오뱅크\n☎센터대표전화 : 1877 2282</textarea>';
-    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-extra\',\'dex\',\''+_cid+'\')">복사</button></div>';
-    rh2 += _drvInputBox;
-    rh2 += '</div>';
-  }
-
-  // 손님한테 줄 기사정보
   if (!_cs.di) {
-    rh2 += '<div class="msg-box org"><div class="msg-box-title">손님한테 줄 기사정보 복사</div>';
+    rh2 += '<div style="display:flex;gap:8px;align-items:flex-start">';
+    rh2 += '<div class="msg-box org" style="flex:1;margin:0"><div class="msg-box-title">손님한테 줄 기사정보 복사</div>';
     rh2 += '<div class="msg-content" id="msg-drv-info">기사정보\n'+esc(drvInfo||(selectedCard?'기사 배정 후 자동입력':'카드를 선택하세요'))+'</div>';
     rh2 += '<button class="btn-copy" '+(!_hasDrvInfo?'disabled style="opacity:0.4;cursor:not-allowed"':'')+' onclick="doCopyBaecha(\'msg-drv-info\',\'di\',\''+_cid+'\')">복사</button></div>';
+    rh2 += _drvInputBox;
+    rh2 += '</div>';
   }
 
   // 손님 안내 문자
