@@ -1098,7 +1098,18 @@ function confirmBaechaDrv(cardId) {
 
   // Firebase 카드에 기사정보 업데이트
   var updates = { driver: name.trim(), driverPhone: phone, driverVehicle: vehicle.trim(), driverVehicleNum: vehicleNum.trim() };
-  db.ref('cards/'+cardId).update(updates);
+  db.ref('cards/'+cardId).update(updates).then(function() {
+    // 카드 데이터 즉시 반영
+    var card = allData.find(function(x){ return x.id === cardId; });
+    if (card) {
+      card.driver = name.trim();
+      card.driverPhone = phone;
+      card.driverVehicle = vehicle.trim();
+      card.driverVehicleNum = vehicleNum.trim();
+      if (selectedCard && selectedCard.id === cardId) selectedCard = card;
+    }
+    render();
+  });
 
   // 기사목록에 등록 (동명이인 없을 때만)
   var sameCount = allDrivers.filter(function(d){ return d.name === name.trim(); }).length;
