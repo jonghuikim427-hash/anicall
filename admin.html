@@ -1723,6 +1723,18 @@ function fbCopy(text,cb){
 }
 
 window.onload = function() {
+  // 10초 안에 데이터 안 오면 새로고침 유도
+  var _connTimer = setTimeout(function() {
+    var el = document.getElementById('main');
+    if (el && el.innerHTML.indexOf('Firebase 연결 중') !== -1) {
+      el.innerHTML = '<div style="padding:40px;text-align:center;color:#aaa">'
+        + '<div style="font-size:32px;margin-bottom:12px">⚠️</div>'
+        + '<div style="font-size:14px;margin-bottom:16px">연결이 지연되고 있어요</div>'
+        + '<button onclick="location.reload()" style="padding:10px 24px;background:#f5b800;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">🔄 새로고침</button>'
+        + '</div>';
+    }
+  }, 10000);
+
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
@@ -1737,6 +1749,7 @@ window.onload = function() {
     });
 
   db.ref('cards').on('value', function(snapshot) {
+      clearTimeout(_connTimer);
       allData = [];
       snapshot.forEach(function(child) {
         var card = child.val();
