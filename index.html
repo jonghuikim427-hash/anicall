@@ -173,11 +173,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
       <div class="ac" id="ac-list"></div>
     </div>
     <div class="field" id="field-detail" style="order:3;margin-top:-4px">
-      <input class="inp" id="inp-detail" placeholder="상세주소 (동/호수/건물명 등)" autocomplete="off" oninput="tmpScheduleSave()">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input class="inp" id="inp-detail" placeholder="상세주소 (동/호수/건물명 등)" autocomplete="off" oninput="tmpScheduleSave()" style="flex:1;margin:0">
+        <button id="btn-add-waypoint" onclick="addWaypoint()" style="padding:7px 12px;background:linear-gradient(135deg,#f5b800,#ffdd57);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#1a1a1a;cursor:pointer;white-space:nowrap;flex-shrink:0">+ 경유지</button>
+      </div>
     </div>
     <div id="waypoint-section" style="order:4;margin-top:4px;margin-bottom:0">
       <div id="waypoint-list"></div>
-      <button id="btn-add-waypoint" onclick="addWaypoint()" style="padding:7px 14px;background:linear-gradient(135deg,#f5b800,#ffdd57);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#1a1a1a;cursor:pointer;margin-bottom:6px">+ 경유지 추가</button>
     </div>
 
     <div class="field" id="field-airport" style="order:5">
