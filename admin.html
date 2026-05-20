@@ -783,7 +783,7 @@ function renderBaecha(container) {
   var _cid = selectedCard ? selectedCard.id : '';
   var _cs = copiedState[_cid] || {dc:false, dex:false, di:false, cu:false};
   var _allCopied = _cs.dc && _cs.dex && _cs.di && _cs.cu;
-  var _hasDrvInfo = drvInfo && drvInfo.replace(/[-\n]/g,'').trim().length > 10;
+  var _hasDrvInfo = drvInfo && (_dPhone && _dPhone !== '-') && (_dVeh && _dVeh !== '-') && (_dVNum && _dVNum !== '-');
 
   // 기사에게 줄 콜카드 복사
   var _cardEmpty = !driverCard.trim();
