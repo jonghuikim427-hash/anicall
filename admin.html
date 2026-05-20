@@ -200,6 +200,7 @@ table.cal th:last-child{color:#1565c0}
 .btn-drv-call:hover{background:#c8e6c9}
 .btn-drv-del{padding:5px 8px;background:#fff;color:#e53935;border:1px solid #ef9a9a;border-radius:4px;font-size:11px;cursor:pointer}
 .btn-drv-del:hover{background:#ffebee}
+@keyframes spin{to{transform:rotate(360deg)}}
 /* 배차 드라이버 입력 확장 */
 .bc-row-inputs{display:flex;gap:3px;align-items:center;flex-shrink:0}
 .bc-dphone{width:72px;padding:4px 5px;border:1px solid #e0e0e0;border-radius:4px;font-size:10px;font-family:inherit;background:#fff;text-align:center}
@@ -226,7 +227,10 @@ table.cal th:last-child{color:#1565c0}
   </div>
   <div class="tab-hdr" id="tab-hdr">① 확정대기 최신방</div>
   <div class="main" id="main">
-    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px">🔥 Firebase 연결 중...</div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#bbb;font-size:13px">
+      <div style="width:32px;height:32px;border:3px solid #eee;border-top-color:#f5b800;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      <div>카드 불러오는 중...</div>
+    </div>
   </div>
 </div>
 
@@ -1824,21 +1828,30 @@ function fbCopy(text,cb){
 }
 
 window.onload = function() {
-  // 10초 안에 데이터 안 오면 새로고침 유도
+  // 8초 안에 데이터 안 오면 자동 재연결
   var _connTimer = setTimeout(function() {
     var el = document.getElementById('main');
-    if (el && el.innerHTML.indexOf('Firebase 연결 중') !== -1) {
-      el.innerHTML = '<div style="padding:40px;text-align:center;color:#aaa">'
-        + '<div style="font-size:32px;margin-bottom:12px">⚠️</div>'
-        + '<div style="font-size:14px;margin-bottom:16px">연결이 지연되고 있어요</div>'
-        + '<button onclick="location.reload()" style="padding:10px 24px;background:#f5b800;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">🔄 새로고침</button>'
-        + '</div>';
+    if (el && (el.innerHTML.indexOf('카드 불러오는 중') !== -1)) {
+      location.reload();
     }
-  }, 10000);
+  }, 3000);
 
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
+
+    // 연결 상태 감지 → 끊기면 자동 재연결
+    db.ref('.info/connected').on('value', function(snap) {
+      if (snap.val() === false) {
+        var el = document.getElementById('last-up');
+        if (el) el.textContent = '⚠️ 연결 끊김 - 재연결 중...';
+        setTimeout(function() {
+          var mainEl = document.getElementById('main');
+          if (mainEl && allData.length === 0) location.reload();
+        }, 5000);
+      }
+    });
+
     db.ref('drivers').on('value', function(snapshot) {
       allDrivers = [];
       snapshot.forEach(function(child) {
