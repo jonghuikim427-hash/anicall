@@ -785,24 +785,43 @@ function renderBaecha(container) {
   var _allCopied = _cs.dc && _cs.dex && _cs.di && _cs.cu;
 
   // 기사에게 줄 콜카드 복사
+  var _cardEmpty = !driverCard.trim();
   if (!_cs.dc) {
     rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드 (꼬리 제거)</div>';
     rh2 += '<div class="msg-content" id="msg-driver-card">'+esc(driverCard||(selectedCard?'카드 선택됨':'카드를 선택하세요'))+'</div>';
-    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-driver-card\',\'dc\',\''+_cid+'\')">복사</button></div>';
+    rh2 += '<button class="btn-copy" '+ (_cardEmpty?'disabled style="opacity:0.4;cursor:not-allowed"':'')+' onclick="doCopyBaecha(\'msg-driver-card\',\'dc\',\''+_cid+'\')">복사</button></div>';
   }
 
-  // 기사에게 보낼 추가 메시지
+  // 기사에게 보낼 추가 메시지 + 기사정보 입력 박스 (나란히)
+  var _drvInputBox = '';
+  var _hasDrvInfo = drvInfo && drvInfo.replace(/[-\n]/g,'').trim().length > 10;
+  _drvInputBox += '<div style="border:2px dashed #FFD700;border-radius:8px;padding:10px;background:#fffdf0;flex:1">';
+  _drvInputBox += '<div style="font-size:11px;font-weight:700;color:#c8880a;margin-bottom:6px">🚖 기사정보 입력 → 자동반영+목록등록</div>';
+  _drvInputBox += '<textarea id="bd-drv-paste" style="width:100%;height:70px;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:11px;font-family:inherit;resize:none;outline:none;box-sizing:border-box" placeholder="기사 카드 붙여넣기..." oninput="parseBaechaDrv()"></textarea>';
+  _drvInputBox += '<div id="bd-drv-preview" style="display:none;margin-top:6px">';
+  _drvInputBox += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">';
+  _drvInputBox += '<input id="bd-p-name" placeholder="이름" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px">';
+  _drvInputBox += '<input id="bd-p-phone" placeholder="전화번호" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px">';
+  _drvInputBox += '<input id="bd-p-vehicle" placeholder="차종" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px">';
+  _drvInputBox += '<input id="bd-p-vnum" placeholder="차량번호" style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px">';
+  _drvInputBox += '</div>';
+  _drvInputBox += '<button onclick="confirmBaechaDrv(\''+_cid+'\')" style="width:100%;padding:6px;background:#f5b800;border:none;border-radius:5px;font-size:12px;font-weight:700;cursor:pointer">✅ 적용 + 기사목록 등록</button>';
+  _drvInputBox += '</div></div>';
+
   if (!_cs.dex) {
-    rh2 += '<div class="msg-box"><div class="msg-box-title">기사에게 보낼 추가 메시지</div>';
+    rh2 += '<div style="display:flex;gap:8px;align-items:flex-start">';
+    rh2 += '<div class="msg-box" style="flex:1;margin:0"><div class="msg-box-title">기사에게 보낼 추가 메시지</div>';
     rh2 += '<textarea class="msg-ta" id="msg-drv-extra">★안녕하세요     인천공항택시예약센터입니다\n저희 콜을 수행해주셔서 감사합니다\n손님과 전화통화 꼭 부탁드립니다\n★전화통화시 손님에게 날짜, 시간 체크 확인 꼭 부탁드립니다\n★오전. 오후 확인 필수입니다.\n고객님께 현금요구 및 기타 불편사항 접수시 저희 콜은 배차 제한될수있으니 친절히 잘부탁드립니다\n항상 건강하시고 안전운전 하세요\n \n✈️인천공항센터(SKY LINE)🛩\n79422743213 카카오뱅크\n☎센터대표전화 : 1877 2282</textarea>';
     rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-extra\',\'dex\',\''+_cid+'\')">복사</button></div>';
+    rh2 += _drvInputBox;
+    rh2 += '</div>';
   }
 
   // 손님한테 줄 기사정보
   if (!_cs.di) {
     rh2 += '<div class="msg-box org"><div class="msg-box-title">손님한테 줄 기사정보 복사</div>';
     rh2 += '<div class="msg-content" id="msg-drv-info">기사정보\n'+esc(drvInfo||(selectedCard?'기사 배정 후 자동입력':'카드를 선택하세요'))+'</div>';
-    rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-drv-info\',\'di\',\''+_cid+'\')">복사</button></div>';
+    rh2 += '<button class="btn-copy" '+(!_hasDrvInfo?'disabled style="opacity:0.4;cursor:not-allowed"':'')+' onclick="doCopyBaecha(\'msg-drv-info\',\'di\',\''+_cid+'\')">복사</button></div>';
   }
 
   // 손님 안내 문자
@@ -1023,6 +1042,77 @@ function renderDriverList(container) {
   }
   wrap.innerHTML = h;
   container.appendChild(wrap);
+}
+
+function parseBaechaDrv() {
+  var text = (document.getElementById('bd-drv-paste')||{}).value||'';
+  if (!text.trim()) { var p=document.getElementById('bd-drv-preview'); if(p) p.style.display='none'; return; }
+
+  var name='', phone='', vehicle='', vehicleNum='';
+  var nameM = text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  if (nameM) { name = nameM[1].trim(); }
+  else { var nameM2 = text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m); if (nameM2) name = nameM2[1].trim(); }
+
+  var phoneM = text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
+  if (phoneM) phone = phoneM[0].replace(/[\s.\-]/g,'');
+
+  var vnumM = text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
+  if (vnumM) vehicleNum = vnumM[0].replace(/\s/g,'');
+
+  var vehM = text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+  if (vehM) { vehicle = vehM[1].trim(); }
+  else {
+    var vehKeywords = ['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
+    for (var vi=0; vi<vehKeywords.length; vi++) {
+      if (text.toLowerCase().indexOf(vehKeywords[vi].toLowerCase()) >= 0) {
+        var vReg = new RegExp('[가-힣a-zA-Z0-9\\s]*'+vehKeywords[vi]+'[가-힣a-zA-Z0-9\\s()]*', 'i');
+        var vM2 = text.match(vReg);
+        if (vM2) { vehicle = vM2[0].trim().split('\n')[0].replace(/[^가-힣a-zA-Z0-9\s]/g,'').trim(); break; }
+      }
+    }
+  }
+
+  var missing = [];
+  if (!name) missing.push('이름');
+  if (!phone) missing.push('전화번호');
+  if (!vehicleNum) missing.push('차량번호');
+  if (missing.length > 0) alert('자동인식 실패: ' + missing.join(', ') + ' - 직접 입력해주세요!');
+
+  var preview = document.getElementById('bd-drv-preview');
+  if (preview) {
+    preview.style.display = 'block';
+    document.getElementById('bd-p-name').value = name;
+    document.getElementById('bd-p-phone').value = phone;
+    document.getElementById('bd-p-vehicle').value = vehicle;
+    document.getElementById('bd-p-vnum').value = vehicleNum;
+  }
+}
+
+function confirmBaechaDrv(cardId) {
+  var name = (document.getElementById('bd-p-name')||{}).value||'';
+  var phone = (document.getElementById('bd-p-phone')||{}).value||'';
+  var vehicle = (document.getElementById('bd-p-vehicle')||{}).value||'';
+  var vehicleNum = (document.getElementById('bd-p-vnum')||{}).value||'';
+  if (!name.trim()) { alert('이름은 필수예요!'); return; }
+  phone = phone.replace(/[^0-9]/g,'');
+
+  // Firebase 카드에 기사정보 업데이트
+  var updates = { driver: name.trim(), driverPhone: phone, driverVehicle: vehicle.trim(), driverVehicleNum: vehicleNum.trim() };
+  db.ref('cards/'+cardId).update(updates);
+
+  // 기사목록에 등록 (동명이인 없을 때만)
+  var sameCount = allDrivers.filter(function(d){ return d.name === name.trim(); }).length;
+  if (sameCount > 0) {
+    if (!confirm('기사목록에 ['+name.trim()+']이 이미 있어요. 그래도 추가할까요?')) return;
+  }
+  db.ref('drivers').push({ name: name.trim(), phone: phone, vehicle: vehicle.trim(), vehicleNum: vehicleNum.trim() })
+    .then(function() { alert('✅ '+name.trim()+' 기사님 기사목록에 등록됐어요!'); });
+
+  // 입력창 초기화
+  var ta = document.getElementById('bd-drv-paste');
+  var preview = document.getElementById('bd-drv-preview');
+  if (ta) ta.value = '';
+  if (preview) preview.style.display = 'none';
 }
 
 function parseDrvCard() {
