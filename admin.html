@@ -431,10 +431,10 @@ function renderConfirm(container) {
   });
 
   var L = document.createElement('div'); L.className = 't01-left';
-  var lh = '';
+  var lh = '<div style="padding:6px 8px 4px"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;outline:none"></div>';
 
   // 고정 카드
-  lh += '<div class="pin-area"><div class="pin-title">📌 선택된 카드 (클릭 시 여기로 뛰어올라옴)</div>';
+  lh += '<div class="pin-area"><div class="pin-title">📌 선택된 카드</div>';
   if (selectedCard) {
     var sc = selectedCard, dups = getDups(sc);
     lh += '<div class="pin-card" onclick="selCard(\''+sc.id+'\')">';
@@ -708,7 +708,7 @@ function renderBaecha(container) {
     // 일반 모드
     mh += '<div class="sec-title">배차결과 입력란 (기사 목록 붙여넣기)</div>';
     mh += '<div class="t2-mid-body">';
-    mh += '<textarea class="ta-box" id="baecha-ta" placeholder="701. 김종희&#10;702. 조재현&#10;703. 홍기조&#10;...">'+esc(baechaText)+'</textarea>';
+    mh += '<textarea class="ta-box" id="baecha-ta" placeholder="31. 김종희&#10;32. 조재현&#10;33. 홍기조&#10;...">'+esc(baechaText)+'</textarea>';
     mh += '<div class="t2-btn-row"><button class="btn-match" onclick="doAutoMatch()">자동 매칭</button><button class="btn-reset" onclick="doResetMatch()">↩ 되돌리기</button></div>';
     if (selectedCard) {
       mh += '<div style="text-align:right;margin-top:4px"><button class="btn-edit" onclick="openEdit(window.currentEditId)">✏️ 카드 수정</button></div>';
@@ -799,7 +799,7 @@ function renderBaecha(container) {
   // 기사에게 줄 콜카드 복사
   var _cardEmpty = !driverCard.trim();
   if (!_cs.dc) {
-    rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드 (꼬리 제거)</div>';
+    rh2 += '<div class="msg-box"><div class="msg-box-title">📋 기사에게 줄 콜카드</div>';
     rh2 += '<div class="msg-content" id="msg-driver-card">'+esc(driverCard||(selectedCard?'카드 선택됨':'카드를 선택하세요'))+'</div>';
     rh2 += '<button class="btn-copy" '+ (_cardEmpty?'disabled style="opacity:0.4;cursor:not-allowed"':'')+' onclick="doCopyBaecha(\'msg-driver-card\',\'dc\',\''+_cid+'\')">복사</button></div>';
   }
@@ -858,9 +858,17 @@ function renderBaecha(container) {
 
 // ══════════ 탭 3: 배차완료방 ══════════════════════════════
 function renderBaechaComplete(container) {
+  var q = searchQuery.toLowerCase();
   var list = allData.filter(function(r) {
     if (r.status !== '배차완료' && r.status !== '재배차완료') return false;
     if (baechaCompleteDateFilter && r.rideDate !== baechaCompleteDateFilter) return false;
+    if (q) {
+      return (r.resNum||'').toLowerCase().includes(q)||
+             (r.name||'').toLowerCase().includes(q)||
+             (r.phone||'').includes(q)||
+             (r.title1||'').toLowerCase().includes(q)||
+             (r.kakaoNick||'').toLowerCase().includes(q);
+    }
     return true;
   }).sort(function(a,b) {
     return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
@@ -868,6 +876,7 @@ function renderBaechaComplete(container) {
 
   var L = document.createElement('div'); L.className = 't3-left';
   var lh = '<div class="sec-title">배차완료 카드 목록</div>';
+  lh += '<div style="padding:4px 8px 4px"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;outline:none"></div>';
   lh += '<div class="date-filter">';
   lh += '<label>날짜:</label>';
   lh += '<input type="date" value="'+baechaCompleteDateFilter+'" onchange="baechaCompleteDateFilter=this.value;render()">';
@@ -1453,6 +1462,7 @@ function doBaechaCard(id){
     driverPhone:_dPhoneBC,
     driverVehicleType:_dVehBC,
     driverVehicleNum:_dVNumBC,
+    kakaoNick: r.kakaoNick || '',
     baechaNum: null
   });
 }
