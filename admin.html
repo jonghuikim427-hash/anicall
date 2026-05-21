@@ -484,8 +484,7 @@ function renderConfirm(container) {
 
   // 오른쪽
   var R = document.createElement('div'); R.className = 't01-right';
-  var rh = '<div class="rp-search"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호 검색" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)"></div>';
-  rh += '<div class="rp-body">';
+  var rh = '<div class="rp-body">';
 
   if (selectedCard) {
     var c = selectedCard;
@@ -1336,11 +1335,18 @@ function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
 // ── 액션 함수 ─────────────────────────────────────────────
 var _searchTimer = null;
 function onSearch(v){
+  searchQuery = v;
   clearTimeout(_searchTimer);
   _searchTimer = setTimeout(function(){
-    searchQuery = v;
     selectedCard = null;
     render();
+    // 검색창 포커스 복원
+    var inputs = document.querySelectorAll('input[placeholder*="예약번호"]');
+    if (inputs.length > 0) {
+      var inp = inputs[0];
+      inp.focus();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
   }, 300);
 }
 
