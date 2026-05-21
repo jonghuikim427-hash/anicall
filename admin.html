@@ -897,6 +897,7 @@ function renderBaechaComplete(container) {
       });
       lh += esc(cardLabel(r));
       lh += '</div>';
+      if (r.kakaoNick) lh += '<div style="font-size:10px;color:#2e7d32;font-weight:700;padding:1px 4px">· '+esc(r.kakaoNick)+'</div>';
       if (r.driverName) {
         var _drvDisp = r.driverHistory ? esc(r.driverHistory)+' >> '+esc(r.driverName) : esc(r.driverName);
         lh += '<div class="bcd-drv">· '+_drvDisp+'</div>';
