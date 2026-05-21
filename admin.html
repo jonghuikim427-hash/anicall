@@ -1334,7 +1334,15 @@ function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
 
 // ── 액션 함수 ─────────────────────────────────────────────
-function onSearch(v){searchQuery=v;selectedCard=null;render();}
+var _searchTimer = null;
+function onSearch(v){
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(function(){
+    searchQuery = v;
+    selectedCard = null;
+    render();
+  }, 300);
+}
 
 function selCard(id){
   var r=allData.find(function(x){return x.id===id;});
@@ -1462,7 +1470,7 @@ function doBaechaCard(id){
     driverPhone:_dPhoneBC,
     driverVehicleType:_dVehBC,
     driverVehicleNum:_dVNumBC,
-    kakaoNick: r.kakaoNick || '',
+    kakaoNick: r.kakaoNick || r.nick || '',
     baechaNum: null
   });
 }
