@@ -422,9 +422,10 @@ function renderConfirm(container) {
   var list = allData.filter(function(r) {
     if (r.status !== status) return false;
     if (!q) return true;
+    var qClean = q.replace(/[-\s]/g,'');
     return (r.resNum||'').toLowerCase().includes(q)||
            (r.name||'').toLowerCase().includes(q)||
-           (r.phone||'').includes(q)||
+           (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||
            (r.title1||'').toLowerCase().includes(q);
   }).sort(function(a,b) {
     return (b.createdAt-a.createdAt);
@@ -862,9 +863,10 @@ function renderBaechaComplete(container) {
     if (r.status !== '배차완료' && r.status !== '재배차완료') return false;
     if (baechaCompleteDateFilter && r.rideDate !== baechaCompleteDateFilter) return false;
     if (q) {
+      var qClean = q.replace(/[-\s]/g,'');
       return (r.resNum||'').toLowerCase().includes(q)||
              (r.name||'').toLowerCase().includes(q)||
-             (r.phone||'').includes(q)||
+             (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||
              (r.title1||'').toLowerCase().includes(q)||
              (r.kakaoNick||'').toLowerCase().includes(q);
     }
@@ -1469,15 +1471,18 @@ function doBaechaCard(id){
   var _dPhoneBC = dm.driverPhone || (_foundDrvBC && _foundDrvBC.phone) || '';
   var _dVehBC = dm.driverVehicle || (_foundDrvBC && _foundDrvBC.vehicle) || '';
   var _dVNumBC = dm.driverVehicleNum || (_foundDrvBC && _foundDrvBC.vehicleNum) || '';
-  db.ref('cards/'+id).update({
-    status:'배차완료',
-    driverName:dm.driver||'',
-    driverKakao:dm.kakao||'',
-    driverPhone:_dPhoneBC,
-    driverVehicleType:_dVehBC,
-    driverVehicleNum:_dVNumBC,
-    kakaoNick: r.kakaoNick || r.nick || '',
-    baechaNum: null
+  db.ref('cards/'+id).once('value').then(function(snap){
+    var freshCard = snap.val() || {};
+    db.ref('cards/'+id).update({
+      status:'배차완료',
+      driverName:dm.driver||'',
+      driverKakao:dm.kakao||'',
+      driverPhone:_dPhoneBC,
+      driverVehicleType:_dVehBC,
+      driverVehicleNum:_dVNumBC,
+      kakaoNick: freshCard.kakaoNick || r.kakaoNick || '',
+      baechaNum: null
+    });
   });
 }
 
