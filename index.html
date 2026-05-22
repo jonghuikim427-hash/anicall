@@ -2124,8 +2124,21 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
     }
   }
 
-  // 차종별 line1 설정
-  let line1 = '';
+  // 당일/내일 출발·입국 체크
+  if(dateV){
+    const depTime = new Date(dateV);
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const depDateStr = depTime.toDateString();
+    const todayStr = today.toDateString();
+    const tomorrowStr = tomorrow.toDateString();
+    if(depDateStr === todayStr){
+      warns.unshift(tab==='입국' ? '❗❗ 당일입국' : '❗❗ 당일출발');
+    } else if(depDateStr === tomorrowStr){
+      warns.unshift(tab==='입국' ? '❗❗ 내일입국' : '❗❗ 내일출발');
+    }
+  }
 
   const _wpSuffix = getWaypointAddrs().length > 0 ? ' 경유' : '';
 
@@ -2382,6 +2395,18 @@ function openChatInquiry(isLongDist){
     if(pax >= 5) warns.push('⚠️ 인원 확인요망 (콜밴선택)');
   } else if(veh==='solar'){
     if(pax < 10) warns.push('⚠️ 인원 확인요망');
+  }
+  // 당일/내일 체크
+  if(dateV){
+    const depTime = new Date(dateV);
+    const todayD = new Date(); todayD.setHours(0,0,0,0);
+    const tomorrowD = new Date(); tomorrowD.setDate(tomorrowD.getDate()+1); tomorrowD.setHours(0,0,0,0);
+    const depD = new Date(depTime); depD.setHours(0,0,0,0);
+    if(depD.getTime()===todayD.getTime()){
+      warns.unshift(currentTab==='입국' ? '❗❗ 당일입국' : '❗❗ 당일출발');
+    } else if(depD.getTime()===tomorrowD.getTime()){
+      warns.unshift(currentTab==='입국' ? '❗❗ 내일입국' : '❗❗ 내일출발');
+    }
   }
   const warnStr = warns.length > 0 ? warns.join(String.fromCharCode(10)) + String.fromCharCode(10) : '';
   // 경고 있으면 배차타입 제거
