@@ -1475,6 +1475,7 @@ function clearResult(){
   document.getElementById('map-container').innerHTML = '';
   document.getElementById('err-msg').classList.remove('show');
   if(leafMap){ leafMap.remove(); leafMap=null; }
+  var _cb = document.getElementById('btn-calc'); if(_cb) _cb.style.display='';
 }
 
 // ── 시간대별 기본요금 (분 단위 정확하게) ────────────────
@@ -1905,6 +1906,7 @@ function getTimeRange(distKm){
 }
 
 function showFixedFare({region, amount, isSurcharge, wpFareAdd, wpCount}, depName, arrName){
+  var _cb = document.getElementById('btn-calc'); if(_cb) _cb.style.display='none';
   _lastFareText = `확정 ${amount.toLocaleString()}원`;
   const label = isSurcharge ? '🌙 야간요금' : '☀️ 일반요금';
   document.getElementById('result-wrap').innerHTML = `
@@ -1927,6 +1929,7 @@ function showFixedFare({region, amount, isSurcharge, wpFareAdd, wpCount}, depNam
 
 function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm,wpFareAdd,wpCount}){
   _lastFareText = `예상 ${totalFare.toLocaleString()}~${(totalFare+3000).toLocaleString()}원`;
+  var _cb2 = document.getElementById('btn-calc'); if(_cb2) _cb2.style.display='none';
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
