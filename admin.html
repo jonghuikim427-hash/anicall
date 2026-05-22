@@ -591,9 +591,19 @@ function renderConfirm(container) {
 // ══════════ 탭 2: 당일배차방 ═══════════════════════════════
 function renderBaecha(container) {
   var today = todayStr();
+  var q = searchQuery.toLowerCase();
   var list = allData.filter(function(r) {
     if (r.status !== '확정') return false;
     if (baechaDateFilter && r.rideDate !== baechaDateFilter) return false;
+    if (q) {
+      var qClean = q.replace(/[-\s]/g,'');
+      return (r.resNum||'').toLowerCase().includes(q)||
+             (r.name||'').toLowerCase().includes(q)||
+             (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||
+             (r.title1||'').toLowerCase().includes(q)||
+             (r.kakaoNick||'').toLowerCase().includes(q)||
+             (r.driver||'').toLowerCase().includes(q);
+    }
     return true;
   }).sort(function(a,b) {
     if (baechaSortByNum) {
@@ -607,6 +617,7 @@ function renderBaecha(container) {
   // 왼쪽 - 카드 목록
   var L = document.createElement('div'); L.className = 't2-left';
   var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div>';
+  lh += '<div style="padding:4px 8px 4px"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호 / 기사명" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;outline:none"></div>';
   // 오늘 날짜의 마지막 번호 계산
   var _usedNums = [];
   allData.forEach(function(r) {
