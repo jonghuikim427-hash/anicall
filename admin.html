@@ -671,6 +671,7 @@ function renderBaecha(container) {
       if (dm.driver) {
         lh += '<button class="bc-done" style="cursor:default;opacity:0.8" onclick="event.stopPropagation()">기사배정</button>';
       }
+      lh += '<button onclick="event.stopPropagation();cancelCard(\''+r.id+'\')" style="padding:3px 8px;background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;margin-left:3px">취소</button>';
       lh += '</div>';
     });
   }
@@ -916,6 +917,7 @@ function renderBaechaComplete(container) {
       }
       lh += '<button class="btn-bcd-ok">완료✓</button>';
       lh += '<button class="btn-reb" onclick="event.stopPropagation();askReb(\''+r.id+'\')" >재배차</button>';
+      lh += '<button onclick="event.stopPropagation();cancelCard(\''+r.id+'\')" style="padding:3px 8px;background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;margin-left:3px">취소</button>';
       lh += '</div>';
     });
   }
@@ -1106,6 +1108,19 @@ function saveDriver(id) {
     vehicle: vehicle.trim(),
     vehicleNum: vehicleNum.trim()
   }).then(function() { alert('✅ 수정됐어요!'); });
+}
+
+function cancelCard(id) {
+  var pw = prompt('⚠️ 예약취소 확인\n비밀번호를 입력해주세요:');
+  if (pw === null) return;
+  if (pw !== '1111') { alert('비밀번호가 틀렸어요!'); return; }
+  var card = allData.find(function(x){ return x.id === id; });
+  var cardName = card ? (card.name||'') : '';
+  if (!confirm((cardName ? '['+cardName+'] ' : '') + '예약을 취소하고 카드를 삭제할까요?')) return;
+  db.ref('cards/'+id).remove().then(function(){
+    if (selectedCard && selectedCard.id === id) selectedCard = null;
+    alert('✅ 예약이 취소됐어요.');
+  });
 }
 
 function parseBaechaDrv() {
