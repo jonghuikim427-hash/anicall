@@ -711,16 +711,14 @@ function renderBaecha(container) {
       var _isSelected = selectedCard && _num && allData.find(function(r){ return r.baechaNum === _num && r.id === selectedCard.id; });
       var _lines = item.trim().split('\n').length;
       mh += '<div style="display:flex;gap:4px;margin-bottom:4px;align-items:flex-start">';
-      // 번호 버튼 (클릭하면 카드 선택)
       if (_num) {
         mh += '<button onclick="selectByBaechaNum('+_num+')" style="padding:3px 7px;background:'+(_isSelected?'#1a2a4a':'#e0e0e0')+';color:'+(_isSelected?'#FFD700':'#555')+';border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;margin-top:2px">'+_num+'</button>';
       }
-      // 편집 가능 textarea
       mh += '<textarea data-idx="'+idx+'" onchange="updateListItem('+idx+',this.value)" style="flex:1;padding:5px 7px;border:1px solid '+(_isSelected?'#1a2a4a':'#e0e0e0')+';border-radius:4px;font-size:11px;font-family:Malgun Gothic,sans-serif;resize:none;outline:none;line-height:1.8;background:'+(_isSelected?'#eef2ff':'#fff')+'" rows="'+(_lines||2)+'">'+esc(item.trim())+'</textarea>';
       mh += '</div>';
     });
     mh += '</div>';
-  } else {
+    }
     // 일반 모드
     mh += '<div class="sec-title">배차결과 입력란 (기사 목록 붙여넣기)</div>';
     mh += '<div class="t2-mid-body">';
