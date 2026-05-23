@@ -262,7 +262,8 @@ var baechaNumStart = 31;
 var baechaSortByNum = false; // false=탑승시간순, true=번호순
 var baechaListMode = null;
 var baechaCompleteDateFilter = todayStr(); // 배차완료방 날짜 기본값 // null=일반, 'view'=리스트보기, 'edit'=편집, 'final'=최종
-var baechaListText = ''; // 리스트 텍스트
+var baechaListText = ''; // 중형 리스트 텍스트
+var baechaListLarge = ''; // 대형/콜밴/쏠라티 리스트 텍스트
 var baechaListHeader = ''; // 헤더 (콜센터명+날짜)
 
 var TAB_HDRS = [
@@ -695,14 +696,34 @@ function renderBaecha(container) {
       mh += '<button onclick="setBaechaFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">완료</button>';
     } else {
       mh += '<button onclick="setBaechaView()" style="padding:4px 8px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer">← 수정</button>';
-      mh += '<button onclick="copyBaechaListFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">📋 전체복사</button>';
     }
     mh += '</div>';
 
     if (baechaListMode === 'final') {
       mh += '<div style="padding:6px 8px 4px;font-size:10px;color:#888">✂️ 원하는 부분만 드래그 선택 후 복사 가능해요</div>';
-      var _fullText = baechaListHeader ? baechaListHeader + '\n\n' + baechaListText : baechaListText;
-      mh += '<textarea id="baecha-final-ta" style="flex:1;width:100%;padding:10px;border:none;outline:none;font-size:12px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box">'+esc(_fullText)+'</textarea>';
+      mh += '<div style="display:flex;gap:6px;flex:1;padding:6px 8px;overflow:hidden">';
+
+      // 중형 리스트
+      var _midText = baechaListHeader ? baechaListHeader + '\n\n' + baechaListText : baechaListText;
+      mh += '<div style="flex:1;display:flex;flex-direction:column;min-width:0">';
+      mh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+      mh += '<span style="font-size:11px;font-weight:700;color:#1a2a4a">중형</span>';
+      mh += '<button onclick="copyListByType(\'mid\')" style="padding:3px 8px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">전체복사</button>';
+      mh += '</div>';
+      mh += '<textarea id="baecha-final-ta" style="flex:1;width:100%;padding:8px;border:1px solid #ddd;outline:none;font-size:11px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box;border-radius:4px;min-height:300px">'+esc(_midText)+'</textarea>';
+      mh += '</div>';
+
+      // 대형/콜밴/쏠라티 리스트
+      var _lgText = baechaListHeader ? baechaListHeader + '\n\n' + baechaListLarge : baechaListLarge;
+      mh += '<div style="flex:1;display:flex;flex-direction:column;min-width:0">';
+      mh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
+      mh += '<span style="font-size:11px;font-weight:700;color:#6a1b9a">대형/콜밴/쏠라티</span>';
+      mh += '<button onclick="copyListByType(\'lg\')" style="padding:3px 8px;background:#6a1b9a;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">전체복사</button>';
+      mh += '</div>';
+      mh += '<textarea id="baecha-final-ta-lg" style="flex:1;width:100%;padding:8px;border:1px solid #ddd;outline:none;font-size:11px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box;border-radius:4px;min-height:300px">'+esc(_lgText)+'</textarea>';
+      mh += '</div>';
+
+      mh += '</div>';
     } else {
       if (baechaListHeader) {
         mh += '<div style="padding:6px 10px;background:#e8f5e9;font-size:11px;color:#1b5e20;font-weight:500;white-space:pre-line;border-bottom:1px solid #c8e6c9">'+esc(baechaListHeader)+'</div>';
@@ -1685,6 +1706,7 @@ function genBaechaList() {
   var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
   baechaListHeader = '✈️인천공항센터(SKY LINE)✈️\n' + (dayLabel ? dayLabel + ' ' : '') + '✈️ ' + dateLabel;
   var lines = [];
+  var linesLarge = [];
 
   list.forEach(function(r) {
     var title1 = r.title1 || '';
@@ -1731,19 +1753,25 @@ function genBaechaList() {
     // 방향
     var dir = title1.indexOf(' 입 ') >= 0 || title1.startsWith('중 입') || title1.startsWith('대 입') || title1.startsWith('버 입') ? 'in' : 'out';
 
-    // 윗줄
     var line1 = r.baechaNum + '. ' + (vehLabel ? vehLabel + ' ' : '') + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark;
-    // 아랫줄
     var line2 = dir === 'out'
       ? timeStr + ' ' + addrShort + ' → ' + airportShort
       : timeStr + ' ' + airportShort + ' → ' + addrShort;
 
-    lines.push(line1.trim());
-    lines.push(line2.trim());
-    lines.push('');
+    var isLarge = (vehType === '대' || vehType === '콜' || vehType === '쏠');
+    if (isLarge) {
+      linesLarge.push(line1.trim());
+      linesLarge.push(line2.trim());
+      linesLarge.push('');
+    } else {
+      lines.push(line1.trim());
+      lines.push(line2.trim());
+      lines.push('');
+    }
   });
 
   baechaListText = lines.join('\n');
+  baechaListLarge = linesLarge.join('\n');
   baechaListMode = 'view';
   selectedCard = null;
   render();
@@ -1828,9 +1856,9 @@ function sortBaechaList() {
   render();
 }
 
-function copyBaechaListFinal() {
-  var ta = document.getElementById('baecha-final-ta');
-  var text = ta ? ta.value : (baechaListHeader ? baechaListHeader + '\n\n' + baechaListText : baechaListText);
+function copyListByType(type) {
+  var ta = document.getElementById(type === 'lg' ? 'baecha-final-ta-lg' : 'baecha-final-ta');
+  var text = ta ? ta.value : '';
   var el = document.createElement('textarea');
   el.value = text;
   el.style.cssText = 'position:fixed;top:-9999px';
@@ -1838,7 +1866,11 @@ function copyBaechaListFinal() {
   el.select();
   try { document.execCommand('copy'); } catch(e) {}
   document.body.removeChild(el);
-  alert('배차 리스트 복사됐어요!\n카카오 배차방에 붙여넣기 하세요!');
+  alert((type === 'lg' ? '대형/콜밴/쏠라티' : '중형') + ' 리스트 복사됐어요!');
+}
+
+function copyBaechaListFinal() {
+  copyListByType('mid');
 }
 
 function toggleBaechaSort() {
