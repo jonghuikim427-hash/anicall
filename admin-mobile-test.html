@@ -595,7 +595,7 @@ function renderEditList(){
     if(!q) return true;
     return (r.resNum||'').toLowerCase().includes(q)||(r.name||'').toLowerCase().includes(q)||
            (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||(r.title1||'').toLowerCase().includes(q);
-  }).sort(function(a,b){ return (a.rideDate||'').localeCompare(b.rideDate||')||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
+  }).sort(function(a,b){ return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='';
   if(!list.length) h='<div class="empty">카드 없음</div>';
   list.forEach(function(r){
