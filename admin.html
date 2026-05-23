@@ -1679,7 +1679,8 @@ function genBaechaList() {
   var d = new Date(baechaDateFilter);
   var today = new Date(); today.setHours(0,0,0,0);
   var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
-  var depD = new Date(d); depD.setHours(0,0,0,0);
+  var _dp = baechaDateFilter.split('-');
+  var depD = new Date(parseInt(_dp[0]), parseInt(_dp[1])-1, parseInt(_dp[2]));
   var dayLabel = depD.getTime() === today.getTime() ? '오늘' : depD.getTime() === tomorrow.getTime() ? '내일' : '';
   var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
   baechaListHeader = '✈️인천공항센터(SKY LINE)✈️\n' + (dayLabel ? dayLabel + ' ' : '') + '✈️ ' + dateLabel;
@@ -1808,8 +1809,7 @@ function sortBaechaList() {
   });
 
   var d = new Date(baechaDateFilter);
-  var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
-  var result = ['✈️ ' + dateLabel, ''];
+  var result = [];
 
   var addGroup = function(label, arr) {
     if (!arr.length) return;
