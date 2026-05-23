@@ -694,11 +694,15 @@ function renderBaecha(container) {
       mh += '<button onclick="setBaechaFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">완료</button>';
     } else {
       mh += '<button onclick="setBaechaView()" style="padding:4px 8px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer">← 수정</button>';
-      mh += '<button onclick="copyBaechaListFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">📋 복사</button>';
+      mh += '<button onclick="copyBaechaListFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">📋 전체복사</button>';
     }
     mh += '</div>';
 
-    // 리스트 아이템 - 항상 편집 가능
+    if (baechaListMode === 'final') {
+      // 최종 미리보기 - textarea로 직접 선택/부분복사 가능
+      mh += '<div style="padding:6px 8px 4px;font-size:10px;color:#888">✂️ 원하는 부분만 드래그 선택 후 복사 가능해요</div>';
+      mh += '<textarea id="baecha-final-ta" style="flex:1;width:100%;padding:10px;border:none;outline:none;font-size:12px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box">'+esc(baechaListText)+'</textarea>';
+    } else {
     mh += '<div style="flex:1;overflow-y:auto;padding:8px" id="baecha-list-items">';
     var _items = parseBaechaListItems(baechaListText);
     _items.forEach(function(item, idx) {
@@ -1668,10 +1672,15 @@ function genBaechaList() {
 
   if (list.length === 0) { alert('넘버링된 카드가 없어요!'); return; }
 
-  // 날짜 표시
+  // 날짜 표시 + 헤더
   var d = new Date(baechaDateFilter);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
+  var depD = new Date(d); depD.setHours(0,0,0,0);
+  var dayLabel = depD.getTime() === today.getTime() ? '오늘' : depD.getTime() === tomorrow.getTime() ? '내일' : '';
   var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
-  var lines = ['✈️ ' + dateLabel, ''];
+  var header = '✈️인천공항센터(SKY LINE)✈️\n'+ (dayLabel ? dayLabel + ' ' : '') + '✈️ ' + dateLabel;
+  var lines = [header, ''];
 
   list.forEach(function(r) {
     var title1 = r.title1 || '';
@@ -1817,8 +1826,10 @@ function sortBaechaList() {
 }
 
 function copyBaechaListFinal() {
+  var ta = document.getElementById('baecha-final-ta');
+  var text = ta ? ta.value : baechaListText;
   var el = document.createElement('textarea');
-  el.value = baechaListText;
+  el.value = text;
   el.style.cssText = 'position:fixed;top:-9999px';
   document.body.appendChild(el);
   el.select();
