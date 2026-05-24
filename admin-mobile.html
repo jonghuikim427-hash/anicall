@@ -1079,19 +1079,20 @@ function renderCompList(){
   var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
   detailEl.style.display='block';
   detailEl.innerHTML=
-    '<div style="background:#f0f4ff;border-radius:10px;padding:10px;margin-bottom:8px">'+
-    '<div style="font-size:10px;color:#888;font-weight:500;margin-bottom:4px">콜카드</div>'+
-    '<div id="comp-card-body" style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:180px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>'+
-    '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+    '<div class="card-view-wrap">'+
+    '<div class="card-view-body" id="comp-card-body" style="white-space:pre-wrap;word-break:break-all">'+esc(colcard)+'</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;padding:8px 10px;background:#f8f9ff;border-top:0.5px solid #e0e4f0">'+
     '<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">기사정보</div>'+
-    '<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>'+
+    '<div style="font-size:11px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>'+
     '<div style="width:0.5px;background:#ddd;margin:0 4px"></div>'+
     '<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">손님정보</div>'+
-    '<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>'+
+    '<div style="font-size:11px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>'+
     '</div>'+
     '<div class="action-grid">'+
-    '<div class="action-btn primary" onclick="doRebaeha()">재배차</div>'+
-    '</div></div>';
+    '<div class="action-btn primary" onclick="openEditPopup(\'comp\')">카드 수정</div>'+
+    '<div class="action-btn yellow" onclick="doRebaeha()">재배차</div>'+
+    '</div>';
 }
 function selectCompCard(id){
   compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
