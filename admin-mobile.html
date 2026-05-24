@@ -1060,11 +1060,11 @@ function renderCompList(){
     var sel=compSelected&&compSelected.id===r.id;
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'';
-    var numStr=r.baechaNum?r.baechaNum+'. ':'';
+    var numStr=r.baechaNum?'<span style="color:#185FA5;font-weight:700">'+r.baechaNum+'.</span> ':'';
     var isReb=r.status==='재배차완료';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectCompCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1"><span style="color:#185FA5">'+numStr+'</span>'+esc(veh+' '+dir)+' '+esc((t1p.slice(2)).join(' '))+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+numStr+esc(veh+' '+dir)+' '+esc(t1p.slice(2).join(' '))+'</div>';
     h+='<div style="display:flex;align-items:center;gap:4px">';
     if(r.driverName) h+='<span class="ci-driver">'+esc(r.driverName)+'</span>';
     if(isReb) h+='<span style="font-size:9px;background:#fff3e0;color:#e65100;padding:2px 5px;border-radius:4px;font-weight:700">재배차</span>';
@@ -1073,31 +1073,32 @@ function renderCompList(){
     h+='<span style="font-size:11px;color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>';
     if(r.driverHistory) h+='<span style="font-size:10px;color:#EF9F27">'+esc(r.driverHistory)+' >> '+esc(r.driverName||'')+'</span>';
     h+='</div>';
-
-    // 클릭 시 상세 펼치기
-    if(sel){
-      var colcard=colcardText(r);
-      var drvInfo=(r.driverName||'-')+'\n'+(r.driverPhone||'-')+'\n'+(r.driverVehicleType||'-')+' / '+(r.driverVehicleNum||'-');
-      var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
-      h+='<div style="background:#f0f4ff;border-top:0.5px solid #c5d0f0;margin:6px -10px -10px;padding:8px 10px">';
-      h+='<div style="font-size:10px;color:#888;font-weight:500;margin-bottom:4px">콜카드</div>';
-      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:180px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>';
-      h+='<div style="display:flex;gap:8px">';
-      h+='<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">기사정보</div>';
-      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>';
-      h+='<div style="width:0.5px;background:#ddd"></div>';
-      h+='<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">손님정보</div>';
-      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>';
-      h+='</div>';
-      h+='<div style="display:flex;gap:6px;margin-top:8px">';
-      h+='<div class="action-btn primary" style="font-size:11px;padding:7px" onclick="event.stopPropagation();startReb(\''+r.id+'\')">재배차</div>';
-      h+='</div></div>';
-    }
     h+='</div>';
   });
   document.getElementById('comp-card-list').innerHTML=h;
-  document.getElementById('comp-card-view').style.display='none';
-  document.getElementById('reb-view').style.display='none';
+
+  // 상세 영역 (별도 div)
+  var detailEl=document.getElementById('comp-card-view');
+  if(!compSelected){ detailEl.style.display='none'; return; }
+  var r=compSelected;
+  var colcard=colcardText(r);
+  var drvInfo=(r.driverName||'-')+'\n'+(r.driverPhone||'-')+'\n'+(r.driverVehicleType||'-')+' / '+(r.driverVehicleNum||'-');
+  var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
+  detailEl.style.display='block';
+  detailEl.innerHTML=
+    '<div style="background:#f0f4ff;border-radius:10px;padding:10px;margin-bottom:8px">'+
+    '<div style="font-size:10px;color:#888;font-weight:500;margin-bottom:4px">콜카드</div>'+
+    '<div id="comp-card-body" style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:180px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>'+
+    '<div style="display:flex;gap:8px;margin-bottom:8px">'+
+    '<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">기사정보</div>'+
+    '<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>'+
+    '<div style="width:0.5px;background:#ddd;margin:0 4px"></div>'+
+    '<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">손님정보</div>'+
+    '<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>'+
+    '</div>'+
+    '<div class="action-grid">'+
+    '<div class="action-btn primary" onclick="doRebaeha()">재배차</div>'+
+    '</div></div>';
 }
 function selectCompCard(id){
   compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
