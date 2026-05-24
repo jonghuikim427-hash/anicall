@@ -1463,10 +1463,8 @@ function autoRenumber(rideDate){
     var list=[], maxNum=30;
     snap.forEach(function(child){
       var r=Object.assign({id:child.key}, child.val());
-      if(r.status==='확정'&&getRideDate(r)===rideDate){
-        list.push(r);
-        if(r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
-      }
+      if(getRideDate(r)===rideDate&&r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+      if(r.status==='확정'&&getRideDate(r)===rideDate) list.push(r);
     });
     var updates={};
     if(baechaListLocked[rideDate]){
