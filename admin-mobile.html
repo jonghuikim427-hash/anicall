@@ -791,7 +791,7 @@ function doMGenList(){
   mListText=addSeparators(lines).join('\n');
   mListLarge=addLargeSeparators(linesLg).join('\n');
   var ta=document.getElementById('m-list-preview');
-  ta.value=mListHeader+'\n\n'+mListText;
+  ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
   ta.style.height='';
   ta.style.minHeight='';
 }
