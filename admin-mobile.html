@@ -1091,7 +1091,7 @@ function renderCompList(){
     '</div>'+
     '<div class="action-grid">'+
     '<div class="action-btn primary" onclick="openEditPopup(\'comp\')">카드 수정</div>'+
-    '<div class="action-btn yellow" onclick="doRebaeha()">재배차</div>'+
+    '<div class="action-btn yellow" onclick="goDirectReb()">재배차</div>'+
     '</div>';
 }
 function selectCompCard(id){
@@ -1104,6 +1104,11 @@ function startReb(id){
   compSelected=r;
   baroCard=r; baroIsReb=true;
   openBaroScreen(r, true);
+}
+function goDirectReb(){
+  if(!compSelected) return;
+  baroCard=compSelected; baroIsReb=true;
+  openBaroScreen(compSelected, true);
 }
 function doRebaeha(){
   if(!compSelected) return;
