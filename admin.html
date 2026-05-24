@@ -1437,9 +1437,11 @@ function onKkInput(v){
 }
 
 function getGroupOrder(r){
-  var t1=r.title1||'', t1p=t1.split(' ');
-  var veh=t1p[0]||'';
-  var isIn=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입');
+  var t1=(r.title1||'').trim();
+  var parts=t1.split(' ');
+  var veh=parts[0]||'';
+  var dir=parts[1]||'';
+  var isIn=(dir==='입');
   if(veh==='중') return isIn?2:1;
   if(veh==='대') return isIn?4:3;
   if(veh==='콜') return isIn?6:5;
