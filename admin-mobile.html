@@ -718,8 +718,7 @@ function onMDateChange(){
   var d=document.getElementById('m-date').value;
   mListText=''; mListLarge=''; mListHeader='';
   var ta=document.getElementById('m-list-preview');
-  ta.value='날짜 선택 후 리스트 생성하세요';
-  ta.style.height='';
+  if(ta){ ta.value='날짜 선택 후 리스트 생성하세요'; ta.style.height=''; }
 }
 
 function doMNumbering(){
@@ -783,9 +782,11 @@ function doMGenList(){
   var dateV2=document.getElementById('m-date').value;
   mListLocked[dateV2]=maxNum;
   var ta=document.getElementById('m-list-preview');
-  ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
-  ta.style.height='';
-  ta.style.minHeight='';
+  if(ta){
+    ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
+    ta.style.height='';
+    ta.style.minHeight='';
+  }
 }
 
 function getRideDate(r){
@@ -813,16 +814,18 @@ function getGroupOrder(r){
 
 function autoRenumber(rideDate){
   return db.ref('cards').once('value').then(function(snap){
-    var list=[], maxNum=30;
+    var list=[], maxNum=30, listWasGenerated=false;
     snap.forEach(function(child){
       var r=Object.assign({id:child.key}, child.val());
-      if(r.status==='확정'&&getRideDate(r)===rideDate){
-        list.push(r);
+      if(getRideDate(r)===rideDate){
         if(r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+        if(r.baechaNum&&(r.status==='배차완료'||r.status==='재배차완료')) listWasGenerated=true;
       }
+      if(r.status==='확정'&&getRideDate(r)===rideDate) list.push(r);
     });
     var updates={};
-    if(mListLocked[rideDate]){
+    var isLocked=mListLocked[rideDate]||listWasGenerated;
+    if(isLocked){
       var noNum=list.filter(function(r){ return !r.baechaNum; });
       noNum.sort(function(a,b){
         var ga=getGroupOrder(a), gb=getGroupOrder(b);
