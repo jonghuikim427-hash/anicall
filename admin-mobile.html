@@ -913,12 +913,12 @@ function doMAutoMatch(){
   var lines=ta.split('\n');
   var map={};
   lines.forEach(function(line){
-    var m=line.match(/^(\d+)[.\s]/);
-    if(m){ var num=parseInt(m[1]); var name=line.replace(/^\d+[.\s]+/,'').trim(); if(name) map[num]=name; }
+    var m=line.trim().match(/^(\d+)\s*[.번:\-]?\s*(.+)$/);
+    if(m){ var num=parseInt(m[1]); var name=m[2].trim(); if(name) map[num]=name; }
   });
   var dateV=document.getElementById('m-date').value;
-  var debugCards=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; });
-  alert('m-date: '+dateV+'\n확정+날짜+번호있는카드: '+debugCards.length+'개\n맵에있는번호: '+Object.keys(map).join(',')+'\n매칭될카드수: '+debugCards.filter(function(r){return map[r.baechaNum];}).length+'개');
+  var updates={};
+  var count=0;
   allData.forEach(function(r){
     if(r.status!=='확정'||getRideDate(r)!==dateV) return;
     if(r.baechaNum&&map[r.baechaNum]){
@@ -928,20 +928,13 @@ function doMAutoMatch(){
       count++;
     }
   });
-  if(Object.keys(updates).length===0){
-    alert('매칭된 카드 없음! 날짜:'+dateV+' 맵번호:'+Object.keys(map).join(','));
-    return;
-  }
-  try{
-    db.ref().update(updates).then(function(){
-      alert('✅ '+count+'개 카드 자동 매칭 완료!');
-      renderInfoList();
-    }).catch(function(e){
-      alert('Firebase 오류: '+e.message);
-    });
-  }catch(e2){
-    alert('JS 오류: '+e2.message);
-  }
+  if(count===0){ alert('매칭된 카드가 없어요!'); return; }
+  db.ref().update(updates).then(function(){
+    alert('✅ '+count+'개 카드 자동 매칭 완료!');
+    renderInfoList();
+  }).catch(function(e){
+    alert('오류: '+e.message);
+  });
 }
 
 function doMResetMatch(){
@@ -958,7 +951,6 @@ function renderInfoList(){
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
     .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
-  alert('정보전달 dateV='+dateV+' 카드='+list.length+'개');
   var h='';
   if(!list.length){ h='<div class="empty">카드 없음 (넘버링 먼저 하세요)</div>'; }
   list.forEach(function(r){
