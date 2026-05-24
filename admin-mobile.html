@@ -918,7 +918,7 @@ function doMAutoMatch(){
   });
   var dateV=document.getElementById('m-date').value;
   var debugCards=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; });
-  alert('m-date: '+dateV+'\n확정+날짜+번호있는카드: '+debugCards.length+'개\n맵에있는번호: '+Object.keys(map).join(','));
+  alert('m-date: '+dateV+'\n확정+날짜+번호있는카드: '+debugCards.length+'개\n맵에있는번호: '+Object.keys(map).join(',')+'\n매칭될카드수: '+debugCards.filter(function(r){return map[r.baechaNum];}).length+'개');
   allData.forEach(function(r){
     if(r.status!=='확정'||getRideDate(r)!==dateV) return;
     if(r.baechaNum&&map[r.baechaNum]){
@@ -932,12 +932,16 @@ function doMAutoMatch(){
     alert('매칭된 카드 없음! 날짜:'+dateV+' 맵번호:'+Object.keys(map).join(','));
     return;
   }
-  db.ref().update(updates).then(function(){
-    alert('✅ '+count+'개 카드 자동 매칭 완료!');
-    renderInfoList();
-  }).catch(function(e){
-    alert('Firebase 오류: '+e.message);
-  });
+  try{
+    db.ref().update(updates).then(function(){
+      alert('✅ '+count+'개 카드 자동 매칭 완료!');
+      renderInfoList();
+    }).catch(function(e){
+      alert('Firebase 오류: '+e.message);
+    });
+  }catch(e2){
+    alert('JS 오류: '+e2.message);
+  }
 }
 
 function doMResetMatch(){
