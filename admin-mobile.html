@@ -916,9 +916,8 @@ function doMAutoMatch(){
     var m=line.trim().match(/^(\d+)[.\s]\s*([가-힣a-zA-Z].+)$/);
     if(m){ var num=parseInt(m[1]); var name=m[2].trim(); if(name) map[num]=name; }
   });
+  if(Object.keys(map).length===0){ alert('기사 응답이 없어요!\n예: 31. 홍길동'); return; }
   var dateV=document.getElementById('m-date').value;
-  var matched=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum&&map[r.baechaNum]; });
-  alert('맵:'+JSON.stringify(map)+'\n매칭카드:'+matched.length+'개\n번호들:'+matched.map(function(r){return r.baechaNum;}).join(','));
   var updates={};
   var count=0;
   allData.forEach(function(r){
