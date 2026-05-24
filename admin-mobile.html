@@ -110,7 +110,15 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 .popup-btn{flex:1;padding:11px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
 .popup-ok{background:#1a2a4a;color:#f5b800}
 .popup-cancel{background:#f0f0f0;color:#555}
-/* 카드수정 풀화면 팝업 */
+/* 사이드바 */
+.split-wrap{display:flex}
+.sidebar{width:54px;background:#fff;border-right:1px solid #eee;overflow-y:auto;flex-shrink:0;max-height:calc(100vh - 140px)}
+.sb-item{padding:4px 3px;border-bottom:1px solid #f5f5f5;font-size:9px;color:#aaa;overflow:hidden;white-space:nowrap;cursor:pointer;line-height:1.4;text-align:center}
+.sb-item.numbered{color:#1a2a4a;font-weight:700}
+.sb-item.urgent-s{border-left:2px solid #E24B4A}
+.sb-item.tomorrow-s{border-left:2px solid #EF9F27}
+.sb-item.sel-s{background:#eef2ff}
+.main-content{flex:1;overflow-y:auto;min-width:0}
 .popup-full{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:200;flex-direction:column}
 .popup-full.show{display:flex}
 .popup-full-head{background:#1a2a4a;padding:12px 14px;display:flex;align-items:center;gap:10px}
@@ -165,6 +173,12 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="btn3" id="btn3-2" onclick="switchSub(2)">매칭완료<br>+정보전달</div>
     <div class="btn3" id="btn3-3" onclick="switchSub(3)">수정/<br>예약취소</div>
   </div>
+  <div class="split-wrap">
+    <!-- 사이드바 -->
+    <div class="sidebar" id="dispatch-sidebar"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
 
   <!-- 콜카드 목록 -->
   <div class="sub-section on" id="sub0">
@@ -190,10 +204,11 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         <button class="btn-sm btn-dark" onclick="doMNumbering()">넘버링</button>
         <button class="btn-sm btn-green" onclick="doMGenList()">리스트생성</button>
       </div>
-      <div class="list-preview" id="m-list-preview">리스트 생성 후 표시됩니다</div>
+      <textarea class="list-preview" id="m-list-preview" style="width:100%;resize:none;font-family:'Malgun Gothic',sans-serif;outline:none">리스트 생성 후 표시됩니다</textarea>
       <div class="share-row">
         <button class="share-btn share-mid" onclick="shareList('mid')">중형 공유</button>
-        <button class="share-btn share-lg" onclick="shareList('lg')">대형/콜밴/쏠라티 공유</button>
+        <button class="share-btn share-lg" onclick="shareList('lg')">대형/콜밴 공유</button>
+        <button class="share-btn" style="background:#EAF3DE;color:#3B6D11" onclick="shareList('num')">번호 공유</button>
       </div>
       <textarea class="match-ta" id="m-match-ta" placeholder="31. 김종희&#10;32. 조재현&#10;33. 홍기조&#10;..."></textarea>
       <div class="match-row">
@@ -249,6 +264,9 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
       </div>
     </div>
   </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end split-wrap -->
 </div>
 
 <!-- ③ 배차완료 -->
@@ -447,10 +465,38 @@ function switchTab(t){
   render();
 }
 
+function renderSidebar(){
+  var sb=document.getElementById('dispatch-sidebar');
+  if(!sb) return;
+  var dateV=document.getElementById('m-date').value||document.getElementById('dispatch-date').value;
+  var list=allData.filter(function(r){ return r.status==='확정'&&(!dateV||r.rideDate===dateV); })
+    .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
+  var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9">카드</div>';
+  list.forEach(function(r){
+    var tail=r.tail||'';
+    var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
+    var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
+    var t1=r.title1||'', t1p=t1.split(' ');
+    var veh=t1p[0]||'', dir=t1p[1]||'', loc=t1p[2]||'';
+    var label=(r.baechaNum?r.baechaNum+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
+    var cls='sb-item'+(r.baechaNum?' numbered':'')+( isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
+    h+='<div class="'+cls+'" onclick="jumpToCard(\''+r.id+'\')">'+label+'</div>';
+  });
+  sb.innerHTML=h;
+}
+
+function jumpToCard(id){
+  var r=allData.find(function(x){ return x.id===id; });
+  if(!r) return;
+  dispatchSelected=r;
+  switchSub(0);
+}
+
 function switchSub(s){
   currentSub=s;
   document.querySelectorAll('.btn3').forEach(function(el,i){ el.classList.toggle('on',i===s); });
   document.querySelectorAll('.sub-section').forEach(function(el,i){ el.classList.toggle('on',i===s); });
+  renderSidebar();
   render();
 }
 
@@ -493,7 +539,7 @@ function renderDispatchList(){
     h+='<div class="ci-title" style="flex:1">'+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
     if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
     h+='</div>';
-    h+='<div class="ci-sub">'+esc(r.name||'')+(r.phone?' · '+esc(r.phone):'')+'</div>';
+    h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
     h+='</div>';
   });
   document.getElementById('dispatch-card-list').innerHTML=h;
@@ -655,7 +701,9 @@ function selectEditCard(id){
 function onMDateChange(){
   var d=document.getElementById('m-date').value;
   mListText=''; mListLarge=''; mListHeader='';
-  document.getElementById('m-list-preview').textContent='날짜 선택 후 리스트 생성하세요';
+  var ta=document.getElementById('m-list-preview');
+  ta.value='날짜 선택 후 리스트 생성하세요';
+  ta.style.height='';
 }
 
 function doMNumbering(){
@@ -670,12 +718,19 @@ function doMNumbering(){
   db.ref().update(updates).then(function(){ alert('✅ 넘버링 완료! ('+startNum+'번부터 '+( startNum+list.length-1)+'번)'); });
 }
 
+function getVehDirOrder(r){
+  var t1=r.title1||'', t1p=t1.split(' ');
+  var veh=t1p[0]||'';
+  var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?1:0;
+  var vehOrder=veh==='중'?0:veh==='대'?2:veh==='콜'?4:veh==='쏠'?6:8;
+  return vehOrder+dir;
+}
+
 function doMGenList(){
   var dateV=document.getElementById('m-date').value;
   if(!dateV){ alert('날짜를 먼저 선택하세요!'); return; }
   var list=allData.filter(function(r){ return r.status==='확정'&&r.rideDate===dateV&&r.baechaNum; })
-    .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
-  if(!list.length){ alert('넘버링된 카드가 없어요!'); return; }
+    .sort(function(a,b){ return getVehDirOrder(a)-getVehDirOrder(b)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var d=new Date(dateV.replace(/-/g,'/'));
   var today=new Date(); today.setHours(0,0,0,0);
   var tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
@@ -706,15 +761,32 @@ function doMGenList(){
   });
   mListText=lines.join('\n');
   mListLarge=linesLg.join('\n');
-  var preview=mListHeader+'\n\n중형:\n'+mListText+(mListLarge?'\n대형/콜밴/쏠라티:\n'+mListLarge:'');
-  document.getElementById('m-list-preview').textContent=preview;
+  var ta=document.getElementById('m-list-preview');
+  ta.value=mListHeader+'\n\n'+mListText;
+  ta.style.height='auto';
+  ta.style.height=Math.min(ta.scrollHeight,180)+'px';
+}
+
+function genNumList(){
+  var dateV=document.getElementById('m-date').value;
+  var list=allData.filter(function(r){ return r.status==='확정'&&r.rideDate===dateV&&r.baechaNum; })
+    .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  if(!list.length) return '';
+  return list.map(function(r){ return r.baechaNum+'.'; }).join('\n');
 }
 
 function shareList(type){
-  var text=(type==='lg'?mListLarge:mListText);
-  if(!text){ alert('먼저 리스트를 생성하세요!'); return; }
-  var full=mListHeader?mListHeader+'\n\n'+text:text;
-  shareText(full);
+  var ta = document.getElementById('m-list-preview');
+  if(type==='num'){
+    var numText = genNumList();
+    if(!numText){ alert('먼저 넘버링을 해주세요!'); return; }
+    shareText(numText);
+    return;
+  }
+  if(!mListText&&!mListLarge){ alert('먼저 리스트를 생성하세요!'); return; }
+  var text = type==='lg' ? (mListHeader?mListHeader+'\n\n':'')+mListLarge : ta.value;
+  if(!text.trim()){ alert('리스트가 비어있어요!'); return; }
+  shareText(text);
   if(type==='mid') infoListShared=true;
 }
 
