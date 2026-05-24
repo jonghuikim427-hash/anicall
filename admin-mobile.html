@@ -1104,9 +1104,11 @@ function selectCompCard(id){
   renderCompList();
 }
 function startReb(id){
-  compSelected=allData.find(function(x){ return x.id===id; })||null;
-  if(!compSelected) return;
-  doRebaeha();
+  var r=allData.find(function(x){ return x.id===id; });
+  if(!r) return;
+  compSelected=r;
+  baroCard=r; baroIsReb=true;
+  openBaroScreen(r, true);
 }
 function doRebaeha(){
   if(!compSelected) return;
