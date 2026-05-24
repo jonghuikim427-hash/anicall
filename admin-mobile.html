@@ -564,7 +564,10 @@ function openNickPopup(){
 function saveNick(){
   if(!waitSelected) return;
   var nick=document.getElementById('nick-input').value.trim();
-  db.ref('cards/'+waitSelected.id).update({kakaoNick:nick}).then(function(){ closePopup('popup-nick'); });
+  db.ref('cards/'+waitSelected.id).update({kakaoNick:nick}).then(function(){
+    waitSelected.kakaoNick=nick;
+    closePopup('popup-nick');
+  });
 }
 
 function doConfirmWait(){
