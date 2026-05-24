@@ -757,8 +757,9 @@ function getVehDirOrder(r){
 function doMGenList(){
   var dateV=document.getElementById('m-date').value;
   if(!dateV){ alert('날짜를 먼저 선택하세요!'); return; }
-  var list=allData.filter(function(r){ return r.status==='확정'&&r.rideDate===dateV&&r.baechaNum; })
-    .sort(function(a,b){ return getVehDirOrder(a)-getVehDirOrder(b)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
+  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
+    .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  if(!list.length){ alert('배차 카드가 없어요! 먼저 확정해주세요.'); return; }
   var d=new Date(dateV.replace(/-/g,'/'));
   var today=new Date(); today.setHours(0,0,0,0);
   var tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
@@ -770,35 +771,27 @@ function doMGenList(){
   list.forEach(function(r){
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'';
-    var vehLabel=veh==='대'?'대형':veh==='콜'?'콜':veh==='쏠'?'쏠라티':'';
-    var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':'';
+    var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
+    var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
+    var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
     var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
     var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
-    var warns=getWarnings(r);
-    var hasSpec=warns.length>0;
-    var warnMark=hasSpec?' ⚠️':'';
+    var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
     var hhmm=r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
     var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
     var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
     var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
-    var line1=r.baechaNum+'. '+(vehLabel?vehLabel+' ':'')+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
+    var line1=isLg
+      ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel
+      : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
     var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
-    var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
     if(isLg){ linesLg.push(line1.trim()); linesLg.push(line2.trim()); linesLg.push(''); }
     else{ lines.push(line1.trim()); lines.push(line2.trim()); lines.push(''); }
   });
   mListText=addSeparators(lines).join('\n');
   mListLarge=addLargeSeparators(linesLg).join('\n');
-
-  var midSection=makeSectionLines(lines);
-  var lgSection=makeSectionLines(linesLg);
-
-  var fullLines=[mListHeader,''];
-  if(midSection.length){ fullLines.push('====중형===='); fullLines=fullLines.concat(midSection); }
-  if(lgSection.length){ fullLines.push('====대형콜밴쏠라티===='); fullLines=fullLines.concat(lgSection); }
-
   var ta=document.getElementById('m-list-preview');
-  ta.value=fullLines.join('\n');
+  ta.value=mListHeader+'\n\n'+mListText;
   ta.style.height='';
   ta.style.minHeight='';
 }
