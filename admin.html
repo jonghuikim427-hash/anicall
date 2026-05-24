@@ -1450,15 +1450,26 @@ function getGroupOrder(r){
 }
 
 function autoRenumber(rideDate){
-  var list=allData.filter(function(r){ return r.status==='확정'&&r.rideDate===rideDate; });
-  list.sort(function(a,b){
-    var ga=getGroupOrder(a), gb=getGroupOrder(b);
-    if(ga!==gb) return ga-gb;
-    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  return db.ref('cards').once('value').then(function(snap){
+    var list=[];
+    snap.forEach(function(child){
+      var r=Object.assign({id:child.key}, child.val());
+      if(r.status==='확정' && r.rideDate===rideDate) list.push(r);
+    });
+    console.log('재정렬 대상:', list.length, '개', rideDate);
+    list.forEach(function(r){ console.log(r.title1, '→ 그룹:', getGroupOrder(r), '시간:', r.rideHHMM); });
+    list.sort(function(a,b){
+      var ga=getGroupOrder(a), gb=getGroupOrder(b);
+      if(ga!==gb) return ga-gb;
+      return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+    });
+    var updates={};
+    list.forEach(function(r,i){
+      updates['cards/'+r.id+'/baechaNum']=31+i;
+      console.log(31+i, r.title1);
+    });
+    return db.ref().update(updates);
   });
-  var updates={};
-  list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
-  return db.ref().update(updates);
 }
 
 function doConfirm(){
