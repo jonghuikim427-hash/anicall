@@ -633,9 +633,7 @@ function renderBaecha(container) {
   lh += '<input type="date" value="'+esc(baechaDateFilter)+'" onchange="setBaechaDate(this.value)">';
   lh += '<button class="btn-all-date'+(baechaDateFilter===''?' on':'')+'" onclick="setBaechaDate(\'\')">전체</button>';
   lh += '<span style="margin-left:8px;font-size:10px;color:#888;flex-shrink:0">시작번호:</span>';
-  lh += '<input type="number" id="baecha-num-input" value="'+_suggestNum+'" style="width:60px;padding:3px 5px;border:1px solid #ccc;border-radius:4px;font-size:11px;text-align:center" min="1">';
-  lh += '<button onclick="doNumbering()" style="padding:3px 10px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">넘버링</button>';
-  lh += '<button onclick="toggleBaechaSort()" style="padding:3px 10px;background:'+(baechaSortByNum?'#e65100':'#888')+';color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">'+(baechaSortByNum?'번호순':'시간순')+'</button>';
+  lh += '<button onclick="doNumbering()" style="display:none"></button>';
   if (baechaDateFilter) lh += '<button onclick="genBaechaList()" style="padding:3px 10px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;margin-left:3px">📋 리스트생성</button>';
   if (_usedNums.length > 0) lh += '<span style="font-size:10px;color:#2e7d32;margin-left:4px">마지막: '+Math.max.apply(null,_usedNums)+'번</span>';
   lh += '</div>';
@@ -692,7 +690,6 @@ function renderBaecha(container) {
     mh += '</div>';
     mh += '<div style="display:flex;gap:4px;padding:6px 8px;background:#f9f9f9;border-bottom:1px solid #eee;flex-shrink:0">';
     if (baechaListMode !== 'final') {
-      mh += '<button onclick="sortBaechaList()" style="padding:4px 8px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">🔀 정렬</button>';
       mh += '<button onclick="setBaechaFinal()" style="padding:4px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer">완료</button>';
     } else {
       mh += '<button onclick="setBaechaView()" style="padding:4px 8px;background:#fff;border:1px solid #ccc;border-radius:4px;font-size:11px;cursor:pointer">← 수정</button>';
@@ -1439,6 +1436,29 @@ function onKkInput(v){
   if(b)b.disabled=!v.trim();
 }
 
+function getGroupOrder(r){
+  var t1=r.title1||'', t1p=t1.split(' ');
+  var veh=t1p[0]||'';
+  var isIn=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입');
+  if(veh==='중') return isIn?2:1;
+  if(veh==='대') return isIn?4:3;
+  if(veh==='콜') return isIn?6:5;
+  if(veh==='쏠') return isIn?8:7;
+  return isIn?2:1;
+}
+
+function autoRenumber(rideDate){
+  var list=allData.filter(function(r){ return r.status==='확정'&&r.rideDate===rideDate; });
+  list.sort(function(a,b){
+    var ga=getGroupOrder(a), gb=getGroupOrder(b);
+    if(ga!==gb) return ga-gb;
+    return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+  });
+  var updates={};
+  list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
+  return db.ref().update(updates);
+}
+
 function doConfirm(){
   var inp=document.getElementById('kk-inp');
   if(!inp||!inp.value.trim())return;
@@ -1449,13 +1469,12 @@ function doConfirm(){
   var _t1 = selectedCard.title1 || '';
   var _oldT2 = selectedCard.title2 || '';
   var _newT2 = '채널>애니>' + nick;
-  // 경고줄 보존하면서 tail 재조합
   var _warnLines = (selectedCard.tail||'').split('\n').filter(function(l){
     return l.trim().indexOf('⚠️')===0 || l.trim().indexOf('❗')===0;
   });
   var _newTail = (_warnLines.length ? _warnLines.join('\n') + '\n' : '') + _t1 + '\n' + _newT2;
-  // body에서 옛날 title2를 새 닉으로 교체
   var _newBody = (selectedCard.body || '').replace(_oldT2, _newT2);
+  var _rideDate = selectedCard.rideDate;
   db.ref('cards/'+selectedCard.id).update({
     status:'확정',
     kakaoNick:nick,
@@ -1465,6 +1484,7 @@ function doConfirm(){
     confirmedAt:Date.now()
   }).then(function(){
     selectedCard=null;
+    return autoRenumber(_rideDate);
   }).catch(function(e){
     alert('오류: '+e.message);
     btn.disabled=false;
@@ -1694,79 +1714,63 @@ function genBaechaList() {
     return r.status === '확정' && r.rideDate === baechaDateFilter && r.baechaNum;
   }).sort(function(a,b){ return a.baechaNum - b.baechaNum; });
 
-  if (list.length === 0) { alert('넘버링된 카드가 없어요!'); return; }
+  if (list.length === 0) { alert('배차 카드가 없어요! 먼저 확정해주세요.'); return; }
 
-  // 날짜 표시 + 헤더
   var d = new Date(baechaDateFilter);
-  var today = new Date(); today.setHours(0,0,0,0);
-  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
   var _dp = baechaDateFilter.split('-');
   var depD = new Date(parseInt(_dp[0]), parseInt(_dp[1])-1, parseInt(_dp[2]));
+  var today = new Date(); today.setHours(0,0,0,0);
+  var tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
   var dayLabel = depD.getTime() === today.getTime() ? '오늘' : depD.getTime() === tomorrow.getTime() ? '내일' : '';
   var dateLabel = (d.getMonth()+1) + '월 ' + d.getDate() + '일';
   baechaListHeader = '✈️인천공항센터(SKY LINE)✈️\n' + (dayLabel ? dayLabel + ' ' : '') + '✈️ ' + dateLabel;
-  var lines = [];
-  var linesLarge = [];
+
+  var lines = [], linesLarge = [];
 
   list.forEach(function(r) {
     var title1 = r.title1 || '';
-    // title1 파싱 (먼저 선언)
     var title1Parts = title1.split(' ');
+    var vehType = title1Parts[0] || '';
+    var isLarge = (vehType === '대' || vehType === '콜' || vehType === '쏠');
+    var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜밴' : vehType === '쏠' ? '쏠라티' : '';
 
-    // 차종 추출
-    var vehType = title1Parts.length >= 1 ? title1Parts[0] : '';
-    var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜' : vehType === '쏠' ? '쏠라티' : '';
-
-    // 배차타입 추출 (G우선, EQ배차)
     var dtype = '';
     if (title1.indexOf('G우선') >= 0) dtype = 'G우선';
     else if (title1.indexOf('EQ배차') >= 0) dtype = 'EQ배차';
+    else if (title1.indexOf('GQE') >= 0) dtype = 'GQE';
 
-    // 확정금액 추출
-    var confirmed = '';
     var body = r.body || '';
     var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
-    if (confMatch) confirmed = confMatch[0].replace(/\s/g,'');
+    var confirmed = confMatch ? confMatch[0].replace(/\s/g,'') : '';
 
-    // ⚠️ 특이사항 체크 (tail 경고줄 + body에서 직접 파싱)
     var warns = getWarnings(r);
-    var _body = r.body || '';
-    var _bLines = _body.split('\n');
-    var _hasCarSeat = _bLines.some(function(l){ return l.indexOf('카시트') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
-    var _hasWaypoint = _bLines.some(function(l){ return l.indexOf('경유지') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
-    var _hasPicket = _bLines.some(function(l){ return l.indexOf('피켓') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
-    var _hasReqVeh = _bLines.some(function(l){ return l.indexOf('요청사항') >= 0 && l.split(':').length > 1 && l.split(':')[1].trim().length > 0; });
-    var hasSpecial = warns.length > 0 || _hasCarSeat || _hasWaypoint || _hasPicket || _hasReqVeh;
+    var _bLines = body.split('\n');
+    var hasSpecial = warns.length > 0 ||
+      _bLines.some(function(l){ return l.indexOf('카시트')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
+      _bLines.some(function(l){ return l.indexOf('경유지')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
+      _bLines.some(function(l){ return l.indexOf('피켓')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
+      _bLines.some(function(l){ return l.indexOf('요청사항')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; });
     var warnMark = hasSpecial ? ' ⚠️' : '';
 
-    // 시간
     var hhmm = r.rideHHMM || '';
     var timeStr = hhmm ? hhmm.slice(0,2) + ':' + hhmm.slice(2) : '';
-
-    // 출발지: title1에서 지역명 추출 (중 출 수원 26... → 수원)
     var addrShort = title1Parts.length >= 3 ? title1Parts[2] : (r.address||'').split(' ')[0];
-
-    // 공항
     var airport = r.airport || 'T1';
     var airportShort = airport.replace('인천공항','').trim() || airport;
+    var dir = title1.indexOf(' 입 ')>=0||title1.startsWith('중 입')||title1.startsWith('대 입')||title1.startsWith('콜 입')||title1.startsWith('쏠 입') ? 'in' : 'out';
 
-    // 방향
-    var dir = title1.indexOf(' 입 ') >= 0 || title1.startsWith('중 입') || title1.startsWith('대 입') || title1.startsWith('버 입') ? 'in' : 'out';
-
-    var line1 = r.baechaNum + '. ' + (vehLabel ? vehLabel + ' ' : '') + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark;
+    // 중형: 앞에 배차타입, 대형/콜밴/쏠라티: 뒤에 차종 표기
+    var line1 = isLarge
+      ? r.baechaNum + '. ' + (confirmed ? confirmed + ' ' : '') + warnMark + ' ' + vehLabel
+      : r.baechaNum + '. ' + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark;
     var line2 = dir === 'out'
       ? timeStr + ' ' + addrShort + ' → ' + airportShort
       : timeStr + ' ' + airportShort + ' → ' + addrShort;
 
-    var isLarge = (vehType === '대' || vehType === '콜' || vehType === '쏠');
     if (isLarge) {
-      linesLarge.push(line1.trim());
-      linesLarge.push(line2.trim());
-      linesLarge.push('');
+      linesLarge.push(line1.trim()); linesLarge.push(line2.trim()); linesLarge.push('');
     } else {
-      lines.push(line1.trim());
-      lines.push(line2.trim());
-      lines.push('');
+      lines.push(line1.trim()); lines.push(line2.trim()); lines.push('');
     }
   });
 
