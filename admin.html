@@ -257,14 +257,15 @@ var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
 var editingCard = null;
 var allDrivers = [];
-var baechaDateFilter = todayStr(); // 오늘 날짜 기본값
+var baechaDateFilter = todayStr();
 var baechaNumStart = 31;
-var baechaSortByNum = false; // false=탑승시간순, true=번호순
+var baechaSortByNum = false;
 var baechaListMode = null;
-var baechaCompleteDateFilter = todayStr(); // 배차완료방 날짜 기본값 // null=일반, 'view'=리스트보기, 'edit'=편집, 'final'=최종
-var baechaListText = ''; // 중형 리스트 텍스트
-var baechaListLarge = ''; // 대형/콜밴/쏠라티 리스트 텍스트
-var baechaListHeader = ''; // 헤더 (콜센터명+날짜)
+var baechaListLocked = {}; // 날짜별 리스트 고정 여부 {날짜: 최대번호}
+var baechaCompleteDateFilter = todayStr();
+var baechaListText = '';
+var baechaListLarge = '';
+var baechaListHeader = '';
 
 var TAB_HDRS = [
   '① 확정대기 최신방',
@@ -1459,18 +1460,33 @@ function getRideDate(r){
 
 function autoRenumber(rideDate){
   return db.ref('cards').once('value').then(function(snap){
-    var list=[];
+    var list=[], maxNum=30;
     snap.forEach(function(child){
       var r=Object.assign({id:child.key}, child.val());
-      if(r.status==='확정' && getRideDate(r)===rideDate) list.push(r);
-    });
-    list.sort(function(a,b){
-      var ga=getGroupOrder(a), gb=getGroupOrder(b);
-      if(ga!==gb) return ga-gb;
-      return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+      if(r.status==='확정'&&getRideDate(r)===rideDate){
+        list.push(r);
+        if(r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+      }
     });
     var updates={};
-    list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
+    if(baechaListLocked[rideDate]){
+      // 리스트 생성 후: 번호 없는 카드만 뒤에 붙임
+      var noNum=list.filter(function(r){ return !r.baechaNum; });
+      noNum.sort(function(a,b){
+        var ga=getGroupOrder(a), gb=getGroupOrder(b);
+        if(ga!==gb) return ga-gb;
+        return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+      });
+      noNum.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=maxNum+1+i; });
+    } else {
+      // 리스트 생성 전: 전체 재정렬
+      list.sort(function(a,b){
+        var ga=getGroupOrder(a), gb=getGroupOrder(b);
+        if(ga!==gb) return ga-gb;
+        return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+      });
+      list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
+    }
     if(Object.keys(updates).length) return db.ref().update(updates);
   });
 }
@@ -1820,6 +1836,8 @@ function genBaechaList() {
 
   baechaListText = addSeparators(lines).join('\n');
   baechaListLarge = addLargeSeparators(linesLarge).join('\n');
+  var maxNum=Math.max.apply(null, list.map(function(r){ return r.baechaNum||0; }).concat([30]));
+  baechaListLocked[baechaDateFilter] = true;
   baechaListMode = 'view';
   selectedCard = null;
   render();
