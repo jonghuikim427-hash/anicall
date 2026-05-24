@@ -344,6 +344,15 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   </div>
 </div>
 
+<!-- 팝업: 사이드바 콜카드 보기 -->
+<div class="popup-bg" id="popup-colcard-view">
+  <div class="popup" style="max-height:80vh;display:flex;flex-direction:column">
+    <div class="popup-title">콜카드 확인</div>
+    <div id="popup-colcard-body" style="flex:1;overflow-y:auto;font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-all;background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:12px"></div>
+    <button class="popup-btn popup-cancel" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#f0f0f0;color:#555" onclick="closePopup('popup-colcard-view')">닫기</button>
+  </div>
+</div>
+
 <!-- 팝업: 손님 카톡닉 입력 -->
 <div class="popup-bg" id="popup-nick">
   <div class="popup">
@@ -488,7 +497,7 @@ function renderSidebar(){
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'', loc=t1p[2]||'';
     var warns=getWarnings(r);
-    var warnMark=warns.some(function(w){ return w.indexOf('❗❗')>=0||w.indexOf('❗❗❗')>=0; })?'❗':warns.length?'⚠':''
+    var warnMark=warns.some(function(w){ return w.indexOf('❗❗')>=0||w.indexOf('❗❗❗')>=0; })?'<span style="color:#E24B4A">❗</span>':warns.length?'<span style="color:#EF9F27">⚠</span>':''
     var label=(r.baechaNum?r.baechaNum+'<br>':'')+(warnMark?warnMark+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
     var cls='sb-item'+(r.baechaNum?' numbered':'')+(isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
     h+='<div class="'+cls+'" onclick="jumpToCard(\''+r.id+'\')">'+label+'</div>';
@@ -499,8 +508,10 @@ function renderSidebar(){
 function jumpToCard(id){
   var r=allData.find(function(x){ return x.id===id; });
   if(!r) return;
-  dispatchSelected=r;
-  switchSub(0);
+  var text=colcardText(r);
+  var pop=document.getElementById('popup-colcard-view');
+  document.getElementById('popup-colcard-body').textContent=text;
+  pop.classList.add('show');
 }
 
 function switchSub(s){
@@ -542,9 +553,9 @@ function renderDispatchList(){
   list.forEach(function(r){
     var tail=r.tail||'';
     var warns=getWarnings(r);
-    var warnIcon=warns.some(function(w){ return w.indexOf('❗❗❗')>=0; })?'❗❗❗ ':
-                 warns.some(function(w){ return w.indexOf('❗❗')>=0; })?'❗❗ ':
-                 warns.length?'⚠️ ':'';
+    var hasRedWarn=tail.indexOf('❗❗')>=0||tail.indexOf('❗❗❗')>=0||warns.some(function(w){return w.indexOf('❗❗')>=0;});
+    var hasYellowWarn=!hasRedWarn&&(tail.indexOf('⚠️')>=0||warns.length>0);
+    var warnIcon=hasRedWarn?'<span style="color:#E24B4A;font-weight:700">❗❗ </span>':hasYellowWarn?'<span style="color:#EF9F27">⚠️ </span>':'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
     var dm=driverMap[r.id]||{};
@@ -787,7 +798,7 @@ function doMGenList(){
   var ta=document.getElementById('m-list-preview');
   ta.value=fullLines.join('\n');
   ta.style.height='auto';
-  ta.style.height=Math.min(ta.scrollHeight,280)+'px';
+  ta.style.height=Math.min(ta.scrollHeight,480)+'px';
 }
 
 function genNumList(){
