@@ -877,19 +877,6 @@ function genNumList(){
   return list.map(function(r){ return r.baechaNum+'.'; }).join('\n');
 }
 
-function makeSectionLines(arr){
-  if(!arr.length) return [];
-  var out=[], outLines=[], inLines=[];
-  for(var i=0;i<arr.length;i+=3){
-    var line1=arr[i]||'', line2=arr[i+1]||'';
-    if(line2.indexOf('→ T')>=0||line2.indexOf('→T')>=0) outLines.push(line1,line2,'');
-    else inLines.push(line1,line2,'');
-  }
-  if(outLines.length){ out.push('====출국===='); out=out.concat(outLines); }
-  if(inLines.length){ out.push('====입국===='); out=out.concat(inLines); }
-  return out;
-}
-
 function shareList(type){
   var ta = document.getElementById('m-list-preview');
   if(type==='num'){
@@ -902,13 +889,9 @@ function shareList(type){
   var text;
   if(type==='lg'){
     if(!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
-    var lgLines=mListLarge.split('\n').filter(function(l){return l.trim();});
-    var lgSec=makeSectionLines(lgLines);
-    text=(mListHeader?mListHeader+'\n\n':'')+lgSec.join('\n');
+    text=(mListHeader?mListHeader+'\n\n':'')+mListLarge;
   } else {
-    var midLines=mListText.split('\n').filter(function(l){return l.trim();});
-    var midSec=makeSectionLines(midLines);
-    text=(mListHeader?mListHeader+'\n\n':'')+midSec.join('\n');
+    text=ta?ta.value:(mListHeader?mListHeader+'\n\n':'')+mListText;
   }
   if(!text||!text.trim()){ alert('리스트가 비어있어요!'); return; }
   shareText(text);
