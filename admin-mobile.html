@@ -644,9 +644,20 @@ function goBarobaecha(){
   if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
   if(!waitSelected.kakaoNick){ alert('손님 카톡닉을 먼저 입력해주세요!'); return; }
   var id=waitSelected.id;
-  db.ref('cards/'+id).once('value').then(function(snap){
-    var fresh=Object.assign({id:id}, snap.val());
-    openBaroScreen(fresh, false);
+  // 731번대 최대번호 찾아서 부여
+  db.ref('cards').once('value').then(function(snap){
+    var maxNum=730;
+    snap.forEach(function(child){
+      var r=child.val();
+      if(getRideDate(r)===getRideDate(waitSelected)&&r.baechaNum>=731&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+    });
+    var newNum=maxNum+1;
+    return db.ref('cards/'+id).update({baechaNum:newNum});
+  }).then(function(){
+    db.ref('cards/'+id).once('value').then(function(snap){
+      var fresh=Object.assign({id:id}, snap.val());
+      openBaroScreen(fresh, false);
+    });
   });
 }
 
