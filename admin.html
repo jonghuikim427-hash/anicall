@@ -1460,14 +1460,19 @@ function getRideDate(r){
 
 function autoRenumber(rideDate){
   return db.ref('cards').once('value').then(function(snap){
-    var list=[], maxNum=30;
+    var list=[], maxNum=30, listWasGenerated=false;
     snap.forEach(function(child){
       var r=Object.assign({id:child.key}, child.val());
-      if(getRideDate(r)===rideDate&&r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+      if(getRideDate(r)===rideDate){
+        if(r.baechaNum&&r.baechaNum>maxNum) maxNum=r.baechaNum;
+        // 배차완료/재배차완료 카드에 번호가 있으면 이미 리스트가 생성된 적 있음
+        if(r.baechaNum&&(r.status==='배차완료'||r.status==='재배차완료')) listWasGenerated=true;
+      }
       if(r.status==='확정'&&getRideDate(r)===rideDate) list.push(r);
     });
     var updates={};
-    if(baechaListLocked[rideDate]){
+    var isLocked = baechaListLocked[rideDate] || listWasGenerated;
+    if(isLocked){
       // 리스트 생성 후: 번호 없는 카드만 뒤에 붙임
       var noNum=list.filter(function(r){ return !r.baechaNum; });
       noNum.sort(function(a,b){
