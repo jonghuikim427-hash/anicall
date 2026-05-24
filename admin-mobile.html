@@ -798,7 +798,7 @@ function doMGenList(){
   var ta=document.getElementById('m-list-preview');
   ta.value=fullLines.join('\n');
   ta.style.height='auto';
-  ta.style.height=Math.min(ta.scrollHeight,480)+'px';
+  ta.style.height=Math.max(ta.scrollHeight, window.innerHeight-420)+'px';
 }
 
 function genNumList(){
