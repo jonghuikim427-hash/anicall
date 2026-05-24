@@ -643,8 +643,11 @@ function doConfirmWait(){
 function goBarobaecha(){
   if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
   if(!waitSelected.kakaoNick){ alert('손님 카톡닉을 먼저 입력해주세요!'); return; }
-  var fresh=allData.find(function(x){ return x.id===waitSelected.id; })||waitSelected;
-  openBaroScreen(fresh, false);
+  var id=waitSelected.id;
+  db.ref('cards/'+id).once('value').then(function(snap){
+    var fresh=Object.assign({id:id}, snap.val());
+    openBaroScreen(fresh, false);
+  });
 }
 
 // ───────────────────────────────────────
@@ -1186,6 +1189,8 @@ function updateBaroBtns(){
 }
 
 function doBaroDone(){
+  var btn=document.getElementById('baro-done-btn');
+  if(!btn||btn.classList.contains('dis')){ alert('콜카드와 기사정보를 먼저 완료해주세요!'); return; }
   if(!baroCard) return;
   var drvText=document.getElementById('baro-driver-content').textContent;
   var lines=drvText.split('\n');
