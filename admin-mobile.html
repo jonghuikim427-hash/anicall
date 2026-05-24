@@ -487,7 +487,9 @@ function renderSidebar(){
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'', loc=t1p[2]||'';
-    var label=(r.baechaNum?r.baechaNum+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
+    var warns=getWarnings(r);
+    var warnMark=warns.some(function(w){ return w.indexOf('❗❗')>=0||w.indexOf('❗❗❗')>=0; })?'❗':warns.length?'⚠':''
+    var label=(r.baechaNum?r.baechaNum+'<br>':'')+(warnMark?warnMark+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
     var cls='sb-item'+(r.baechaNum?' numbered':'')+(isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
     h+='<div class="'+cls+'" onclick="jumpToCard(\''+r.id+'\')">'+label+'</div>';
   });
@@ -539,13 +541,17 @@ function renderDispatchList(){
   if(!list.length) h='<div class="empty">카드 없음</div>';
   list.forEach(function(r){
     var tail=r.tail||'';
+    var warns=getWarnings(r);
+    var warnIcon=warns.some(function(w){ return w.indexOf('❗❗❗')>=0; })?'❗❗❗ ':
+                 warns.some(function(w){ return w.indexOf('❗❗')>=0; })?'❗❗ ':
+                 warns.length?'⚠️ ':'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
     var dm=driverMap[r.id]||{};
     var sel=dispatchSelected&&dispatchSelected.id===r.id;
     h+='<div class="card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(sel?' selected':'')+'" onclick="selectDispatchCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
     if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
     h+='</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
@@ -770,10 +776,18 @@ function doMGenList(){
   });
   mListText=lines.join('\n');
   mListLarge=linesLg.join('\n');
+
+  var midSection=makeSectionLines(lines);
+  var lgSection=makeSectionLines(linesLg);
+
+  var fullLines=[mListHeader,''];
+  if(midSection.length){ fullLines.push('====중형===='); fullLines=fullLines.concat(midSection); }
+  if(lgSection.length){ fullLines.push('====대형콜밴쏠라티===='); fullLines=fullLines.concat(lgSection); }
+
   var ta=document.getElementById('m-list-preview');
-  ta.value=mListHeader+'\n\n'+mListText;
+  ta.value=fullLines.join('\n');
   ta.style.height='auto';
-  ta.style.height=Math.min(ta.scrollHeight,180)+'px';
+  ta.style.height=Math.min(ta.scrollHeight,280)+'px';
 }
 
 function genNumList(){
@@ -782,6 +796,19 @@ function genNumList(){
     .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
   if(!list.length) return '';
   return list.map(function(r){ return r.baechaNum+'.'; }).join('\n');
+}
+
+function makeSectionLines(arr){
+  if(!arr.length) return [];
+  var out=[], outLines=[], inLines=[];
+  for(var i=0;i<arr.length;i+=3){
+    var line1=arr[i]||'', line2=arr[i+1]||'';
+    if(line2.indexOf('→ T')>=0||line2.indexOf('→T')>=0) outLines.push(line1,line2,'');
+    else inLines.push(line1,line2,'');
+  }
+  if(outLines.length){ out.push('====출국===='); out=out.concat(outLines); }
+  if(inLines.length){ out.push('====입국===='); out=out.concat(inLines); }
+  return out;
 }
 
 function shareList(type){
@@ -793,9 +820,18 @@ function shareList(type){
     return;
   }
   if(!mListText&&!mListLarge){ alert('먼저 리스트를 생성하세요!'); return; }
-  var text = type==='lg' ? (mListHeader?mListHeader+'\n\n':'')+mListLarge : ta.value;
-  if(type==='lg'&&!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
-  if(!text.trim()){ alert('리스트가 비어있어요!'); return; }
+  var text;
+  if(type==='lg'){
+    if(!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
+    var lgLines=mListLarge.split('\n').filter(function(l){return l.trim();});
+    var lgSec=makeSectionLines(lgLines);
+    text=(mListHeader?mListHeader+'\n\n':'')+lgSec.join('\n');
+  } else {
+    var midLines=mListText.split('\n').filter(function(l){return l.trim();});
+    var midSec=makeSectionLines(midLines);
+    text=(mListHeader?mListHeader+'\n\n':'')+midSec.join('\n');
+  }
+  if(!text||!text.trim()){ alert('리스트가 비어있어요!'); return; }
   shareText(text);
   if(type==='mid') infoListShared=true;
 }
