@@ -226,9 +226,8 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         </div>
       </div>
       <div class="done-wrap">
-        <button class="done-btn dis" id="info-done-btn" onclick="doInfoDone()">선택 배차완료</button>
-        <button class="done-btn" style="margin-top:6px;background:#1a2a4a" onclick="doAllMatchedDone()">배정된 카드 전체 배차완료</button>
-        <div class="done-note">미배차 카드는 당일배차방에 남아요</div>
+        <button class="done-btn dis" id="info-done-btn" onclick="doInfoDone()">배차완료</button>
+        <div class="done-note">콜카드 + 기사정보 완료 시 활성화</div>
       </div>
     </div>
   </div>
@@ -972,8 +971,8 @@ function updateInfoDetail(){
   var drvDone=infoDriverDone[r.id];
   ['btn-colcard-share','btn-colcard-copy'].forEach(function(id){ var el=document.getElementById(id); el.classList.toggle('dis',!matched); });
   document.getElementById('btn-driver-copy').classList.toggle('dis',!matched);
-  var allDone=infoListShared&&colDone&&drvDone;
-  var db2=document.getElementById('info-done-btn'); db2.classList.toggle('dis',!allDone);
+  var allDone=matched&&colDone&&drvDone;
+  var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
 }
 
 function shareColcard(){
@@ -1202,11 +1201,11 @@ function doBaroDone(){
 // ───────────────────────────────────────
 window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('m-date').value=todayStr();
-  document.getElementById('dispatch-date').value=todayStr();
-  document.getElementById('edit-date').value=todayStr();
-  document.getElementById('comp-date').value=todayStr();
+  var editDate=document.getElementById('edit-date'); if(editDate) editDate.value=todayStr();
+  var compDate=document.getElementById('comp-date'); if(compDate) compDate.value=todayStr();
   editDateFilter=todayStr();
   compDateFilter=todayStr();
+  renderEditList();
 });
 </script>
 </body>
