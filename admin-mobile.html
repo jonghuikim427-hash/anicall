@@ -646,8 +646,10 @@ function doConfirmWait(){
   if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
   var nick=waitSelected.kakaoNick||'';
   if(!nick){ alert('손님 카톡닉을 먼저 입력해주세요!'); return; }
+  var _rideDate=getRideDate(waitSelected);
   db.ref('cards/'+waitSelected.id).update({status:'확정'}).then(function(){
     alert('✅ 예약 확정됐어요!'); waitSelected=null; renderWait();
+    if(_rideDate) autoRenumber(_rideDate);
   });
 }
 
@@ -785,8 +787,8 @@ function doMGenList(){
     if(isLg){ linesLg.push(line1.trim()); linesLg.push(line2.trim()); linesLg.push(''); }
     else{ lines.push(line1.trim()); lines.push(line2.trim()); lines.push(''); }
   });
-  mListText=lines.join('\n');
-  mListLarge=linesLg.join('\n');
+  mListText=addSeparators(lines).join('\n');
+  mListLarge=addLargeSeparators(linesLg).join('\n');
 
   var midSection=makeSectionLines(lines);
   var lgSection=makeSectionLines(linesLg);
@@ -799,6 +801,72 @@ function doMGenList(){
   ta.value=fullLines.join('\n');
   ta.style.height='';
   ta.style.minHeight='';
+}
+
+function getRideDate(r){
+  if(r.rideDate) return r.rideDate;
+  var parts=(r.title1||'').split(' ');
+  var yy=parts[3]||'', mmdd=parts[4]||'';
+  if(yy.length===2&&mmdd.length===4){
+    return '20'+yy+'-'+mmdd.slice(0,2)+'-'+mmdd.slice(2);
+  }
+  return '';
+}
+
+function getGroupOrder(r){
+  var t1=(r.title1||'').trim();
+  var parts=t1.split(' ');
+  var veh=parts[0]||'';
+  var dir=parts[1]||'';
+  var isIn=(dir==='입');
+  if(veh==='중') return isIn?2:1;
+  if(veh==='대') return isIn?4:3;
+  if(veh==='콜') return isIn?6:5;
+  if(veh==='쏠') return isIn?8:7;
+  return isIn?2:1;
+}
+
+function autoRenumber(rideDate){
+  return db.ref('cards').once('value').then(function(snap){
+    var list=[];
+    snap.forEach(function(child){
+      var r=Object.assign({id:child.key}, child.val());
+      if(r.status==='확정'&&getRideDate(r)===rideDate) list.push(r);
+    });
+    list.sort(function(a,b){
+      var ga=getGroupOrder(a), gb=getGroupOrder(b);
+      if(ga!==gb) return ga-gb;
+      return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
+    });
+    var updates={};
+    list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
+    if(Object.keys(updates).length) return db.ref().update(updates);
+  });
+}
+
+function addSeparators(arr){
+  var result=[], lastGroup=null;
+  for(var i=0;i<arr.length;i+=3){
+    var line1=arr[i]||'', line2=arr[i+1]||'';
+    var isIn=line2.indexOf('→ T')<0&&line2.indexOf('→T')<0;
+    var grp=isIn?'입국':'출국';
+    if(grp!==lastGroup){ result.push('〓〓〓'+grp+'〓〓〓'); result.push(''); lastGroup=grp; }
+    result.push(line1); result.push(line2); result.push('');
+  }
+  return result;
+}
+
+function addLargeSeparators(arr){
+  var result=[], lastGrp=null;
+  for(var i=0;i<arr.length;i+=3){
+    var line1=arr[i]||'', line2=arr[i+1]||'';
+    var veh=line1.indexOf('대형')>=0?'대형':line1.indexOf('콜밴')>=0?'콜밴':line1.indexOf('쏠라티')>=0?'쏠라티':'대형';
+    var isIn=line2.indexOf('→ T')<0&&line2.indexOf('→T')<0;
+    var grp=veh+(isIn?'입국':'출국');
+    if(grp!==lastGrp){ result.push('〓〓〓'+veh+(isIn?' 입국':' 출국')+'〓〓〓'); result.push(''); lastGrp=grp; }
+    result.push(line1); result.push(line2); result.push('');
+  }
+  return result;
 }
 
 function genNumList(){
@@ -1114,8 +1182,10 @@ function doBaroDone(){
     if(prevDriver&&drvName) updates.driverHistory=(baroCard.driverHistory?baroCard.driverHistory+' >> ':prevDriver+' >> ')+drvName;
     updates.status='재배차완료';
   }
+  var _rideDateBaro=getRideDate(baroCard);
   db.ref('cards/'+baroCard.id).update(updates).then(function(){
     alert('✅ 배차완료!'); closeBaroScreen();
+    if(baroIsReb&&_rideDateBaro) autoRenumber(_rideDateBaro);
   });
 }
 
