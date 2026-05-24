@@ -1649,15 +1649,16 @@ function askReb(id){
 function doRebaecha(id){
   var r = allData.find(function(x){ return x.id === id; });
   var prevDriver = r ? (r.driverName || '') : '';
+  var _rideDate = r ? getRideDate(r) : '';
   var updates = { status:'확정' };
-  // 이전 기사 이름 누적 (김종희 >> 조재현 형식)
   if (prevDriver) {
     var prevHistory = r.driverHistory || '';
     updates.driverHistory = prevHistory ? prevHistory + ' >> ' + prevDriver : prevDriver;
     updates.driverName = '';
   }
   db.ref('cards/'+id).update(updates).then(function(){
-    rebTarget=null;selectedCard=null;
+    rebTarget=null; selectedCard=null;
+    if(_rideDate) autoRenumber(_rideDate);
   });
 }
 
@@ -1790,8 +1791,35 @@ function genBaechaList() {
     }
   });
 
-  baechaListText = lines.join('\n');
-  baechaListLarge = linesLarge.join('\n');
+  // 중형 출국/입국 구분선 추가
+  function addSeparators(arr){
+    var result=[], lastGroup=null;
+    for(var i=0;i<arr.length;i+=3){
+      var line1=arr[i]||'', line2=arr[i+1]||'';
+      var isIn=line2.indexOf('→ T')<0&&line2.indexOf('→T')<0;
+      var grp=isIn?'입국':'출국';
+      if(grp!==lastGroup){ result.push('〓〓〓'+grp+'〓〓〓'); result.push(''); lastGroup=grp; }
+      result.push(line1); result.push(line2); result.push('');
+    }
+    return result;
+  }
+
+  // 대형/콜밴/쏠라티 차종별 구분선 추가
+  function addLargeSeparators(arr){
+    var result=[], lastVeh=null;
+    for(var i=0;i<arr.length;i+=3){
+      var line1=arr[i]||'', line2=arr[i+1]||'';
+      var veh=line1.indexOf('대형')>=0?'대형':line1.indexOf('콜밴')>=0?'콜밴':line1.indexOf('쏠라티')>=0?'쏠라티':'대형';
+      var isIn=line2.indexOf('→ T')<0&&line2.indexOf('→T')<0;
+      var grp=veh+(isIn?'입국':'출국');
+      if(grp!==lastVeh){ result.push('〓〓〓'+veh+(isIn?' 입국':' 출국')+'〓〓〓'); result.push(''); lastVeh=grp; }
+      result.push(line1); result.push(line2); result.push('');
+    }
+    return result;
+  }
+
+  baechaListText = addSeparators(lines).join('\n');
+  baechaListLarge = addLargeSeparators(linesLarge).join('\n');
   baechaListMode = 'view';
   selectedCard = null;
   render();
