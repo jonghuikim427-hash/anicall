@@ -1187,8 +1187,50 @@ function doBaroMatch(){
 function doBaroMatchPaste(){
   var text=document.getElementById('baro-drv-paste').value.trim();
   if(!text){ alert('기사 정보를 붙여넣어주세요!'); return; }
-  document.getElementById('baro-driver-content').textContent=text;
-  updateBaroBtns(); alert('✅ 기사 정보 입력됐어요!');
+
+  var name='', phone='', vehicle='', vehicleNum='';
+  var nameM=text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  if(nameM){ name=nameM[1].trim(); }
+  else{ var nameM2=text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m); if(nameM2) name=nameM2[1].trim(); }
+
+  var phoneM=text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
+  if(phoneM) phone=phoneM[0].replace(/[\s.\-]/g,'');
+
+  var vnumM=text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
+  if(vnumM) vehicleNum=vnumM[0].replace(/\s/g,'');
+
+  var vehM=text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+  if(vehM){ vehicle=vehM[1].trim(); }
+  else{
+    var vehKeywords=['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
+    for(var vi=0;vi<vehKeywords.length;vi++){
+      if(text.toLowerCase().indexOf(vehKeywords[vi].toLowerCase())>=0){
+        var vReg=new RegExp('[가-힣a-zA-Z0-9\\s]*'+vehKeywords[vi]+'[가-힣a-zA-Z0-9\\s()]*','i');
+        var vM2=text.match(vReg);
+        if(vM2){ vehicle=vM2[0].trim().split('\n')[0].replace(/[^가-힣a-zA-Z0-9\s]/g,'').trim(); break; }
+      }
+    }
+  }
+
+  var missing=[];
+  if(!name) missing.push('이름');
+  if(!phone) missing.push('전화번호');
+  if(!vehicleNum) missing.push('차량번호');
+  if(missing.length>0) alert('자동인식 실패: '+missing.join(', ')+'\n직접 입력란에 입력해주세요!');
+
+  var drvInfo='기사:'+name+'\n전화:'+phone+'\n차종:'+vehicle+'\n번호:'+vehicleNum;
+  document.getElementById('baro-driver-content').textContent=drvInfo;
+  baroDriverDone=true;
+  updateBaroBtns();
+
+  // PC 기사목록에 자동저장 (이름+전화 있을 때만, 동명이인 없을 때만)
+  if(name&&phone){
+    db.ref('drivers').orderByChild('name').equalTo(name).once('value').then(function(snap){
+      if(!snap.exists()){
+        db.ref('drivers').push({name:name,phone:phone,vehicle:vehicle,vehicleNum:vehicleNum});
+      }
+    });
+  }
 }
 
 function updateBaroBtns(){
