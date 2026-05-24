@@ -241,8 +241,9 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         </div>
       </div>
       <div class="done-wrap">
-        <button class="done-btn dis" id="info-done-btn" onclick="doInfoDone()">배차완료</button>
-        <div class="done-note">리스트공유 + 콜카드 + 기사정보 완료 시 활성화</div>
+        <button class="done-btn dis" id="info-done-btn" onclick="doInfoDone()">선택 배차완료</button>
+        <button class="done-btn" style="margin-top:6px;background:#1a2a4a" onclick="doAllMatchedDone()">배정된 카드 전체 배차완료</button>
+        <div class="done-note">미배차 카드는 당일배차방에 남아요</div>
       </div>
     </div>
   </div>
@@ -523,8 +524,10 @@ function switchSub(s){
 }
 
 function render(){
+  updateCounts();
   if(currentTab===0) renderWait();
   else if(currentTab===1){
+    renderSidebar();
     if(currentSub===0) renderDispatchList();
     else if(currentSub===2) renderInfoList();
     else if(currentSub===3) renderEditList();
@@ -988,8 +991,32 @@ function copyDriverInfo(){
 function doInfoDone(){
   if(!infoSelected) return;
   var dm=driverMap[infoSelected.id]||{};
+  if(!dm.driver){
+    alert('기사가 배정되지 않은 카드예요.\n미배차 카드는 당일배차방에 남아있어요.');
+    return;
+  }
   db.ref('cards/'+infoSelected.id).update({status:'배차완료',driverName:dm.driver||'',driverPhone:dm.phone||'',driverVehicleType:dm.vehicle||'',driverVehicleNum:dm.vehicleNum||'',kakaoNick:infoSelected.kakaoNick||''})
-    .then(function(){ alert('✅ 배차완료!'); infoSelected=null; renderInfoList(); });
+    .then(function(){ infoSelected=null; renderInfoList(); renderSidebar(); });
+}
+
+function doAllMatchedDone(){
+  var dateV=document.getElementById('m-date').value;
+  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum&&driverMap[r.id]&&driverMap[r.id].driver; });
+  if(!list.length){ alert('배정된 카드가 없어요!'); return; }
+  if(!confirm('기사 배정된 카드 '+list.length+'개를 배차완료 처리할까요?\n미배차 카드는 당일배차방에 남아요.')) return;
+  var updates={};
+  list.forEach(function(r){
+    var dm=driverMap[r.id]||{};
+    updates['cards/'+r.id+'/status']='배차완료';
+    updates['cards/'+r.id+'/driverName']=dm.driver||'';
+    updates['cards/'+r.id+'/driverPhone']=dm.phone||'';
+    updates['cards/'+r.id+'/driverVehicleType']=dm.vehicle||'';
+    updates['cards/'+r.id+'/driverVehicleNum']=dm.vehicleNum||'';
+    updates['cards/'+r.id+'/kakaoNick']=r.kakaoNick||'';
+  });
+  db.ref().update(updates).then(function(){
+    alert('✅ '+list.length+'개 배차완료!'); infoSelected=null; renderInfoList(); renderSidebar();
+  });
 }
 
 // ───────────────────────────────────────
