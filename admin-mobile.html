@@ -1081,7 +1081,7 @@ function renderCompList(){
       var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
       h+='<div style="background:#f0f4ff;border-top:0.5px solid #c5d0f0;margin:6px -10px -10px;padding:8px 10px">';
       h+='<div style="font-size:10px;color:#888;font-weight:500;margin-bottom:4px">콜카드</div>';
-      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:100px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>';
+      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:180px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>';
       h+='<div style="display:flex;gap:8px">';
       h+='<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">기사정보</div>';
       h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>';
@@ -1090,7 +1090,7 @@ function renderCompList(){
       h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>';
       h+='</div>';
       h+='<div style="display:flex;gap:6px;margin-top:8px">';
-      h+='<div class="action-btn primary" style="font-size:11px;padding:7px" onclick="event.stopPropagation();doRebaeha()">재배차</div>';
+      h+='<div class="action-btn primary" style="font-size:11px;padding:7px" onclick="event.stopPropagation();startReb(\''+r.id+'\')">재배차</div>';
       h+='</div></div>';
     }
     h+='</div>';
@@ -1102,6 +1102,11 @@ function renderCompList(){
 function selectCompCard(id){
   compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
   renderCompList();
+}
+function startReb(id){
+  compSelected=allData.find(function(x){ return x.id===id; })||null;
+  if(!compSelected) return;
+  doRebaeha();
 }
 function doRebaeha(){
   if(!compSelected) return;
