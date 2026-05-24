@@ -111,8 +111,8 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 .popup-ok{background:#1a2a4a;color:#f5b800}
 .popup-cancel{background:#f0f0f0;color:#555}
 /* 사이드바 */
-.split-wrap{display:flex}
-.sidebar{width:54px;background:#fff;border-right:1px solid #eee;overflow-y:auto;flex-shrink:0;max-height:calc(100vh - 140px)}
+.split-wrap{display:flex;height:calc(100vh - 195px);min-height:420px}
+.sidebar{width:54px;background:#fff;border-right:1px solid #eee;overflow-y:auto;flex-shrink:0;height:100%}
 .sb-item{padding:4px 3px;border-bottom:1px solid #f5f5f5;font-size:9px;color:#aaa;overflow:hidden;white-space:nowrap;cursor:pointer;line-height:1.4;text-align:center}
 .sb-item.numbered{color:#1a2a4a;font-weight:700}
 .sb-item.urgent-s{border-left:2px solid #E24B4A}
@@ -489,7 +489,7 @@ function renderSidebar(){
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ return r.status==='확정'&&(!dateV||r.rideDate===dateV); })
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
-  var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9">카드</div>';
+  var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9;position:sticky;top:0">카드</div>';
   list.forEach(function(r){
     var tail=r.tail||'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
