@@ -558,7 +558,7 @@ function selectWaitCard(id){
 
 function openNickPopup(){
   if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
-  document.getElementById('nick-input').value=waitSelected.kakaoNick||'';
+  document.getElementById('nick-input').value='';
   document.getElementById('popup-nick').classList.add('show');
 }
 function saveNick(){
