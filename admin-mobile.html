@@ -183,7 +183,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <!-- 콜카드 목록 -->
   <div class="sub-section on" id="sub0">
     <div class="filter-row">
-      <input type="date" class="f-date" id="dispatch-date" onchange="renderDispatchList()">
+      <input type="date" class="f-date" id="dispatch-date" onchange="renderDispatchList();renderSidebar()">
       <input class="f-search" type="text" placeholder="🔍 검색" oninput="onSearchDispatch(this.value)">
     </div>
     <div id="dispatch-card-list" class="card-list"></div>
@@ -198,7 +198,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <div class="sub-section" id="sub1">
     <div class="box-body">
       <div class="row-filter">
-        <input type="date" id="m-date" class="f-date" style="font-size:12px" onchange="onMDateChange()">
+        <input type="date" id="m-date" class="f-date" style="font-size:12px" onchange="onMDateChange();renderSidebar()">
         <span style="font-size:11px;color:#888">시작번호</span>
         <input type="number" class="num-input" id="m-startnum" value="31" min="1">
         <button class="btn-sm btn-dark" onclick="doMNumbering()">넘버링</button>
@@ -468,7 +468,16 @@ function switchTab(t){
 function renderSidebar(){
   var sb=document.getElementById('dispatch-sidebar');
   if(!sb) return;
-  var dateV=document.getElementById('m-date').value||document.getElementById('dispatch-date').value;
+  if(currentSub!==1){
+    sb.style.display='none';
+    sb.style.width='0';
+    sb.style.borderRight='none';
+    return;
+  }
+  sb.style.display='block';
+  sb.style.width='54px';
+  sb.style.borderRight='1px solid #eee';
+  var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ return r.status==='확정'&&(!dateV||r.rideDate===dateV); })
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9">카드</div>';
@@ -479,7 +488,7 @@ function renderSidebar(){
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'', loc=t1p[2]||'';
     var label=(r.baechaNum?r.baechaNum+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
-    var cls='sb-item'+(r.baechaNum?' numbered':'')+( isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
+    var cls='sb-item'+(r.baechaNum?' numbered':'')+(isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
     h+='<div class="'+cls+'" onclick="jumpToCard(\''+r.id+'\')">'+label+'</div>';
   });
   sb.innerHTML=h;
@@ -785,6 +794,7 @@ function shareList(type){
   }
   if(!mListText&&!mListLarge){ alert('먼저 리스트를 생성하세요!'); return; }
   var text = type==='lg' ? (mListHeader?mListHeader+'\n\n':'')+mListLarge : ta.value;
+  if(type==='lg'&&!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
   if(!text.trim()){ alert('리스트가 비어있어요!'); return; }
   shareText(text);
   if(type==='mid') infoListShared=true;
