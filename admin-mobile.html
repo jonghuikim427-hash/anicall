@@ -1086,7 +1086,8 @@ function confirmDrvPaste(){
 function copyDriverInfo(){
   if(!infoSelected) return;
   var dm=driverMap[infoSelected.id]||{};
-  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
+  if(!dm.driver){ alert('기사정보가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
+  if(!dm.phone){ alert('전화번호가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
   var text='기사: '+dm.driver+'\n전화: '+(dm.phone||'-')+'\n차종: '+(dm.vehicle||'-')+'\n번호: '+(dm.vehicleNum||'-');
   copyText(text,'기사정보');
   infoDriverDone[infoSelected.id]=true; updateInfoDetail();
