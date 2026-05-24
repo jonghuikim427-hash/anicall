@@ -282,13 +282,13 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 </div>
 
 <!-- 바로배차 화면 (전체화면) -->
-<div id="baro-screen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:150;overflow-y:auto">
+<div id="baro-screen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f2f5;z-index:150;display:none;flex-direction:column">
   <div class="topbar">
     <button class="ch-btn" onclick="closeBaroScreen()">← 뒤로</button>
     <div class="topbar-title" id="baro-title"></div>
     <div class="ci-badge badge-red" id="baro-nick" style="font-size:11px;padding:4px 8px"></div>
   </div>
-  <div style="padding:8px">
+  <div style="flex:1;overflow-y:auto;padding:8px;padding-bottom:70px">
     <div class="btn3-row" style="position:relative;top:0;padding:0;margin-bottom:8px">
       <div class="btn3 on" id="baro-tab0" onclick="switchBaroTab(0)">배차리스트</div>
       <div class="btn3" id="baro-tab1" onclick="switchBaroTab(1)">급좌표</div>
@@ -298,17 +298,17 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
       <button style="padding:8px 12px;background:#f5b800;border:none;border-radius:8px;font-size:11px;font-weight:700;color:#1a2a4a;cursor:pointer;white-space:nowrap" onclick="shareBaroList()">공유</button>
     </div>
     <div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px">
-      <div style="display:grid;grid-template-columns:1fr auto 1fr auto;gap:6px">
-        <input type="text" id="baro-drv-name" placeholder="기사 이름" style="padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:'Malgun Gothic',sans-serif">
-        <button class="btn-sm btn-dark" onclick="doBaroMatch()">매칭</button>
-        <textarea id="baro-drv-paste" placeholder="정보 붙여넣기" style="padding:8px;border:1px solid #ddd;border-radius:8px;font-size:11px;font-family:'Malgun Gothic',sans-serif;resize:none;height:36px"></textarea>
-        <button class="btn-sm btn-dark" onclick="doBaroMatchPaste()">매칭</button>
+      <div style="display:grid;grid-template-columns:100px auto 1fr auto;gap:6px;align-items:start">
+        <input type="text" id="baro-drv-name" placeholder="기사 이름" style="padding:7px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:'Malgun Gothic',sans-serif">
+        <button class="btn-sm btn-dark" onclick="doBaroMatch()" style="white-space:nowrap;height:36px">매칭</button>
+        <textarea id="baro-drv-paste" placeholder="기사정보 붙여넣기" style="padding:7px;border:1px solid #ddd;border-radius:8px;font-size:11px;font-family:'Malgun Gothic',sans-serif;resize:none;height:60px"></textarea>
+        <button class="btn-sm btn-dark" onclick="doBaroMatchPaste()" style="white-space:nowrap;height:36px">매칭</button>
       </div>
     </div>
     <div class="bot-grid" style="padding:0;margin-bottom:8px">
       <div class="bot-box">
         <div class="bot-title">콜카드</div>
-        <div class="bot-content" id="baro-colcard-content">-</div>
+        <div class="bot-content" id="baro-colcard-content" style="max-height:160px;overflow-y:auto">-</div>
         <div class="bot-action">
           <button class="bot-btn bot-share dis" id="baro-btn-share" onclick="shareBaroColcard()">공유</button>
           <button class="bot-btn bot-copy dis" id="baro-btn-copy" onclick="copyBaroColcard()">복사</button>
@@ -322,10 +322,10 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         </div>
       </div>
     </div>
-    <div class="done-wrap" style="padding:0">
-      <button class="done-btn dis" id="baro-done-btn" onclick="doBaroDone()">배차완료</button>
-      <div class="done-note">리스트공유 + 콜카드 + 기사정보 완료 시 활성화</div>
-    </div>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:10px;background:#f0f2f5;border-top:1px solid #ddd;z-index:10">
+    <button class="done-btn dis" id="baro-done-btn" onclick="doBaroDone()">배차완료</button>
+    <div class="done-note">콜카드 + 기사정보 완료 시 활성화</div>
   </div>
 </div>
 
@@ -1105,20 +1105,32 @@ function genBaroList(){
   if(!baroCard) return;
   var r=baroCard, t1=r.title1||'', t1p=t1.split(' ');
   var veh=t1p[0]||'';
-  var vehLabel=veh==='대'?'대형':veh==='콜'?'콜':veh==='쏠'?'쏠라티':'';
-  var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':'';
+  var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
+  var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
   var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
   var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
-  var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
   var hhmm=r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
   var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
   var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
   var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
-  var num=r.baechaNum||'';
-  var line1=(num?num+'. ':'')+(vehLabel?vehLabel+' ':'')+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
   var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
-  var today=new Date(); var todayLabel='오늘';
-  var header=currentBaroTab===0?(mListHeader||('✈️인천공항센터(SKY LINE)✈️\n'+todayLabel+' ✈️ '+(today.getMonth()+1)+'월'+today.getDate()+'일')):'급좌표';
+  var today=new Date();
+  var isLarge=(veh==='대'||veh==='콜'||veh==='쏠');
+  var header, line1;
+  if(currentBaroTab===0){
+    // 배차리스트: 번호 포함, ⚠️ 없음
+    var num=r.baechaNum||'';
+    header=mListHeader||('✈️인천공항센터(SKY LINE)✈️\n오늘 ✈️ '+(today.getMonth()+1)+'월'+today.getDate()+'일');
+    line1=isLarge
+      ? (num?num+'. ':'')+( confirmed?confirmed+' ':'')+vehLabel
+      : (num?num+'. ':'')+( dtype?dtype+' ':'')+(confirmed?confirmed+' ':'');
+  } else {
+    // 급좌표: 번호 없음
+    header='급좌표';
+    line1=isLarge
+      ? (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+vehLabel
+      : (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'');
+  }
   var preview=header+'\n\n'+line1.trim()+'\n'+line2.trim();
   document.getElementById('baro-list-preview').textContent=preview;
 }
@@ -1168,7 +1180,7 @@ function updateBaroBtns(){
   var matched=document.getElementById('baro-driver-content').textContent!=='기사 매칭 후';
   ['baro-btn-share','baro-btn-copy'].forEach(function(id){ document.getElementById(id).classList.toggle('dis',!matched); });
   document.getElementById('baro-btn-drvcp').classList.toggle('dis',!matched);
-  var allDone=baroListShared&&baroColcardDone&&baroDriverDone;
+  var allDone=baroColcardDone&&baroDriverDone;
   document.getElementById('baro-done-btn').classList.toggle('dis',!allDone);
 }
 
