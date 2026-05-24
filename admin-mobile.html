@@ -928,7 +928,16 @@ function doMAutoMatch(){
       count++;
     }
   });
-  db.ref().update(updates).then(function(){ alert('✅ '+count+'개 카드 자동 매칭 완료!'); renderInfoList(); });
+  if(Object.keys(updates).length===0){
+    alert('매칭된 카드 없음! 날짜:'+dateV+' 맵번호:'+Object.keys(map).join(','));
+    return;
+  }
+  db.ref().update(updates).then(function(){
+    alert('✅ '+count+'개 카드 자동 매칭 완료!');
+    renderInfoList();
+  }).catch(function(e){
+    alert('Firebase 오류: '+e.message);
+  });
 }
 
 function doMResetMatch(){
