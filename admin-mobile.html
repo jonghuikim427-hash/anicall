@@ -222,6 +222,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
           <div class="bot-content" id="info-driver">카드 선택 후</div>
           <div class="bot-action">
             <button class="bot-btn bot-copy dis" id="btn-driver-copy" onclick="copyDriverInfo()">복사</button>
+            <button class="bot-btn bot-share dis" id="btn-driver-paste" onclick="openDriverPastePopup()" style="background:#e8f5e9;color:#2e7d32">붙여넣기</button>
           </div>
         </div>
       </div>
@@ -328,6 +329,20 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="popup-title">콜카드 확인</div>
     <div id="popup-colcard-body" style="flex:1;overflow-y:auto;font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-all;background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:12px"></div>
     <button class="popup-btn popup-cancel" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#f0f0f0;color:#555" onclick="closePopup('popup-colcard-view')">닫기</button>
+  </div>
+</div>
+
+<!-- 팝업: 기사카드 붙여넣기 -->
+<div class="popup-bg" id="popup-drv-paste">
+  <div class="popup" style="max-height:80vh;display:flex;flex-direction:column">
+    <div class="popup-title">기사카드 붙여넣기</div>
+    <textarea id="drv-paste-input" placeholder="기사 카드를 붙여넣으세요..." style="flex:1;min-height:120px;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:'Malgun Gothic',sans-serif;resize:none;margin-bottom:10px"></textarea>
+    <div id="drv-paste-preview" style="display:none;background:#f5f5f5;border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px;line-height:1.8"></div>
+    <div class="popup-btns">
+      <button class="popup-btn popup-cancel" onclick="closePopup('popup-drv-paste')">취소</button>
+      <button class="popup-btn" style="background:#2e7d32;color:#fff" onclick="parseDrvPaste()">인식</button>
+      <button class="popup-btn popup-ok" id="drv-paste-confirm" style="display:none" onclick="confirmDrvPaste()">저장</button>
+    </div>
   </div>
 </div>
 
@@ -989,23 +1004,89 @@ function updateInfoDetail(){
   var drvDone=infoDriverDone[r.id];
   ['btn-colcard-share','btn-colcard-copy'].forEach(function(id){ var el=document.getElementById(id); el.classList.toggle('dis',!matched); });
   document.getElementById('btn-driver-copy').classList.toggle('dis',!matched);
+  var pastBtn=document.getElementById('btn-driver-paste'); if(pastBtn) pastBtn.classList.toggle('dis',!infoSelected);
   var allDone=matched&&colDone&&drvDone;
   var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
 }
 
 function shareColcard(){
   if(!infoSelected) return;
+  var dm=driverMap[infoSelected.id]||{};
+  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
   shareText(colcardText(infoSelected));
   infoColcardDone[infoSelected.id]=true; updateInfoDetail();
 }
 function copyColcard(){
   if(!infoSelected) return;
+  var dm=driverMap[infoSelected.id]||{};
+  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
   copyText(colcardText(infoSelected),'콜카드');
   infoColcardDone[infoSelected.id]=true; updateInfoDetail();
 }
+var drvParsed={};
+function openDriverPastePopup(){
+  if(!infoSelected){ alert('카드를 먼저 선택하세요!'); return; }
+  document.getElementById('drv-paste-input').value='';
+  document.getElementById('drv-paste-preview').style.display='none';
+  document.getElementById('drv-paste-confirm').style.display='none';
+  drvParsed={};
+  document.getElementById('popup-drv-paste').classList.add('show');
+}
+function parseDrvPaste(){
+  var text=document.getElementById('drv-paste-input').value.trim();
+  if(!text){ alert('내용을 붙여넣어주세요!'); return; }
+  var name='',phone='',vehicle='',vehicleNum='';
+  var nameM=text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  if(nameM){ name=nameM[1].trim(); }
+  else{ var nameM2=text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m); if(nameM2) name=nameM2[1].trim(); }
+  var phoneM=text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
+  if(phoneM) phone=phoneM[0].replace(/[\s.\-]/g,'');
+  var vnumM=text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
+  if(vnumM) vehicleNum=vnumM[0].replace(/\s/g,'');
+  var vehM=text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+  if(vehM){ vehicle=vehM[1].trim(); }
+  else{
+    var keys=['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
+    for(var vi=0;vi<keys.length;vi++){
+      if(text.toLowerCase().indexOf(keys[vi].toLowerCase())>=0){
+        var vR=new RegExp('[가-힣a-zA-Z0-9\\s]*'+keys[vi]+'[가-힣a-zA-Z0-9\\s()]*','i');
+        var vM2=text.match(vR);
+        if(vM2){ vehicle=vM2[0].trim().split('\n')[0].replace(/[^가-힣a-zA-Z0-9\s]/g,'').trim(); break; }
+      }
+    }
+  }
+  drvParsed={name:name,phone:phone,vehicle:vehicle,vehicleNum:vehicleNum};
+  var preview=document.getElementById('drv-paste-preview');
+  preview.style.display='block';
+  var missing=[];
+  if(!name) missing.push('이름');
+  if(!phone) missing.push('전화번호');
+  preview.innerHTML='<b>이름:</b> '+(name||'<span style="color:red">미인식</span>')+'<br>'+
+    '<b>전화:</b> '+(phone||'<span style="color:red">미인식</span>')+'<br>'+
+    '<b>차종:</b> '+(vehicle||'-')+'<br>'+
+    '<b>번호:</b> '+(vehicleNum||'-')+
+    (missing.length?'<br><span style="color:red;font-size:11px">미인식: '+missing.join(', ')+'</span>':'');
+  document.getElementById('drv-paste-confirm').style.display='block';
+}
+function confirmDrvPaste(){
+  if(!infoSelected||!drvParsed.name){ alert('이름이 없어요!'); return; }
+  db.ref('driverMap/'+infoSelected.id).update({
+    driver:drvParsed.name,phone:drvParsed.phone||'',vehicle:drvParsed.vehicle||'',vehicleNum:drvParsed.vehicleNum||''
+  }).then(function(){
+    if(drvParsed.name&&drvParsed.phone){
+      db.ref('drivers').orderByChild('name').equalTo(drvParsed.name).once('value').then(function(snap){
+        if(!snap.exists()) db.ref('drivers').push({name:drvParsed.name,phone:drvParsed.phone,vehicle:drvParsed.vehicle,vehicleNum:drvParsed.vehicleNum});
+      });
+    }
+    closePopup('popup-drv-paste');
+    renderInfoList();
+  });
+}
+
 function copyDriverInfo(){
   if(!infoSelected) return;
   var dm=driverMap[infoSelected.id]||{};
+  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
   var text='기사: '+dm.driver+'\n전화: '+(dm.phone||'-')+'\n차종: '+(dm.vehicle||'-')+'\n번호: '+(dm.vehicleNum||'-');
   copyText(text,'기사정보');
   infoDriverDone[infoSelected.id]=true; updateInfoDetail();
