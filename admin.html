@@ -608,17 +608,14 @@ function renderBaecha(container) {
     }
     return true;
   }).sort(function(a,b) {
-    if (baechaSortByNum) {
-      if (a.baechaNum && b.baechaNum) return a.baechaNum - b.baechaNum;
-      if (a.baechaNum) return -1;
-      if (b.baechaNum) return 1;
-    }
+    if (a.baechaNum && b.baechaNum) return a.baechaNum - b.baechaNum;
+    if (a.baechaNum) return -1;
+    if (b.baechaNum) return 1;
     return (a.rideDate||'').localeCompare(b.rideDate||'') || (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
 
-  // 왼쪽 - 카드 목록
   var L = document.createElement('div'); L.className = 't2-left';
-  var lh = '<div class="sec-title">확정 카드 목록 (탑승시간순)</div>';
+  var lh = '<div class="sec-title">확정 카드 목록 (그룹순)</div>';
   lh += '<div style="padding:4px 8px 4px"><input type="text" placeholder="🔍 예약번호 / 이름 / 전화번호 / 기사명" value="'+esc(searchQuery)+'" oninput="onSearch(this.value)" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;outline:none"></div>';
   // 오늘 날짜의 마지막 번호 계산
   var _usedNums = [];
@@ -1467,7 +1464,6 @@ function autoRenumber(rideDate){
       var r=Object.assign({id:child.key}, child.val());
       if(r.status==='확정' && getRideDate(r)===rideDate) list.push(r);
     });
-    alert('재정렬 날짜: '+rideDate+'\n대상 카드: '+list.length+'개\n\n'+list.map(function(r){ return getRideDate(r)+' '+r.title1+' 그룹:'+getGroupOrder(r); }).join('\n'));
     list.sort(function(a,b){
       var ga=getGroupOrder(a), gb=getGroupOrder(b);
       if(ga!==gb) return ga-gb;
