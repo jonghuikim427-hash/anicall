@@ -916,9 +916,11 @@ function doMAutoMatch(){
     var m=line.match(/^(\d+)[.\s]/);
     if(m){ var num=parseInt(m[1]); var name=line.replace(/^\d+[.\s]+/,'').trim(); if(name) map[num]=name; }
   });
+  var dateV=document.getElementById('m-date').value;
   var updates={};
   var count=0;
   allData.forEach(function(r){
+    if(r.status!=='확정'||getRideDate(r)!==dateV) return;
     if(r.baechaNum&&map[r.baechaNum]){
       var drvName=map[r.baechaNum];
       var drv=allDrivers.find(function(d){ return d.name===drvName; });
