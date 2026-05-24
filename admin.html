@@ -1467,6 +1467,7 @@ function autoRenumber(rideDate){
       var r=Object.assign({id:child.key}, child.val());
       if(r.status==='확정' && getRideDate(r)===rideDate) list.push(r);
     });
+    alert('재정렬 날짜: '+rideDate+'\n대상 카드: '+list.length+'개\n\n'+list.map(function(r){ return getRideDate(r)+' '+r.title1+' 그룹:'+getGroupOrder(r); }).join('\n'));
     list.sort(function(a,b){
       var ga=getGroupOrder(a), gb=getGroupOrder(b);
       if(ga!==gb) return ga-gb;
