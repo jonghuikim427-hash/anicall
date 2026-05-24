@@ -1047,33 +1047,61 @@ function renderCompList(){
   var q=compSearch.toLowerCase(), qClean=q.replace(/[-\s]/g,'');
   var list=allData.filter(function(r){
     if(r.status!=='배차완료'&&r.status!=='재배차완료') return false;
-    if(compDateFilter&&r.rideDate!==compDateFilter) return false;
+    if(compDateFilter&&getRideDate(r)!==compDateFilter) return false;
     if(!q) return true;
     return (r.resNum||'').toLowerCase().includes(q)||(r.name||'').toLowerCase().includes(q)||
            (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||(r.driverName||'').toLowerCase().includes(q)||
            (r.kakaoNick||'').toLowerCase().includes(q);
-  }).sort(function(a,b){ return (a.rideDate||'').localeCompare(b.rideDate||'')||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
+  }).sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999); });
+
   var h='';
   if(!list.length) h='<div class="empty">카드 없음</div>';
   list.forEach(function(r){
     var sel=compSelected&&compSelected.id===r.id;
+    var t1=r.title1||'', t1p=t1.split(' ');
+    var veh=t1p[0]||'', dir=t1p[1]||'';
+    var numStr=r.baechaNum?r.baechaNum+'. ':'';
+    var isReb=r.status==='재배차완료';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectCompCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+esc(cardLabel(r))+'</div>';
-    if(r.driverName) h+='<div class="ci-driver">'+esc(r.driverName)+'</div>';
+    h+='<div class="ci-title" style="flex:1"><span style="color:#185FA5">'+numStr+'</span>'+esc(veh+' '+dir)+' '+esc((t1p.slice(2)).join(' '))+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:4px">';
+    if(r.driverName) h+='<span class="ci-driver">'+esc(r.driverName)+'</span>';
+    if(isReb) h+='<span style="font-size:9px;background:#fff3e0;color:#e65100;padding:2px 5px;border-radius:4px;font-weight:700">재배차</span>';
+    h+='</div></div>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span style="font-size:11px;color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>';
+    if(r.driverHistory) h+='<span style="font-size:10px;color:#EF9F27">'+esc(r.driverHistory)+' >> '+esc(r.driverName||'')+'</span>';
     h+='</div>';
-    h+='<div class="ci-sub">'+esc(r.name||'')+(r.phone?' · '+esc(r.phone):'')+(r.kakaoNick?' <span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>':'')+'</div>';
+
+    // 클릭 시 상세 펼치기
+    if(sel){
+      var colcard=colcardText(r);
+      var drvInfo=(r.driverName||'-')+'\n'+(r.driverPhone||'-')+'\n'+(r.driverVehicleType||'-')+' / '+(r.driverVehicleNum||'-');
+      var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
+      h+='<div style="background:#f0f4ff;border-top:0.5px solid #c5d0f0;margin:6px -10px -10px;padding:8px 10px">';
+      h+='<div style="font-size:10px;color:#888;font-weight:500;margin-bottom:4px">콜카드</div>';
+      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:100px;overflow-y:auto;margin-bottom:8px">'+esc(colcard)+'</div>';
+      h+='<div style="display:flex;gap:8px">';
+      h+='<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">기사정보</div>';
+      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(drvInfo)+'</div></div>';
+      h+='<div style="width:0.5px;background:#ddd"></div>';
+      h+='<div style="flex:1"><div style="font-size:10px;color:#888;font-weight:500;margin-bottom:3px">손님정보</div>';
+      h+='<div style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333">'+esc(custInfo)+'</div></div>';
+      h+='</div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px">';
+      h+='<div class="action-btn primary" style="font-size:11px;padding:7px" onclick="event.stopPropagation();doRebaeha()">재배차</div>';
+      h+='</div></div>';
+    }
     h+='</div>';
   });
   document.getElementById('comp-card-list').innerHTML=h;
-  document.getElementById('comp-card-view').style.display=compSelected?'block':'none';
+  document.getElementById('comp-card-view').style.display='none';
   document.getElementById('reb-view').style.display='none';
-  if(compSelected){ document.getElementById('comp-card-body').textContent=colcardText(compSelected); }
 }
 function selectCompCard(id){
-  compSelected=allData.find(function(x){ return x.id===id; })||null;
+  compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
   renderCompList();
-  if(compSelected) document.getElementById('comp-card-view').scrollIntoView({behavior:'smooth'});
 }
 function doRebaeha(){
   if(!compSelected) return;
