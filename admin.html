@@ -1449,26 +1449,32 @@ function getGroupOrder(r){
   return isIn?2:1;
 }
 
+function getRideDate(r){
+  if(r.rideDate) return r.rideDate;
+  // title1에서 파싱: "중 출 강동 26 0615 1304 G우선" → "2026-06-15"
+  var parts=(r.title1||'').split(' ');
+  var yy=parts[3]||'', mmdd=parts[4]||'';
+  if(yy.length===2&&mmdd.length===4){
+    return '20'+yy+'-'+mmdd.slice(0,2)+'-'+mmdd.slice(2);
+  }
+  return '';
+}
+
 function autoRenumber(rideDate){
   return db.ref('cards').once('value').then(function(snap){
     var list=[];
     snap.forEach(function(child){
       var r=Object.assign({id:child.key}, child.val());
-      if(r.status==='확정' && r.rideDate===rideDate) list.push(r);
+      if(r.status==='확정' && getRideDate(r)===rideDate) list.push(r);
     });
-    console.log('재정렬 대상:', list.length, '개', rideDate);
-    list.forEach(function(r){ console.log(r.title1, '→ 그룹:', getGroupOrder(r), '시간:', r.rideHHMM); });
     list.sort(function(a,b){
       var ga=getGroupOrder(a), gb=getGroupOrder(b);
       if(ga!==gb) return ga-gb;
       return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
     });
     var updates={};
-    list.forEach(function(r,i){
-      updates['cards/'+r.id+'/baechaNum']=31+i;
-      console.log(31+i, r.title1);
-    });
-    return db.ref().update(updates);
+    list.forEach(function(r,i){ updates['cards/'+r.id+'/baechaNum']=31+i; });
+    if(Object.keys(updates).length) return db.ref().update(updates);
   });
 }
 
@@ -1487,7 +1493,7 @@ function doConfirm(){
   });
   var _newTail = (_warnLines.length ? _warnLines.join('\n') + '\n' : '') + _t1 + '\n' + _newT2;
   var _newBody = (selectedCard.body || '').replace(_oldT2, _newT2);
-  var _rideDate = selectedCard.rideDate;
+  var _rideDate = getRideDate(selectedCard);
   db.ref('cards/'+selectedCard.id).update({
     status:'확정',
     kakaoNick:nick,
