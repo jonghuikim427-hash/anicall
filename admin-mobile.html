@@ -899,7 +899,8 @@ function shareList(type){
     if(!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
     text=(mListHeader?mListHeader+'\n\n':'')+mListLarge;
   } else {
-    text=ta?ta.value:(mListHeader?mListHeader+'\n\n':'')+mListText;
+    if(!mListText){ alert('중형 카드가 없어요!'); return; }
+    text=(mListHeader?mListHeader+'\n\n':'')+mListText;
   }
   if(!text||!text.trim()){ alert('리스트가 비어있어요!'); return; }
   shareText(text);
