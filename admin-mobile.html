@@ -945,6 +945,7 @@ function renderInfoList(){
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
     .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  alert('정보전달 dateV='+dateV+' 카드='+list.length+'개');
   var h='';
   if(!list.length){ h='<div class="empty">카드 없음 (넘버링 먼저 하세요)</div>'; }
   list.forEach(function(r){
