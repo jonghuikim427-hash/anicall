@@ -35,7 +35,10 @@ self.addEventListener('notificationclick', function(e){
 
 self.addEventListener('message', function(e){
   if(e.data && e.data.type === 'CLEAR_BADGE'){
-    // 페이지에서 요청 시 배지 제거
     if(self.registration.clearAppBadge) self.registration.clearAppBadge();
+    // 남아있는 알림 전부 닫기 → 아이콘 점 사라짐
+    self.registration.getNotifications().then(function(notifications){
+      notifications.forEach(function(n){ n.close(); });
+    });
   }
 });
