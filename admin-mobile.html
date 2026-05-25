@@ -1507,11 +1507,12 @@ async function initPush(){
 }
 
 function clearBadge(){
-  // 직접 호출 (swReg 필요 없음)
   if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
-  // 서비스워커에도 전달
-  if(navigator.serviceWorker && navigator.serviceWorker.controller){
-    navigator.serviceWorker.controller.postMessage({type:'CLEAR_BADGE'});
+  // ready 기다렸다가 메시지 전송 (controller null 문제 해결)
+  if(navigator.serviceWorker){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg.active) reg.active.postMessage({type:'CLEAR_BADGE'});
+    });
   }
 }
 
