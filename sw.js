@@ -12,7 +12,6 @@ self.addEventListener('push', function(e){
       renotify: true,
       data: { url: '/admin-mobile.html' }
     }).then(function(){
-      // 서비스워커 컨텍스트에서 배지 설정
       if(self.registration.setAppBadge) return self.registration.setAppBadge(badge);
     })
   );
@@ -20,7 +19,6 @@ self.addEventListener('push', function(e){
 
 self.addEventListener('notificationclick', function(e){
   e.notification.close();
-  // 알림 클릭 시 배지 제거
   if(self.registration.clearAppBadge) self.registration.clearAppBadge();
   e.waitUntil(
     clients.matchAll({type:'window', includeUncontrolled:true}).then(function(cls){
@@ -36,7 +34,6 @@ self.addEventListener('notificationclick', function(e){
 self.addEventListener('message', function(e){
   if(e.data && e.data.type === 'CLEAR_BADGE'){
     if(self.registration.clearAppBadge) self.registration.clearAppBadge();
-    // 남아있는 알림 전부 닫기 → 아이콘 점 사라짐
     self.registration.getNotifications().then(function(notifications){
       notifications.forEach(function(n){ n.close(); });
     });
