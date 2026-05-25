@@ -156,6 +156,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="card-view-wrap">
       <div class="card-view-body" id="wait-card-body" style="max-height:300px"></div>
     </div>
+    <div id="wait-dup-view"></div>
     <div class="action-grid">
       <div class="action-btn" onclick="openNickPopup()">손님카톡닉 입력</div>
       <div class="action-btn" onclick="openEditPopup('wait')">카드수정</div>
@@ -329,6 +330,28 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="popup-title">콜카드 확인</div>
     <div id="popup-colcard-body" style="flex:1;overflow-y:auto;font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-all;background:#f9f9f9;border-radius:8px;padding:10px;margin-bottom:12px"></div>
     <button class="popup-btn popup-cancel" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#f0f0f0;color:#555" onclick="closePopup('popup-colcard-view')">닫기</button>
+  </div>
+</div>
+
+<!-- 팝업: 중복카드 비교 -->
+<div class="popup-bg" id="popup-dup">
+  <div class="popup" style="max-height:85vh;display:flex;flex-direction:column;width:92%">
+    <div class="popup-title" style="color:#E24B4A">🔴 중복카드 비교</div>
+    <div style="display:flex;gap:8px;flex:1;overflow:hidden">
+      <div style="flex:1;overflow-y:auto">
+        <div style="font-size:10px;font-weight:700;color:#185FA5;margin-bottom:4px">📌 현재 카드</div>
+        <div id="dup-card-a" style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;background:#f0f4ff;border-radius:6px;padding:6px"></div>
+        <button onclick="deleteDupFromPopup('a')" style="width:100%;margin-top:6px;padding:8px;background:#E24B4A;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">이 카드 삭제</button>
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <div style="font-size:10px;font-weight:700;color:#E24B4A;margin-bottom:4px">중복 카드</div>
+        <div id="dup-card-b" style="font-size:10px;line-height:1.6;white-space:pre-wrap;color:#333;background:#fff3f3;border-radius:6px;padding:6px"></div>
+        <button onclick="deleteDupFromPopup('b')" style="width:100%;margin-top:6px;padding:8px;background:#E24B4A;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">이 카드 삭제</button>
+      </div>
+    </div>
+    <div class="popup-btns" style="margin-top:10px">
+      <button class="popup-btn popup-cancel" onclick="closePopup('popup-dup')">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -582,6 +605,35 @@ function onSearchWait(v){
   _searchTimer=setTimeout(function(){ waitSelected=null; renderWait(); },300);
 }
 
+var dupCardA='', dupCardB='';
+function openDupPopup(idA, idB){
+  dupCardA=idA; dupCardB=idB;
+  var a=allData.find(function(x){ return x.id===idA; });
+  var b=allData.find(function(x){ return x.id===idB; });
+  document.getElementById('dup-card-a').textContent=a?colcardText(a):'';
+  document.getElementById('dup-card-b').textContent=b?colcardText(b):'';
+  document.getElementById('popup-dup').classList.add('show');
+}
+function deleteDupFromPopup(which){
+  var id=which==='a'?dupCardA:dupCardB;
+  if(!confirm('이 카드를 삭제할까요?')) return;
+  db.ref('cards/'+id).remove().then(function(){
+    closePopup('popup-dup');
+    waitSelected=null;
+  });
+}
+function deleteDup(id){
+  if(!confirm('중복카드를 삭제할까요?')) return;
+  db.ref('cards/'+id).remove();
+}
+
+function getDups(r){
+  if(!r.resNum) return [];
+  return allData.filter(function(x){
+    return x.resNum===r.resNum&&(x.name||'')===(r.name||'')&&x.id!==r.id&&(x.status==='대기'||x.status==='대기_오래됨');
+  }).sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+}
+
 function renderWait(){
   var q=waitSearch.toLowerCase();
   var qClean=q.replace(/[-\s]/g,'');
@@ -603,16 +655,37 @@ function renderWait(){
     var warnStr=warns.length?'<span style="color:#E24B4A;font-size:12px">'+esc(warns.join(' '))+'</span><br>':'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
+    var dups=getDups(r);
+    var dupBadge=dups.length?'<span style="background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px">🔴 중복</span>':'';
     var cls='card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(waitSelected&&waitSelected.id===r.id?' selected':'');
     h+='<div class="'+cls+'" onclick="selectWaitCard(\''+r.id+'\')">';
-    h+='<div class="ci-title">'+warnStr+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title" style="display:flex;align-items:center;flex-wrap:wrap">'+warnStr+esc(cardLabel(r))+dupBadge+'</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
     h+='</div>';
   });
   document.getElementById('wait-list').innerHTML=h;
+
+  // 카드뷰 아래 중복카드 표시
   document.getElementById('wait-card-view').style.display=waitSelected?'block':'none';
   if(waitSelected){
     document.getElementById('wait-card-body').textContent=colcardText(waitSelected);
+    var dups2=getDups(waitSelected);
+    var dupView=document.getElementById('wait-dup-view');
+    if(dupView){
+      if(dups2.length){
+        var dh='<div style="margin-top:10px;background:#fff3f3;border:1px solid #E24B4A;border-radius:8px;padding:10px">';
+        dh+='<div style="font-size:12px;font-weight:700;color:#E24B4A;margin-bottom:8px">🔴 중복카드 '+dups2.length+'개</div>';
+        dups2.forEach(function(d,i){
+          dh+='<div style="font-size:11px;color:#333;margin-bottom:4px">'+esc(colcardText(d).split('\n').slice(0,3).join(' / '))+'</div>';
+          dh+='<div style="display:flex;gap:6px;margin-bottom:8px">';
+          dh+='<div class="action-btn" style="font-size:11px;padding:6px" onclick="openDupPopup(\''+waitSelected.id+'\',\''+d.id+'\')">비교 확인</div>';
+          dh+='<div class="action-btn danger" style="font-size:11px;padding:6px" onclick="deleteDup(\''+d.id+'\')">이 카드 삭제</div>';
+          dh+='</div>';
+        });
+        dh+='</div>';
+        dupView.innerHTML=dh;
+      } else { dupView.innerHTML=''; }
+    }
   }
 }
 
