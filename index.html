@@ -1222,6 +1222,16 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
       driverKakao: ''
     };
     _fbDb.ref('cards').push(cardData);
+    // 새 예약 푸시 알림 전송
+    fetch('/api/push', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        action: 'send',
+        title: '🚕 새 예약 들어왔어요!',
+        body: (extra.name||'손님') + ' · ' + (title1||'')
+      })
+    }).catch(function(){});
   } catch(e) { console.warn('Firebase write error:', e); }
 }
 // ────────────────────────────────────────────────────────
