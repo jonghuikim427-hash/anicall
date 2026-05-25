@@ -1533,7 +1533,12 @@ function checkNewCard(data){
   });
 }
 
-window.addEventListener('load', function(){ initPush(); });
+window.addEventListener('load', function(){ initPush(); clearBadge(); });
+// 앱 열리거나 포커스 될 때 배지 자동 제거
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible') clearBadge();
+});
+window.addEventListener('focus', clearBadge);
 window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('m-date').value=todayStr();
   var editDate=document.getElementById('edit-date'); if(editDate) editDate.value=todayStr();
