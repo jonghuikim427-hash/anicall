@@ -1534,6 +1534,7 @@ function checkNewCard(data){
 }
 
 window.addEventListener('load', function(){ initPush(); });
+window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('m-date').value=todayStr();
   var editDate=document.getElementById('edit-date'); if(editDate) editDate.value=todayStr();
   var compDate=document.getElementById('comp-date'); if(compDate) compDate.value=todayStr();
