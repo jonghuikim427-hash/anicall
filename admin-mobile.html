@@ -1507,8 +1507,12 @@ async function initPush(){
 }
 
 function clearBadge(){
-  if(swReg && navigator.clearAppBadge) navigator.clearAppBadge();
-  if(swReg) swReg.active && swReg.active.postMessage({type:'CLEAR_BADGE'});
+  // 직접 호출 (swReg 필요 없음)
+  if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
+  // 서비스워커에도 전달
+  if(navigator.serviceWorker && navigator.serviceWorker.controller){
+    navigator.serviceWorker.controller.postMessage({type:'CLEAR_BADGE'});
+  }
 }
 
 // 새 카드 감지 → 푸시 전송
