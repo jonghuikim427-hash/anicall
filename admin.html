@@ -569,14 +569,10 @@ function renderConfirm(container) {
     rh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+c.id+'\')" >✏️ 카드 수정</button></div>';
     // 수정 모드
     if (editingCard === c.id) {
+      var _editFull = colcardText(c);
       rh += '<div class="edit-box">';
-      rh += '<div class="edit-box-title">✏️ 카드 수정</div>';
-      rh += '<div class="edit-label">꼬리 1줄 (제목)</div>';
-      rh += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(c.title1||'')+'</textarea>';
-      rh += '<div class="edit-label">꼬리 2줄 (채널)</div>';
-      rh += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(c.title2||'')+'</textarea>';
-      rh += '<div class="edit-label">카드 본문 전체</div>';
-      rh += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(c.body||'')+'</textarea>';
+      rh += '<div class="edit-box-title">✏️ 카드 수정 (꼬리+본문 같이 수정)</div>';
+      rh += '<textarea class="edit-ta" id="edit-full" rows="14" style="font-size:12px;line-height:1.7">'+esc(_editFull)+'</textarea>';
       rh += '<div class="edit-btns">';
       rh += '<button class="btn-save" onclick="saveEdit(\''+c.id+'\')" >💾 저장</button>';
       rh += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
@@ -651,6 +647,7 @@ function renderBaecha(container) {
         lh += (w.indexOf('❗')===0 ? '<span style="color:#b71c1c;font-weight:700">❗</span>' : '<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
       lh += esc(cardLabel(r));
+      if (r.edited) lh += ' <span style="background:#ff6f00;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:3px">수정됨</span>';
       if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
@@ -787,14 +784,10 @@ function renderBaecha(container) {
 
   // 수정 모드
   if (selectedCard && editingCard === selectedCard.id) {
+    var _editFull2 = colcardText(selectedCard);
     rh2 += '<div class="edit-box" style="margin-bottom:12px">';
-    rh2 += '<div class="edit-box-title">✏️ 카드 수정</div>';
-    rh2 += '<div class="edit-label">꼬리 1줄 (제목)</div>';
-    rh2 += '<textarea class="edit-ta" id="edit-title1" rows="1">'+esc(selectedCard.title1||'')+'</textarea>';
-    rh2 += '<div class="edit-label">꼬리 2줄 (채널)</div>';
-    rh2 += '<textarea class="edit-ta" id="edit-title2" rows="1">'+esc(selectedCard.title2||'')+'</textarea>';
-    rh2 += '<div class="edit-label">카드 본문 전체</div>';
-    rh2 += '<textarea class="edit-ta" id="edit-body" rows="10">'+esc(selectedCard.body||'')+'</textarea>';
+    rh2 += '<div class="edit-box-title">✏️ 카드 수정 (꼬리+본문 같이 수정)</div>';
+    rh2 += '<textarea class="edit-ta" id="edit-full" rows="14" style="font-size:12px;line-height:1.7">'+esc(_editFull2)+'</textarea>';
     rh2 += '<div class="edit-btns">';
     rh2 += '<button class="btn-save" onclick="saveEdit(currentEditId)">💾 저장</button>';
     rh2 += '<button class="btn-cancel-edit" onclick="editingCard=null;render()">취소</button>';
@@ -1985,28 +1978,38 @@ function openEdit(id) {
 }
 
 function saveEdit(id) {
-  var t1 = document.getElementById('edit-title1');
-  var t2 = document.getElementById('edit-title2');
-  var body = document.getElementById('edit-body');
-  if (!t1 || !body) return;
-  var newTitle1 = t1.value.trim();
-  var newTitle2 = t2 ? t2.value.trim() : '';
-  var newBody = body.value;
-  // tail 재조합
+  var fullEl = document.getElementById('edit-full');
+  if (!fullEl) return;
+  var fullText = fullEl.value.trim();
+  if (!fullText) return;
+
+  // 꼬리 확인 팝업
+  if (!confirm('꼬리도 수정하셨나요?\n\n확인 → 저장\n취소 → 다시 확인')) return;
+
+  // 꼬리(처음 2줄) + 본문 분리
+  var lines = fullText.split('\n');
+  var newTitle1 = lines[0] ? lines[0].trim() : '';
+  var newTitle2 = lines[1] ? lines[1].trim() : '';
   var newTail = newTitle1 + (newTitle2 ? '\n' + newTitle2 : '');
-  db.ref('cards/'+id).update({
+  var newBody = fullText;
+
+  // 리스트 생성 후 수정 시 수정됨 표시
+  var updateData = {
     title1: newTitle1,
     title2: newTitle2,
     tail: newTail,
     body: newBody
-  }).then(function() {
+  };
+  if (baechaListLocked) updateData.edited = true;
+
+  db.ref('cards/'+id).update(updateData).then(function() {
     editingCard = null;
-    // selectedCard 즉시 업데이트
     if (selectedCard && selectedCard.id === id) {
       selectedCard.title1 = newTitle1;
       selectedCard.title2 = newTitle2;
       selectedCard.tail = newTail;
       selectedCard.body = newBody;
+      if (baechaListLocked) selectedCard.edited = true;
     }
     render();
   });
