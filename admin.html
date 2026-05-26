@@ -1683,6 +1683,19 @@ function doCopyBaecha(elId, key, cardId) {
   var done = function() {
     if (!copiedState[cardId]) copiedState[cardId] = {dc:false,dex:false,di:false,cu:false};
     copiedState[cardId][key] = true;
+    var cs = copiedState[cardId];
+    // 4개 다 복사 완료 → 배차완료 팝업
+    if (cs.dc && cs.dex && cs.di && cs.cu) {
+      var dm = driverMap[cardId] || {};
+      if (dm.driver) {
+        setTimeout(function(){
+          if (confirm('✅ 4개 복사 완료!\n\n배차완료 처리 하시겠습니까?')) {
+            doBaechaCard(cardId);
+          }
+        }, 100);
+        return;
+      }
+    }
     render();
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
