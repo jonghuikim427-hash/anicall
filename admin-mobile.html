@@ -582,7 +582,7 @@ function renderDispatchList(){
     var sel=dispatchSelected&&dispatchSelected.id===r.id;
     h+='<div class="card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(sel?' selected':'')+'" onclick="selectDispatchCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+(r.edited?'<span style="background:#ff6f00;color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;margin-left:3px">수정됨</span>':'')+'</div>';
     if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
     h+='</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
@@ -758,8 +758,25 @@ function saveEdit(){
   var ctx=editContext;
   var card=ctx==='wait'?waitSelected:ctx==='dispatch'?editSelected:ctx==='reb'?baroCard:compSelected;
   if(!card) return;
-  var newBody=document.getElementById('edit-input').value;
-  db.ref('cards/'+card.id).update({body:newBody}).then(function(){ closePopup('popup-edit'); alert('✅ 수정됐어요!'); });
+  var newFull=document.getElementById('edit-input').value.trim();
+  if(!newFull) return;
+
+  // 꼬리 확인 팝업
+  if(!confirm('꼬리도 수정하셨나요?\n\n확인 → 저장\n취소 → 다시 확인')) return;
+
+  // 꼬리 첫 줄에서 title1 재파싱
+  var lines=newFull.split('\n');
+  var newTitle1=lines[0]?lines[0].trim():'';
+  var newTitle2=lines[1]?lines[1].trim():'';
+  var newTail=newTitle1+(newTitle2?'\n'+newTitle2:'');
+
+  var updateData={body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2};
+  if(mListLocked) updateData.edited=true;
+
+  db.ref('cards/'+card.id).update(updateData).then(function(){
+    closePopup('popup-edit');
+    alert('✅ 수정됐어요!');
+  });
 }
 
 function closePopup(id){ document.getElementById(id).classList.remove('show'); }
@@ -1507,13 +1524,8 @@ async function initPush(){
 }
 
 function clearBadge(){
-  if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
-  // ready 기다렸다가 메시지 전송 (controller null 문제 해결)
-  if(navigator.serviceWorker){
-    navigator.serviceWorker.ready.then(function(reg){
-      if(reg.active) reg.active.postMessage({type:'CLEAR_BADGE'});
-    });
-  }
+  if(swReg && navigator.clearAppBadge) navigator.clearAppBadge();
+  if(swReg) swReg.active && swReg.active.postMessage({type:'CLEAR_BADGE'});
 }
 
 // 새 카드 감지 → 푸시 전송
@@ -1538,12 +1550,7 @@ function checkNewCard(data){
   });
 }
 
-window.addEventListener('load', function(){ initPush(); clearBadge(); });
-// 앱 열리거나 포커스 될 때 배지 자동 제거
-document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'visible') clearBadge();
-});
-window.addEventListener('focus', clearBadge);
+window.addEventListener('load', function(){ initPush(); });
 window.addEventListener('DOMContentLoaded', function(){
   document.getElementById('m-date').value=todayStr();
   var editDate=document.getElementById('edit-date'); if(editDate) editDate.value=todayStr();
