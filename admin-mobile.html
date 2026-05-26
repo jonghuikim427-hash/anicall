@@ -768,8 +768,12 @@ function doConfirmWait(){
   var nick=waitSelected.kakaoNick||'';
   if(!nick){ alert('손님 카톡닉을 먼저 입력해주세요!'); return; }
   var _rideDate=getRideDate(waitSelected);
-  db.ref('cards/'+waitSelected.id).update({status:'확정'}).then(function(){
-    alert('✅ 예약 확정됐어요!'); waitSelected=null; renderWait();
+  var _id=waitSelected.id;
+  db.ref('cards/'+_id).update({status:'확정'}).then(function(){
+    // allData 즉시 업데이트
+    var idx=allData.findIndex(function(r){ return r.id===_id; });
+    if(idx>=0) allData[idx].status='확정';
+    alert('✅ 예약 확정됐어요!'); waitSelected=null; render();
     if(_rideDate) autoRenumber(_rideDate);
   });
 }
@@ -821,7 +825,18 @@ function saveEdit(){
 
   db.ref('cards/'+card.id).update({
     body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2
-  }).then(function(){ closePopup('popup-edit'); alert('✅ 수정됐어요!'); });
+  }).then(function(){
+    // allData 즉시 업데이트
+    var idx=allData.findIndex(function(r){ return r.id===card.id; });
+    if(idx>=0){
+      allData[idx].body=newFull; allData[idx].tail=newTail;
+      allData[idx].title1=newTitle1; allData[idx].title2=newTitle2;
+    }
+    card.body=newFull; card.tail=newTail; card.title1=newTitle1; card.title2=newTitle2;
+    closePopup('popup-edit');
+    alert('✅ 수정됐어요!');
+    render();
+  });
 }
 
 function closePopup(id){ document.getElementById(id).classList.remove('show'); }
