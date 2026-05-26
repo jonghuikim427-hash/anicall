@@ -319,7 +319,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     </div>
   </div>
   <div style="position:fixed;bottom:0;left:0;right:0;padding:10px;background:#f0f2f5;border-top:1px solid #ddd;z-index:10">
-    <button class="done-btn dis" id="baro-done-btn" onclick="doBaroDone()">배차완료</button>
+    
     <div class="done-note">콜카드 + 기사정보 완료 시 활성화</div>
   </div>
 </div>
@@ -522,7 +522,9 @@ function renderSidebar(){
   sb.style.width='54px';
   sb.style.borderRight='1px solid #eee';
   var dateV=document.getElementById('m-date').value;
-  var list=allData.filter(function(r){ return r.status==='확정'&&(!dateV||r.rideDate===dateV); })
+  var list=allData.filter(function(r){ 
+    return r.status==='확정'&&(!dateV||r.rideDate===dateV)&&!(driverMap[r.id]&&driverMap[r.id].driver);
+  })
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9;position:sticky;top:0">카드</div>';
   list.forEach(function(r){
@@ -1622,7 +1624,7 @@ function updateBaroBtns(){
   ['baro-btn-share','baro-btn-copy'].forEach(function(id){ document.getElementById(id).classList.toggle('dis',!matched); });
   document.getElementById('baro-btn-drvcp').classList.toggle('dis',!matched);
   var allDone=baroColcardDone&&baroDriverDone;
-  document.getElementById('baro-done-btn').classList.toggle('dis',!allDone);
+  var doneBtn=document.getElementById('baro-done-btn'); if(doneBtn) doneBtn.classList.toggle('dis',!allDone);
   if(allDone && !_baroPopupShowing){
     _baroPopupShowing=true;
     setTimeout(function(){
@@ -1635,8 +1637,6 @@ function updateBaroBtns(){
 }
 
 function doBaroDone(){
-  var btn=document.getElementById('baro-done-btn');
-  if(!btn||btn.classList.contains('dis')){ alert('콜카드와 기사정보를 먼저 완료해주세요!'); return; }
   if(!baroCard) return;
   var drvText=document.getElementById('baro-driver-content').textContent;
   var lines=drvText.split('\n');
