@@ -1117,7 +1117,9 @@ function doMAutoMatch(){
   var updates={};
   var count=0;
   allData.forEach(function(r){
+    // 사이드바 조건과 동일: 확정 + 해당날짜 + 기사 미배정
     if(r.status!=='확정'||getRideDate(r)!==dateV) return;
+    if(driverMap[r.id]&&driverMap[r.id].driver) return; // 이미 배정된 카드 제외
     if(r.baechaNum&&map[r.baechaNum]){
       var drvName=map[r.baechaNum];
       var drv=allDrivers.find(function(d){ return d.name===drvName; });
@@ -1127,14 +1129,16 @@ function doMAutoMatch(){
   });
   if(count===0){ alert('매칭된 카드가 없어요!'); return; }
   db.ref().update(updates).then(function(){
-    // driverMap 로컬 즉시 업데이트 → 사이드바 바로 갱신
+    // driverMap 로컬 즉시 업데이트
     Object.keys(updates).forEach(function(key){
       var id=key.replace('driverMap/','');
       driverMap[id]=updates[key];
     });
+    // 입력란 초기화
+    document.getElementById('m-match-ta').value='';
     renderSidebar();
-    alert('✅ '+count+'개 카드 자동 매칭 완료!');
     renderInfoList();
+    alert('✅ '+count+'개 카드 자동 매칭 완료!');
   }).catch(function(e){
     alert('오류: '+e.message);
   });
