@@ -601,7 +601,11 @@ function renderDispatchList(){
     h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
     if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
     h+='</div>';
-    h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
+    h+='<div class="ci-sub">';
+    if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
+    else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
+    if(r.phone) h+=' · '+esc(r.phone);
+    h+='</div>';
     h+='</div>';
   });
   document.getElementById('dispatch-card-list').innerHTML=h;
@@ -729,24 +733,31 @@ function saveNick(){
   var parts = oldTitle2.split('>');
   var newTitle2 = '';
   if(parts.length >= 2){
-    // 채널>애니> 앞 두 덩어리 유지하고 닉 추가
     newTitle2 = parts[0]+'>'+parts[1]+'>'+nick;
   } else {
     newTitle2 = oldTitle2 ? oldTitle2+'>'+nick : nick;
   }
+  var oldTitle1 = waitSelected.title1||'';
+  var newTail = oldTitle1 + (newTitle2 ? '\n'+newTitle2 : '');
   var oldTail = waitSelected.tail||'';
-  var tailLines = oldTail.split('\n');
-  tailLines[1] = newTitle2;
-  var newTail = tailLines.join('\n');
+
+  // body에서 old tail 제거하고 new tail로 교체
+  var oldBody = waitSelected.body||'';
+  var newBody = oldBody;
+  if(oldBody.startsWith(oldTail)){
+    newBody = newTail + oldBody.slice(oldTail.length);
+  }
 
   db.ref('cards/'+waitSelected.id).update({
     kakaoNick: nick,
     title2: newTitle2,
-    tail: newTail
+    tail: newTail,
+    body: newBody
   }).then(function(){
     waitSelected.kakaoNick = nick;
     waitSelected.title2 = newTitle2;
     waitSelected.tail = newTail;
+    waitSelected.body = newBody;
     closePopup('popup-nick');
     renderWait();
   });
@@ -1182,9 +1193,15 @@ function parseDrvPaste(){
     '<b>번호:</b> '+(vehicleNum||'-')+
     (missing.length?'<br><span style="color:red;font-size:11px">미인식: '+missing.join(', ')+'</span>':'');
   document.getElementById('drv-paste-confirm').style.display='block';
-  // 이름 또는 전화번호 미인식 시 수동입력 버튼 표시
+  // 이름 또는 전화번호 미인식 시 바로 수동입력 팝업
+  if(missing.length){
+    if(confirm('⚠️ 미인식 항목: '+missing.join(', ')+'\n\n직접 입력하시겠습니까?')){
+      openManualDrv();
+      return;
+    }
+  }
   var manualBtn=document.getElementById('drv-paste-manual-btn');
-  if(manualBtn) manualBtn.style.display = missing.length ? 'block' : 'none';
+  if(manualBtn) manualBtn.style.display='none';
 }
 function confirmDrvPaste(){
   if(!infoSelected||!drvParsed.name){ alert('이름이 없어요!'); return; }
