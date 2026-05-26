@@ -1206,7 +1206,6 @@ function parseDrvPaste(){
     }, 100);
   }
 }
-}
 function confirmDrvPaste(){
   if(!infoSelected||!drvParsed.name){ alert('이름이 없어요!'); return; }
   db.ref('driverMap/'+infoSelected.id).update({
