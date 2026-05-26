@@ -237,7 +237,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <!-- 수정/예약취소 -->
   <div class="sub-section" id="sub2">
     <div class="filter-row">
-      <input type="date" class="f-date" id="edit-date" onchange="renderEditList()">
+      <input type="date" class="f-date" id="edit-date" onchange="editSelected=null;renderEditList()">
       <input class="f-search" type="text" placeholder="🔍 검색" oninput="onSearchEdit(this.value)">
     </div>
     <div id="edit-card-list" class="card-list"></div>
@@ -1164,6 +1164,14 @@ function updateInfoDetail(){
   var pastBtn=document.getElementById('btn-driver-paste'); if(pastBtn) pastBtn.classList.toggle('dis',!infoSelected);
   var allDone=matched&&colDone&&drvDone;
   var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
+  // 두 개 다 완료되면 배차완료 팝업
+  if(allDone){
+    setTimeout(function(){
+      if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
+        doInfoDone();
+      }
+    },100);
+  }
 }
 
 function shareColcard(){
@@ -1597,6 +1605,14 @@ function updateBaroBtns(){
   document.getElementById('baro-btn-drvcp').classList.toggle('dis',!matched);
   var allDone=baroColcardDone&&baroDriverDone;
   document.getElementById('baro-done-btn').classList.toggle('dis',!allDone);
+  // 두 개 다 완료되면 배차완료 팝업
+  if(allDone){
+    setTimeout(function(){
+      if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
+        doBaroDone();
+      }
+    },100);
+  }
 }
 
 function doBaroDone(){
