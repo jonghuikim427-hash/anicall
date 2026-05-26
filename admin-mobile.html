@@ -560,6 +560,8 @@ function jumpToCard(id){
 
 function switchSub(s){
   currentSub=s;
+  // 리스트생성란 떠날 때 매칭 입력란 초기화
+  if(s!==0){ var mta=document.getElementById('m-match-ta'); if(mta) mta.value=''; }
   document.querySelectorAll('.btn3').forEach(function(el,i){ el.classList.toggle('on',i===s); });
   document.querySelectorAll('.sub-section').forEach(function(el,i){ el.classList.toggle('on',i===s); });
   renderSidebar();
