@@ -872,12 +872,10 @@ function renderBaecha(container) {
     rh2 += '<button class="btn-copy" onclick="doCopyBaecha(\'msg-cust\',\'cu\',\''+_cid+'\')">복사</button></div>';
   }
 
-  // 4개 다 복사 완료 → 배차완료 버튼
-  if (_allCopied && selectedCard && dm2.driver) {
-    rh2 += '<button style="width:100%;padding:14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px" onclick="doBaechaCard(\''+_cid+'\')">✅ 배차완료</button>';
-  } else if (selectedCard && dm2.driver) {
+  // 복사 진행상태 표시
+  if (selectedCard && dm2.driver && !_allCopied) {
     var _doneCount = [_cs.dc,_cs.dex,_cs.di,_cs.cu].filter(Boolean).length;
-    rh2 += '<div style="text-align:center;color:#aaa;font-size:11px;margin-top:10px;padding:8px;background:#f9f9f9;border-radius:5px">복사 '+_doneCount+'/4 완료 → 모두 복사하면 배차완료 버튼이 나타납니다</div>';
+    rh2 += '<div style="text-align:center;color:#aaa;font-size:11px;margin-top:10px;padding:8px;background:#f9f9f9;border-radius:5px">복사 '+_doneCount+'/4 완료 → 모두 복사하면 배차완료 팝업이 뜹니다</div>';
   }
 
   Rp.innerHTML = rh2;
