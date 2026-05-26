@@ -489,6 +489,7 @@ try{
   });
   db.ref('driverMap').on('value', function(snap){
     driverMap = snap.val()||{};
+    renderSidebar();
   });
 }catch(e){ alert('Firebase 연결 실패: '+e.message); }
 
@@ -523,19 +524,25 @@ function renderSidebar(){
   sb.style.borderRight='1px solid #eee';
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ 
-    return r.status==='확정'&&(!dateV||r.rideDate===dateV)&&!(driverMap[r.id]&&driverMap[r.id].driver);
+    return r.status==='확정'&&(!dateV||r.rideDate===dateV);
   })
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9;position:sticky;top:0">카드</div>';
   list.forEach(function(r){
+    var dm=driverMap[r.id]||{};
+    var hasDriver=!!(dm.driver);
+    // 기사 배정된 카드는 사이드바에서 숨김
+    if(hasDriver) return;
     var tail=r.tail||'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'', loc=t1p[2]||'';
     var warns=getWarnings(r);
-    var warnMark=warns.some(function(w){ return w.indexOf('❗❗')>=0||w.indexOf('❗❗❗')>=0; })?'<span style="color:#E24B4A">❗</span>':warns.length?'<span style="color:#EF9F27">⚠</span>':''
-    var label=(r.baechaNum?r.baechaNum+'<br>':'')+(warnMark?warnMark+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
+    var warnMark=warns.some(function(w){ return w.indexOf('❗❗')>=0||w.indexOf('❗❗❗')>=0; })?'<span style="color:#E24B4A">❗</span>':warns.length?'<span style="color:#EF9F27">⚠</span>':'';
+    // 번호 없으면 미배차 표시
+    var numLabel=r.baechaNum?r.baechaNum+'<br>':'<span style="color:#e53935;font-size:8px">미배차</span><br>';
+    var label=numLabel+(warnMark?warnMark+'<br>':'')+(veh+dir)+'<br>'+loc.slice(0,2);
     var cls='sb-item'+(r.baechaNum?' numbered':'')+(isUrgent?' urgent-s':isTomorrow?' tomorrow-s':'');
     h+='<div class="'+cls+'" onclick="jumpToCard(\''+r.id+'\')">'+label+'</div>';
   });
@@ -1183,7 +1190,7 @@ function updateInfoDetail(){
   var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
   if(allDone && !_infoPopupShowing){
     _infoPopupShowing=true;
-    renderSidebar(); // 매칭 완료 카드 사이드바에서 즉시 제거
+    renderSidebar();
     setTimeout(function(){
       if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
         doInfoDone();
