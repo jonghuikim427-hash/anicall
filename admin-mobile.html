@@ -1166,14 +1166,19 @@ function parseDrvPaste(){
   var text=document.getElementById('drv-paste-input').value.trim();
   if(!text){ alert('내용을 붙여넣어주세요!'); return; }
   var name='',phone='',vehicle='',vehicleNum='';
-  var nameM=text.match(/(?:이름|성함)[^:：]*[:：\s]\s*([가-힣\s]{2,5})/);
+  // 이름: 이름:|성함:|기사: 형식
+  var nameM=text.match(/(?:이름|성함|기사)[^:：]*[:：]\s*([가-힣]{2,5})/);
   if(nameM){ name=nameM[1].trim(); }
-  else{ var nameM2=text.match(/(?:^|\n)([가-힣]{2,4})(?= |\t|$)/m); if(nameM2) name=nameM2[1].trim(); }
+  else{ var nameM2=text.match(/(?:^|\n)([가-힣]{2,4})(?=[ \t]|$)/m); if(nameM2) name=nameM2[1].trim(); }
+  // 전화번호
   var phoneM=text.match(/01[0-9][\s.\-]?\d{3,4}[\s.\-]?\d{4}/);
   if(phoneM) phone=phoneM[0].replace(/[\s.\-]/g,'');
-  var vnumM=text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/);
-  if(vnumM) vehicleNum=vnumM[0].replace(/\s/g,'');
-  var vehM=text.match(/(?:차종|차량)[^:]*[:][\s]*([^\n\r]+)/);
+  // 차량번호: 번호:|차량번호: 형식 우선, 없으면 패턴 직접 검색
+  var vnumPrefixM=text.match(/(?:번호|차량번호)[^:：]*[:：]\s*([가-힣]{1,3}\s*\d{2,3}\s*[가-힣]\s*\d{4})/);
+  if(vnumPrefixM){ vehicleNum=vnumPrefixM[1].replace(/\s/g,''); }
+  else{ var vnumM=text.match(/[가-힣]{2,3}\s*\d{2,3}\s*[가-힣]\s*\d{4}/); if(vnumM) vehicleNum=vnumM[0].replace(/\s/g,''); }
+  // 차종: 차종:|차량: 형식 우선, 없으면 키워드 검색
+  var vehM=text.match(/(?:차종|차량)[^:：]*[:：]\s*([^\n\r]+)/);
   if(vehM){ vehicle=vehM[1].trim(); }
   else{
     var keys=['GN7','그랜저','그랜져','K8','아이오닉','IONIQ','sonata','소나타','카니발','스타리아','쏠라티'];
