@@ -846,7 +846,11 @@ function renderEditList(){
     var sel=editSelected&&editSelected.id===r.id;
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
     h+='<div class="ci-title">'+esc(cardLabel(r))+'</div>';
-    h+='<div class="ci-sub">'+esc(r.name||'')+(r.phone?' · '+esc(r.phone):'')+'</div>';
+    h+='<div class="ci-sub">';
+    if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
+    else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
+    if(r.phone) h+=' · '+esc(r.phone);
+    h+='</div>';
     h+='</div>';
   });
   document.getElementById('edit-card-list').innerHTML=h;
@@ -1192,16 +1196,16 @@ function parseDrvPaste(){
     '<b>차종:</b> '+(vehicle||'-')+'<br>'+
     '<b>번호:</b> '+(vehicleNum||'-')+
     (missing.length?'<br><span style="color:red;font-size:11px">미인식: '+missing.join(', ')+'</span>':'');
-  document.getElementById('drv-paste-confirm').style.display='block';
-  // 이름 또는 전화번호 미인식 시 바로 수동입력 팝업
+  document.getElementById('drv-paste-confirm').style.display = missing.length ? 'none' : 'block';
+  // 미인식 시 setTimeout으로 팝업 (렌더 완료 후 띄우기)
   if(missing.length){
-    if(confirm('⚠️ 미인식 항목: '+missing.join(', ')+'\n\n직접 입력하시겠습니까?')){
-      openManualDrv();
-      return;
-    }
+    setTimeout(function(){
+      if(confirm('⚠️ 미인식 항목: '+missing.join(', ')+'\n\n직접 입력하시겠습니까?')){
+        openManualDrv();
+      }
+    }, 100);
   }
-  var manualBtn=document.getElementById('drv-paste-manual-btn');
-  if(manualBtn) manualBtn.style.display='none';
+}
 }
 function confirmDrvPaste(){
   if(!infoSelected||!drvParsed.name){ alert('이름이 없어요!'); return; }
