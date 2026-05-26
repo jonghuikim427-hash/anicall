@@ -366,6 +366,22 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
       <button class="popup-btn" style="background:#2e7d32;color:#fff" onclick="parseDrvPaste()">인식</button>
       <button class="popup-btn popup-ok" id="drv-paste-confirm" style="display:none" onclick="confirmDrvPaste()">저장</button>
     </div>
+    <button id="drv-paste-manual-btn" style="display:none;width:100%;margin-top:8px;padding:10px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer" onclick="openManualDrv()">✏️ 직접 입력하기</button>
+  </div>
+</div>
+
+<!-- 팝업: 기사정보 수동입력 -->
+<div class="popup-bg" id="popup-drv-manual">
+  <div class="popup">
+    <div class="popup-title">기사정보 직접 입력</div>
+    <input type="text" id="manual-drv-name" placeholder="이름 (필수)" style="margin-bottom:8px">
+    <input type="text" id="manual-drv-phone" placeholder="전화번호 (필수)" style="margin-bottom:8px">
+    <input type="text" id="manual-drv-vehicle" placeholder="차종" style="margin-bottom:8px">
+    <input type="text" id="manual-drv-vnum" placeholder="차량번호" style="margin-bottom:8px">
+    <div class="popup-btns">
+      <button class="popup-btn popup-cancel" onclick="closePopup('popup-drv-manual')">취소</button>
+      <button class="popup-btn popup-ok" onclick="saveManualDrv()">저장</button>
+    </div>
   </div>
 </div>
 
@@ -582,7 +598,7 @@ function renderDispatchList(){
     var sel=dispatchSelected&&dispatchSelected.id===r.id;
     h+='<div class="card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(sel?' selected':'')+'" onclick="selectDispatchCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+(r.edited?'<span style="background:#ff6f00;color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;margin-left:3px">수정됨</span>':'')+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
     if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
     h+='</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
@@ -706,9 +722,33 @@ function openNickPopup(){
 function saveNick(){
   if(!waitSelected) return;
   var nick=document.getElementById('nick-input').value.trim();
-  db.ref('cards/'+waitSelected.id).update({kakaoNick:nick}).then(function(){
-    waitSelected.kakaoNick=nick;
+  if(!nick){ alert('닉네임을 입력해주세요!'); return; }
+
+  // 꼬리 2줄째 채널>애니>닉네임 으로 업데이트
+  var oldTitle2 = waitSelected.title2||'';
+  var parts = oldTitle2.split('>');
+  var newTitle2 = '';
+  if(parts.length >= 2){
+    // 채널>애니> 앞 두 덩어리 유지하고 닉 추가
+    newTitle2 = parts[0]+'>'+parts[1]+'>'+nick;
+  } else {
+    newTitle2 = oldTitle2 ? oldTitle2+'>'+nick : nick;
+  }
+  var oldTail = waitSelected.tail||'';
+  var tailLines = oldTail.split('\n');
+  tailLines[1] = newTitle2;
+  var newTail = tailLines.join('\n');
+
+  db.ref('cards/'+waitSelected.id).update({
+    kakaoNick: nick,
+    title2: newTitle2,
+    tail: newTail
+  }).then(function(){
+    waitSelected.kakaoNick = nick;
+    waitSelected.title2 = newTitle2;
+    waitSelected.tail = newTail;
     closePopup('popup-nick');
+    renderWait();
   });
 }
 
@@ -758,25 +798,8 @@ function saveEdit(){
   var ctx=editContext;
   var card=ctx==='wait'?waitSelected:ctx==='dispatch'?editSelected:ctx==='reb'?baroCard:compSelected;
   if(!card) return;
-  var newFull=document.getElementById('edit-input').value.trim();
-  if(!newFull) return;
-
-  // 꼬리 확인 팝업
-  if(!confirm('꼬리도 수정하셨나요?\n\n확인 → 저장\n취소 → 다시 확인')) return;
-
-  // 꼬리 첫 줄에서 title1 재파싱
-  var lines=newFull.split('\n');
-  var newTitle1=lines[0]?lines[0].trim():'';
-  var newTitle2=lines[1]?lines[1].trim():'';
-  var newTail=newTitle1+(newTitle2?'\n'+newTitle2:'');
-
-  var updateData={body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2};
-  if(mListLocked) updateData.edited=true;
-
-  db.ref('cards/'+card.id).update(updateData).then(function(){
-    closePopup('popup-edit');
-    alert('✅ 수정됐어요!');
-  });
+  var newBody=document.getElementById('edit-input').value;
+  db.ref('cards/'+card.id).update({body:newBody}).then(function(){ closePopup('popup-edit'); alert('✅ 수정됐어요!'); });
 }
 
 function closePopup(id){ document.getElementById(id).classList.remove('show'); }
@@ -1159,6 +1182,9 @@ function parseDrvPaste(){
     '<b>번호:</b> '+(vehicleNum||'-')+
     (missing.length?'<br><span style="color:red;font-size:11px">미인식: '+missing.join(', ')+'</span>':'');
   document.getElementById('drv-paste-confirm').style.display='block';
+  // 이름 또는 전화번호 미인식 시 수동입력 버튼 표시
+  var manualBtn=document.getElementById('drv-paste-manual-btn');
+  if(manualBtn) manualBtn.style.display = missing.length ? 'block' : 'none';
 }
 function confirmDrvPaste(){
   if(!infoSelected||!drvParsed.name){ alert('이름이 없어요!'); return; }
@@ -1171,6 +1197,35 @@ function confirmDrvPaste(){
       });
     }
     closePopup('popup-drv-paste');
+    renderInfoList();
+  });
+}
+
+function openManualDrv(){
+  closePopup('popup-drv-paste');
+  document.getElementById('manual-drv-name').value = drvParsed.name||'';
+  document.getElementById('manual-drv-phone').value = drvParsed.phone||'';
+  document.getElementById('manual-drv-vehicle').value = drvParsed.vehicle||'';
+  document.getElementById('manual-drv-vnum').value = drvParsed.vehicleNum||'';
+  document.getElementById('popup-drv-manual').classList.add('show');
+}
+function saveManualDrv(){
+  if(!infoSelected) return;
+  var name=document.getElementById('manual-drv-name').value.trim();
+  var phone=document.getElementById('manual-drv-phone').value.trim();
+  var vehicle=document.getElementById('manual-drv-vehicle').value.trim();
+  var vehicleNum=document.getElementById('manual-drv-vnum').value.trim();
+  if(!name){ alert('이름은 필수예요!'); return; }
+  if(!phone){ alert('전화번호는 필수예요!'); return; }
+  phone = phone.replace(/[\s.\-]/g,'');
+  db.ref('driverMap/'+infoSelected.id).update({
+    driver:name, phone:phone, vehicle:vehicle, vehicleNum:vehicleNum
+  }).then(function(){
+    // 기사목록에도 저장
+    db.ref('drivers').orderByChild('name').equalTo(name).once('value').then(function(snap){
+      if(!snap.exists()) db.ref('drivers').push({name:name,phone:phone,vehicle:vehicle,vehicleNum:vehicleNum});
+    });
+    closePopup('popup-drv-manual');
     renderInfoList();
   });
 }
