@@ -437,6 +437,7 @@ var mListText = '', mListLarge = '', mListHeader = '', mMatchBackup = {}, mListL
 var baroCard = null, baroIsReb = false;
 var baroListShared = false, baroColcardDone = false, baroDriverDone = false;
 var infoListShared = false, infoColcardDone = {}, infoDriverDone = {};
+var _infoPopupShowing = false;
 var editContext = 'wait';
 var editDateFilter = '', compDateFilter = '';
 var _searchTimer = null;
@@ -879,8 +880,14 @@ function renderEditList(){
   if(!list.length) h='<div class="empty">카드 없음</div>';
   list.forEach(function(r){
     var sel=editSelected&&editSelected.id===r.id;
+    var warnIcon='';
+    var t1=r.title1||'';
+    if(t1.indexOf('❗❗❗')>=0) warnIcon='<span style="color:#d32f2f">❗❗❗</span> ';
+    else if(t1.indexOf('❗❗')>=0) warnIcon='<span style="color:#d32f2f">❗❗</span> ';
+    else if(t1.indexOf('❗')>=0) warnIcon='<span style="color:#d32f2f">❗</span> ';
+    else if((r.tail||'').indexOf('⚠️')>=0||(r.title1||'').indexOf('⚠️')>=0) warnIcon='<span style="color:#e65100">⚠️</span> ';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
-    h+='<div class="ci-title">'+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title">'+warnIcon+esc(cardLabel(r))+'</div>';
     h+='<div class="ci-sub">';
     if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
     else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
@@ -1172,10 +1179,9 @@ function updateInfoDetail(){
   var pastBtn=document.getElementById('btn-driver-paste'); if(pastBtn) pastBtn.classList.toggle('dis',!infoSelected);
   var allDone=matched&&colDone&&drvDone;
   var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
-var _infoPopupShowing = false;
-  // 두 개 다 완료되면 배차완료 팝업
   if(allDone && !_infoPopupShowing){
     _infoPopupShowing=true;
+    renderSidebar(); // 매칭 완료 카드 사이드바에서 즉시 제거
     setTimeout(function(){
       if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
         doInfoDone();
