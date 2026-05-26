@@ -738,8 +738,11 @@ function saveNick(){
     newTitle2 = oldTitle2 ? oldTitle2+'>'+nick : nick;
   }
   var oldTitle1 = waitSelected.title1||'';
-  var newTail = oldTitle1 + (newTitle2 ? '\n'+newTitle2 : '');
   var oldTail = waitSelected.tail||'';
+  // 꼬리 경고줄(3번째~) 유지하면서 2번째 줄만 닉으로 교체
+  var oldTailLines = oldTail.split('\n');
+  oldTailLines[1] = newTitle2;
+  var newTail = oldTailLines.join('\n');
 
   // body에서 old tail 제거하고 new tail로 교체
   var oldBody = waitSelected.body||'';
@@ -1164,12 +1167,15 @@ function updateInfoDetail(){
   var pastBtn=document.getElementById('btn-driver-paste'); if(pastBtn) pastBtn.classList.toggle('dis',!infoSelected);
   var allDone=matched&&colDone&&drvDone;
   var db2=document.getElementById('info-done-btn'); if(db2) db2.classList.toggle('dis',!allDone);
+var _infoPopupShowing = false;
   // 두 개 다 완료되면 배차완료 팝업
-  if(allDone){
+  if(allDone && !_infoPopupShowing){
+    _infoPopupShowing=true;
     setTimeout(function(){
       if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
         doInfoDone();
       }
+      _infoPopupShowing=false;
     },100);
   }
 }
@@ -1599,18 +1605,20 @@ function doBaroMatchPaste(){
   }
 }
 
+var _baroPopupShowing = false;
 function updateBaroBtns(){
   var matched=document.getElementById('baro-driver-content').textContent!=='기사 매칭 후';
   ['baro-btn-share','baro-btn-copy'].forEach(function(id){ document.getElementById(id).classList.toggle('dis',!matched); });
   document.getElementById('baro-btn-drvcp').classList.toggle('dis',!matched);
   var allDone=baroColcardDone&&baroDriverDone;
   document.getElementById('baro-done-btn').classList.toggle('dis',!allDone);
-  // 두 개 다 완료되면 배차완료 팝업
-  if(allDone){
+  if(allDone && !_baroPopupShowing){
+    _baroPopupShowing=true;
     setTimeout(function(){
       if(confirm('✅ 완료!\n\n배차완료 처리 하시겠습니까?')){
         doBaroDone();
       }
+      _baroPopupShowing=false;
     },100);
   }
 }
