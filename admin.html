@@ -305,6 +305,8 @@ function autoMoveOld() {
 
 // ── 탭 전환 ───────────────────────────────────────────────
 function go(n) {
+  // 당일배차방 떠날 때 매칭 입력란 초기화
+  if (currentTab === 2 && n !== 2) baechaText = '';
   currentTab = n;
   document.querySelectorAll('.tab').forEach(function(t, i) {
     t.className = 'tab' + (i === n ? ' on' : '');
@@ -1584,8 +1586,7 @@ function doBaechaCard(id){
       driverPhone:_dPhoneBC,
       driverVehicleType:_dVehBC,
       driverVehicleNum:_dVNumBC,
-      kakaoNick: freshCard.kakaoNick || r.kakaoNick || '',
-      baechaNum: null
+      kakaoNick: freshCard.kakaoNick || r.kakaoNick || ''
     });
   });
 }
