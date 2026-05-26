@@ -739,9 +739,14 @@ function saveNick(){
   }
   var oldTitle1 = waitSelected.title1||'';
   var oldTail = waitSelected.tail||'';
-  // 꼬리 경고줄(3번째~) 유지하면서 2번째 줄만 닉으로 교체
   var oldTailLines = oldTail.split('\n');
-  oldTailLines[1] = newTitle2;
+  // title1 위치 찾아서 바로 다음 줄을 title2로 교체
+  var t1idx = oldTailLines.findIndex(function(l){ return l.trim()===oldTitle1.trim(); });
+  if(t1idx >= 0 && t1idx+1 < oldTailLines.length){
+    oldTailLines[t1idx+1] = newTitle2;
+  } else if(t1idx >= 0){
+    oldTailLines.push(newTitle2);
+  }
   var newTail = oldTailLines.join('\n');
 
   // body에서 old tail 제거하고 new tail로 교체
