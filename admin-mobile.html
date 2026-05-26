@@ -835,6 +835,7 @@ function saveEdit(){
     card.body=newFull; card.tail=newTail; card.title1=newTitle1; card.title2=newTitle2;
     closePopup('popup-edit');
     alert('✅ 수정됐어요!');
+    editSelected=null;
     render();
   });
 }
