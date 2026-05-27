@@ -985,9 +985,10 @@ function doMGenList(){
       var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
       var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
       var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
+      var hasWaypoint=t1.indexOf('경유')>=0;
       var line1=isLg
-        ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel
-        : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
+        ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel+(hasWaypoint?' 경유':'')
+        : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark+(hasWaypoint?' 경유':'');
       var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
       if(isLg){ linesLg.push(line1.trim()); linesLg.push(line2.trim()); linesLg.push(''); }
       else{ lines.push(line1.trim()); lines.push(line2.trim()); lines.push(''); }
