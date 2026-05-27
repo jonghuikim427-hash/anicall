@@ -953,54 +953,55 @@ function getVehDirOrder(r){
 function doMGenList(){
   var dateV=document.getElementById('m-date').value;
   if(!dateV){ alert('날짜를 먼저 선택하세요!'); return; }
-  var list=allData.filter(function(r){
-    return r.status==='확정' && getRideDate(r)===dateV && r.baechaNum
-      && !(driverMap[r.id] && driverMap[r.id].driver); // 이미 매칭된 카드 제외
-  }).sort(function(a,b){ return a.baechaNum-b.baechaNum; });
-  if(!list.length){ alert('배차 카드가 없어요! 먼저 확정해주세요.'); return; }
-  var d=new Date(dateV.replace(/-/g,'/'));
-  var today=new Date(); today.setHours(0,0,0,0);
-  var tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
-  var dep=new Date(d); dep.setHours(0,0,0,0);
-  var dayLabel=dep.getTime()===today.getTime()?'오늘':dep.getTime()===tomorrow.getTime()?'내일':'';
-  var dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일';
-  mListHeader='✈️인천공항센터(SKY LINE)✈️\n'+(dayLabel?dayLabel+' ':'')+'✈️ '+dateLabel;
-  var lines=[], linesLg=[];
-  list.forEach(function(r){
-    // body 앞 5줄에서 중/대/콜/쏠 시작 줄을 title1로 파싱 (경고줄 건너뜀)
-    var bodyLines=(r.body||r.tail||'').split('\n');
-    var t1=bodyLines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||r.title1||'';
-    var t1p=t1.split(' ');
-    var veh=t1p[0]||'';
-    var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
-    var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
-    var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
-    var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
-    var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
-    var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
-    var hhmm=t1p[5]||r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
-    var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
-    var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
-    var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
-    var line1=isLg
-      ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel
-      : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
-    var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
-    if(isLg){ linesLg.push(line1.trim()); linesLg.push(line2.trim()); linesLg.push(''); }
-    else{ lines.push(line1.trim()); lines.push(line2.trim()); lines.push(''); }
+  // Firebase에서 직접 최신 데이터 읽기
+  db.ref('cards').once('value').then(function(snap){
+    var freshData=[];
+    snap.forEach(function(child){ freshData.push(Object.assign({id:child.key},child.val())); });
+    var list=freshData.filter(function(r){
+      return r.status==='확정' && getRideDate(r)===dateV && r.baechaNum
+        && !(driverMap[r.id] && driverMap[r.id].driver);
+    }).sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+    if(!list.length){ alert('배차 카드가 없어요! 먼저 확정해주세요.'); return; }
+    var d=new Date(dateV.replace(/-/g,'/'));
+    var today=new Date(); today.setHours(0,0,0,0);
+    var tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
+    var dep=new Date(d); dep.setHours(0,0,0,0);
+    var dayLabel=dep.getTime()===today.getTime()?'오늘':dep.getTime()===tomorrow.getTime()?'내일':'';
+    var dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일';
+    mListHeader='✈️인천공항센터(SKY LINE)✈️\n'+(dayLabel?dayLabel+' ':'')+'✈️ '+dateLabel;
+    var lines=[], linesLg=[];
+    list.forEach(function(r){
+      var bodyLines=(r.body||r.tail||'').split('\n');
+      var t1=bodyLines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||r.title1||'';
+      var t1p=t1.split(' ');
+      var veh=t1p[0]||'';
+      var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
+      var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
+      var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
+      var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
+      var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
+      var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
+      var hhmm=t1p[5]||r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
+      var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
+      var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
+      var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
+      var line1=isLg
+        ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel
+        : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark;
+      var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
+      if(isLg){ linesLg.push(line1.trim()); linesLg.push(line2.trim()); linesLg.push(''); }
+      else{ lines.push(line1.trim()); lines.push(line2.trim()); lines.push(''); }
+    });
+    mListText=addSeparators(lines).join('\n');
+    mListLarge=addLargeSeparators(linesLg).join('\n');
+    var maxNum=Math.max.apply(null, list.map(function(r){ return r.baechaNum||0; }).concat([30]));
+    mListLocked[dateV]=maxNum;
+    var ta=document.getElementById('m-list-preview');
+    if(ta){
+      ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
+      ta.style.height=''; ta.style.minHeight='';
+    }
   });
-  mListText=addSeparators(lines).join('\n');
-  mListLarge=addLargeSeparators(linesLg).join('\n');
-  // 리스트 생성 시 번호 고정
-  var maxNum=Math.max.apply(null, list.map(function(r){ return r.baechaNum||0; }).concat([30]));
-  var dateV2=document.getElementById('m-date').value;
-  mListLocked[dateV2]=maxNum;
-  var ta=document.getElementById('m-list-preview');
-  if(ta){
-    ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
-    ta.style.height='';
-    ta.style.minHeight='';
-  }
 }
 
 function getRideDate(r){
