@@ -403,7 +403,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="popup-full-title">카드 수정</div>
   </div>
   <div class="popup-full-body">
-    <textarea id="edit-input" placeholder="카드 내용을 수정하세요"></textarea>
+    <textarea id="edit-input" placeholder="카드 내용을 수정하세요" oninput="autoUpperEdit(this)"></textarea>
   </div>
   <div class="popup-full-btns">
     <button class="popup-btn popup-cancel" style="flex:1;padding:13px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;background:#f0f0f0;color:#555" onclick="closePopup('popup-edit')">취소</button>
@@ -820,6 +820,16 @@ function goBarobaecha(){
 // ───────────────────────────────────────
 // 카드 수정 팝업
 // ───────────────────────────────────────
+function autoUpperEdit(el){
+  var pos=el.selectionStart;
+  var val=el.value;
+  // 영문자만 대문자로 변환 (한글/숫자/특수문자 유지)
+  var newVal=val.replace(/[a-z]/g, function(c){ return c.toUpperCase(); });
+  if(newVal!==val){
+    el.value=newVal;
+    el.selectionStart=el.selectionEnd=pos;
+  }
+}
 function openEditPopup(ctx){
   editContext=ctx;
   var card = ctx==='wait'?waitSelected:ctx==='dispatch'?editSelected:ctx==='reb'?baroCard:compSelected;
