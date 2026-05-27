@@ -978,7 +978,7 @@ function doMGenList(){
     var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
     var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
     var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
-    var hhmm=r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
+    var hhmm=t1p[5]||r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
     var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
     var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
     var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
