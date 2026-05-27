@@ -1535,33 +1535,45 @@ function switchBaroTab(t){
 }
 function genBaroList(){
   if(!baroCard) return;
-  var r=baroCard, t1=r.title1||'', t1p=t1.split(' ');
+  var r=baroCard;
+  // body에서 title1 파싱 (경고줄 건너뜀)
+  var bodyLines=(r.body||r.tail||'').split('\n');
+  var t1=bodyLines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||r.title1||'';
+  var t1lower=t1.toLowerCase();
+  var t1p=t1.split(' ');
   var veh=t1p[0]||'';
   var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
-  var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
+  var dtype=t1lower.indexOf('g우선')>=0?'G우선':t1lower.indexOf('eq배차')>=0?'EQ배차':t1lower.indexOf('gqe')>=0?'GQE':'';
+  var hasWaypoint=t1lower.indexOf('경유')>=0;
   var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
   var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
-  var hhmm=r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
+  // 시간은 title1에서 파싱 (t1p[5])
+  var hhmm=t1p[5]||r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
   var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
   var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
   var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
   var line2=dir==='out'?timeStr+' '+addrShort+' → '+airportShort:timeStr+' '+airportShort+' → '+addrShort;
-  var today=new Date();
+  // 카드 날짜로 헤더 생성
+  var rideDate=getRideDate(r);
+  var today=new Date(); today.setHours(0,0,0,0);
+  var tomorrow=new Date(); tomorrow.setDate(today.getDate()+1); tomorrow.setHours(0,0,0,0);
+  var cardDate=rideDate?new Date(rideDate.replace(/-/g,'/')):today;
+  cardDate.setHours(0,0,0,0);
+  var dayLabel=cardDate.getTime()===today.getTime()?'오늘':cardDate.getTime()===tomorrow.getTime()?'내일':'';
+  var dateLabel=(cardDate.getMonth()+1)+'월 '+cardDate.getDate()+'일';
   var isLarge=(veh==='대'||veh==='콜'||veh==='쏠');
   var header, line1;
   if(currentBaroTab===0){
-    // 배차리스트: 번호 포함, ⚠️ 없음
     var num=r.baechaNum||'';
-    header=mListHeader||('✈️인천공항센터(SKY LINE)✈️\n오늘 ✈️ '+(today.getMonth()+1)+'월'+today.getDate()+'일');
+    header='✈️인천공항센터(SKY LINE)✈️\n'+(dayLabel?dayLabel+' ':'')+'✈️ '+dateLabel;
     line1=isLarge
-      ? (num?num+'. ':'')+( confirmed?confirmed+' ':'')+vehLabel
-      : (num?num+'. ':'')+( dtype?dtype+' ':'')+(confirmed?confirmed+' ':'');
+      ? (num?num+'. ':'')+( confirmed?confirmed+' ':'')+vehLabel+(hasWaypoint?' 경유':'')
+      : (num?num+'. ':'')+( dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+(hasWaypoint?' 경유':'');
   } else {
-    // 급좌표: 번호 없음
     header='급좌표';
     line1=isLarge
-      ? (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+vehLabel
-      : (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'');
+      ? (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+vehLabel+(hasWaypoint?' 경유':'')
+      : (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+(hasWaypoint?' 경유':'');
   }
   var preview=header+'\n\n'+line1.trim()+'\n'+line2.trim();
   document.getElementById('baro-list-preview').textContent=preview;
