@@ -977,7 +977,8 @@ function doMGenList(){
       var veh=t1p[0]||'';
       var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
       var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
-      var dtype=t1.indexOf('G우선')>=0?'G우선':t1.indexOf('EQ배차')>=0?'EQ배차':t1.indexOf('GQE')>=0?'GQE':'';
+      var t1lower=t1.toLowerCase();
+      var dtype=t1lower.indexOf('g우선')>=0?'G우선':t1lower.indexOf('eq배차')>=0?'EQ배차':t1lower.indexOf('gqe')>=0?'GQE':'';
       var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
       var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
       var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
@@ -985,7 +986,7 @@ function doMGenList(){
       var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
       var airport=r.airport||'T1', airportShort=airport.replace('인천공항','').trim()||airport;
       var dir=t1.indexOf(' 입 ')>=0||t1.startsWith('중 입')||t1.startsWith('대 입')||t1.startsWith('콜 입')||t1.startsWith('쏠 입')?'in':'out';
-      var hasWaypoint=t1.indexOf('경유')>=0;
+      var hasWaypoint=t1lower.indexOf('경유')>=0;
       var line1=isLg
         ? r.baechaNum+'. '+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel+(hasWaypoint?' 경유':'')
         : r.baechaNum+'. '+(dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+warnMark+(hasWaypoint?' 경유':'');
