@@ -452,9 +452,7 @@ function getWarnings(r){
   return warns;
 }
 function colcardText(r){
-  var tail = r.tail||''; var body = r.body||r.full||'';
-  if(body.startsWith(tail)) return body;
-  return (tail?tail+'\n':'') + body;
+  return r.body || r.tail || '';
 }
 function copyText(text, label){
   var el=document.createElement('textarea'); el.value=text;
@@ -826,7 +824,7 @@ function openEditPopup(ctx){
   editContext=ctx;
   var card = ctx==='wait'?waitSelected:ctx==='dispatch'?editSelected:ctx==='reb'?baroCard:compSelected;
   if(!card){ alert('카드를 먼저 선택하세요!'); return; }
-  document.getElementById('edit-input').value=colcardText(card);
+  document.getElementById('edit-input').value = card.body || card.tail || '';
   document.getElementById('popup-edit').classList.add('show');
 }
 function saveEdit(){
@@ -839,10 +837,14 @@ function saveEdit(){
   if(!confirm('꼬리도 수정하셨나요?\n\n확인 → 저장\n취소 → 다시 확인')) return;
 
   var lines=newFull.split('\n');
-  // 앞 5줄 이내에서 중/대/콜/쏠 시작 줄을 title1로 (경고줄 건너뜀)
-  var newTitle1=lines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||lines[0]||'';
-  var t1idx=lines.indexOf(newTitle1);
-  var newTitle2=t1idx>=0&&lines[t1idx+1]?lines[t1idx+1].trim():'';
+  // 앞 5줄 이내에서 중/대/콜/쏠 시작 줄 위치 찾기
+  var t1idx=lines.slice(0,5).findIndex(function(l){ return /^[중대콜쏠]/.test(l.trim()); });
+  if(t1idx<0) t1idx=0;
+  var newTitle1=lines[t1idx]?lines[t1idx].trim():'';
+  var newTitle2=lines[t1idx+1]?lines[t1idx+1].trim():'';
+  // 경고줄 + title1 + title2 = 완전한 tail
+  var warnLines=lines.slice(0,t1idx).map(function(l){ return l.trim(); }).filter(Boolean);
+  var newTail=warnLines.concat([newTitle1,newTitle2]).filter(Boolean).join('\n');
   var newTail=newTitle1+(newTitle2?'\n'+newTitle2:'');
 
   db.ref('cards/'+card.id).update({
