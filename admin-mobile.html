@@ -560,8 +560,8 @@ function jumpToCard(id){
 
 function switchSub(s){
   currentSub=s;
-  // 리스트생성란 떠날 때 매칭 입력란 초기화
-  if(s!==0){ var mta=document.getElementById('m-match-ta'); if(mta) mta.value=''; }
+  // 매칭 입력란 항상 초기화
+  var mta=document.getElementById('m-match-ta'); if(mta) mta.value='';
   document.querySelectorAll('.btn3').forEach(function(el,i){ el.classList.toggle('on',i===s); });
   document.querySelectorAll('.sub-section').forEach(function(el,i){ el.classList.toggle('on',i===s); });
   renderSidebar();
@@ -839,8 +839,10 @@ function saveEdit(){
   if(!confirm('꼬리도 수정하셨나요?\n\n확인 → 저장\n취소 → 다시 확인')) return;
 
   var lines=newFull.split('\n');
-  var newTitle1=lines[0]?lines[0].trim():'';
-  var newTitle2=lines[1]?lines[1].trim():'';
+  // 앞 5줄 이내에서 중/대/콜/쏠 시작 줄을 title1로 (경고줄 건너뜀)
+  var newTitle1=lines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||lines[0]||'';
+  var t1idx=lines.indexOf(newTitle1);
+  var newTitle2=t1idx>=0&&lines[t1idx+1]?lines[t1idx+1].trim():'';
   var newTail=newTitle1+(newTitle2?'\n'+newTitle2:'');
 
   db.ref('cards/'+card.id).update({
@@ -949,8 +951,10 @@ function getVehDirOrder(r){
 function doMGenList(){
   var dateV=document.getElementById('m-date').value;
   if(!dateV){ alert('날짜를 먼저 선택하세요!'); return; }
-  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
-    .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  var list=allData.filter(function(r){
+    return r.status==='확정' && getRideDate(r)===dateV && r.baechaNum
+      && !(driverMap[r.id] && driverMap[r.id].driver); // 이미 매칭된 카드 제외
+  }).sort(function(a,b){ return a.baechaNum-b.baechaNum; });
   if(!list.length){ alert('배차 카드가 없어요! 먼저 확정해주세요.'); return; }
   var d=new Date(dateV.replace(/-/g,'/'));
   var today=new Date(); today.setHours(0,0,0,0);
@@ -961,7 +965,10 @@ function doMGenList(){
   mListHeader='✈️인천공항센터(SKY LINE)✈️\n'+(dayLabel?dayLabel+' ':'')+'✈️ '+dateLabel;
   var lines=[], linesLg=[];
   list.forEach(function(r){
-    var t1=r.title1||'', t1p=t1.split(' ');
+    // body 앞 5줄에서 중/대/콜/쏠 시작 줄을 title1로 파싱 (경고줄 건너뜀)
+    var bodyLines=(r.body||r.tail||'').split('\n');
+    var t1=bodyLines.slice(0,5).find(function(l){ return /^[중대콜쏠]/.test(l.trim()); })||r.title1||'';
+    var t1p=t1.split(' ');
     var veh=t1p[0]||'';
     var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
     var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
