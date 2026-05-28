@@ -571,8 +571,7 @@ function renderConfirm(container) {
     rh += '<div style="margin-top:8px;text-align:right"><button class="btn-edit" onclick="openEdit(\''+c.id+'\')" >✏️ 카드 수정</button></div>';
     // 수정 모드
     if (editingCard === c.id) {
-      var _tail = c.tail||''; var _body = c.body||'';
-      var _editFull = _body.startsWith(_tail) ? _body : (_tail?_tail+'\n':'')+_body;
+      var _editFull = c.body || c.tail || '';
       rh += '<div class="edit-box">';
       rh += '<div class="edit-box-title">✏️ 카드 수정 (꼬리+본문 같이 수정)</div>';
       rh += '<textarea class="edit-ta" id="edit-full" rows="14" style="font-size:12px;line-height:1.7">'+esc(_editFull)+'</textarea>';
@@ -787,8 +786,7 @@ function renderBaecha(container) {
 
   // 수정 모드
   if (selectedCard && editingCard === selectedCard.id) {
-    var _tail2 = selectedCard.tail||''; var _body2 = selectedCard.body||'';
-    var _editFull2 = _body2.startsWith(_tail2) ? _body2 : (_tail2?_tail2+'\n':'')+_body2;
+    var _editFull2 = selectedCard.body || selectedCard.tail || '';
     rh2 += '<div class="edit-box" style="margin-bottom:12px">';
     rh2 += '<div class="edit-box-title">✏️ 카드 수정 (꼬리+본문 같이 수정)</div>';
     rh2 += '<textarea class="edit-ta" id="edit-full" rows="14" style="font-size:12px;line-height:1.7">'+esc(_editFull2)+'</textarea>';
