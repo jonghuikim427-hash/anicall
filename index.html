@@ -2169,7 +2169,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
 
   } else if(veh==='van'){
     line1 = `${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2} 콜밴${_wpSuffix}`;
-    warns.push('⚠️ 짐 확인요망');
+    if(totalBag >= 9)      warns.push('⚠️ 짐 확인요망');
     if(p >= 5)            warns.push('⚠️ 인원 확인요망 (콜밴선택)');
 
   } else if(veh==='solar'){
@@ -2403,7 +2403,7 @@ function openChatInquiry(isLongDist){
     if(pax >= 10)              warns.push('⚠️ 인원 확인요망');
     else if(pax>=8||totalBag>=6) warns.push('⚠️ 인원/짐 확인요망');
   } else if(veh==='van'){
-    warns.push('⚠️ 짐 확인요망');
+    if(totalBag >= 9)       warns.push('⚠️ 짐 확인요망');
     if(pax >= 5) warns.push('⚠️ 인원 확인요망 (콜밴선택)');
   } else if(veh==='solar'){
     if(pax < 10) warns.push('⚠️ 인원 확인요망');
