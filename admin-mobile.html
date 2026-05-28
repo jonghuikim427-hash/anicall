@@ -223,7 +223,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
           <div class="bot-content" id="info-driver">카드 선택 후</div>
           <div class="bot-action">
             <button class="bot-btn bot-copy dis" id="btn-driver-copy" onclick="copyDriverInfo()">복사</button>
-            <button class="bot-btn bot-share dis" id="btn-driver-paste" onclick="openDriverPastePopup()" style="background:#e8f5e9;color:#2e7d32">붙여넣기</button>
+            <button class="bot-btn bot-share dis" id="btn-driver-paste" onclick="openDriverPastePopup()" style="background:#e8f5e9;color:#2e7d32">기사정보 입력</button>
           </div>
         </div>
       </div>
@@ -1795,7 +1795,15 @@ window.addEventListener('DOMContentLoaded', function(){
   editDateFilter=todayStr();
   compDateFilter=todayStr();
   renderEditList();
+  // 페이지 로드 시 배지 즉시 제거
+  clearBadge();
 });
+
+// 앱 포커스 시 배지 제거
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible') clearBadge();
+});
+window.addEventListener('focus', function(){ clearBadge(); });
 </script>
 </body>
 </html>
