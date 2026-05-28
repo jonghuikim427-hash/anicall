@@ -1761,8 +1761,12 @@ async function initPush(){
 }
 
 function clearBadge(){
-  if(swReg && navigator.clearAppBadge) navigator.clearAppBadge();
-  if(swReg) swReg.active && swReg.active.postMessage({type:'CLEAR_BADGE'});
+  if(navigator.clearAppBadge) navigator.clearAppBadge();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(reg){
+      if(reg.active) reg.active.postMessage({type:'CLEAR_BADGE'});
+    });
+  }
 }
 
 // 새 카드 감지 → 푸시 전송
