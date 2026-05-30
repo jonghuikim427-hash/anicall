@@ -855,7 +855,6 @@ function saveEdit(){
   // 경고줄 + title1 + title2 = 완전한 tail
   var warnLines=lines.slice(0,t1idx).map(function(l){ return l.trim(); }).filter(Boolean);
   var newTail=warnLines.concat([newTitle1,newTitle2]).filter(Boolean).join('\n');
-  var newTail=newTitle1+(newTitle2?'\n'+newTitle2:'');
 
   db.ref('cards/'+card.id).update({
     body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2
