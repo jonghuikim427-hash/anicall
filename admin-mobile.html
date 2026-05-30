@@ -701,7 +701,7 @@ function renderWait(){
     var cls='card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(waitSelected&&waitSelected.id===r.id?' selected':'');
     h+='<div class="'+cls+'" onclick="selectWaitCard(\''+r.id+'\')">';
     h+='<div class="ci-title" style="display:flex;align-items:center;flex-wrap:wrap">'+warnStr+esc(cardLabel(r))+dupBadge+'</div>';
-    h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>'+(r.phone?' · '+esc(r.phone):'')+'</div>';
+    h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
     h+='</div>';
   });
   document.getElementById('wait-list').innerHTML=h;
@@ -1218,6 +1218,7 @@ function renderInfoList(){
     h+='<div class="ici-title">'+warnIcon+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
     if(di.driver){ h+='<div class="ici-driver">'+esc(di.driver)+'</div>'; h+='<span class="ci-badge badge-green" style="font-size:10px">배정</span>'; }
     else{ h+='<span class="ci-badge badge-amber" style="font-size:10px">미배차</span>'; }
+    h+='<div style="font-size:10px;font-weight:700;width:100%;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
     h+='</div>';
   });
   document.getElementById('info-card-list').innerHTML=h;
