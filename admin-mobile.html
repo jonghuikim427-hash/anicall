@@ -1627,10 +1627,14 @@ function genBaroList(){
   var t1p=t1.split(' ');
   var veh=t1p[0]||'';
   var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
-  var dtype=t1lower.indexOf('g우선')>=0?'G우선':t1lower.indexOf('eq배차')>=0?'EQ배차':t1lower.indexOf('gqe')>=0?'GQE':'';
-  var hasWaypoint=t1lower.indexOf('경유')>=0;
+  var isLarge=(veh==='대'||veh==='콜'||veh==='쏠');
+  // 앞 6개 토큰 제외한 나머지 키워드 전부 표시 (차종 중복 제거) - 당일배차방과 동일
+  var extras=t1p.slice(6).filter(function(tok){
+    return ['대형','콜밴','쏠라티','대','콜','쏠','중형','중'].indexOf(tok)<0;
+  }).join(' ');
   var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
   var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
+  var warns=getWarnings(r); var warnMark=warns.length?' ⚠️':'';
   // 시간은 title1에서 파싱 (t1p[5])
   var hhmm=t1p[5]||r.rideHHMM||'', timeStr=hhmm?hhmm.slice(0,2)+':'+hhmm.slice(2):'';
   var addrShort=t1p.length>=3?t1p[2]:(r.address||'').split(' ')[0];
@@ -1645,19 +1649,18 @@ function genBaroList(){
   cardDate.setHours(0,0,0,0);
   var dayLabel=cardDate.getTime()===today.getTime()?'오늘':cardDate.getTime()===tomorrow.getTime()?'내일':'';
   var dateLabel=(cardDate.getMonth()+1)+'월 '+cardDate.getDate()+'일';
-  var isLarge=(veh==='대'||veh==='콜'||veh==='쏠');
   var header, line1;
   if(currentBaroTab===0){
     var num=r.baechaNum||'';
     header='✈️인천공항센터(SKY LINE)✈️\n'+(dayLabel?dayLabel+' ':'')+'✈️ '+dateLabel;
     line1=isLarge
-      ? (num?num+'. ':'')+( confirmed?confirmed+' ':'')+vehLabel+(hasWaypoint?' 경유':'')
-      : (num?num+'. ':'')+( dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+(hasWaypoint?' 경유':'');
+      ? (num?num+'. ':'')+(confirmed?confirmed+' ':'')+warnMark+' '+vehLabel+(extras?' '+extras:'')
+      : (num?num+'. ':'')+(extras?extras+' ':'')+warnMark+(confirmed?' '+confirmed:'');
   } else {
     header='급좌표';
     line1=isLarge
-      ? (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+vehLabel+(hasWaypoint?' 경유':'')
-      : (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+(hasWaypoint?' 경유':'');
+      ? (confirmed?confirmed+' ':'')+warnMark+' '+vehLabel+(extras?' '+extras:'')
+      : (extras?extras+' ':'')+warnMark+(confirmed?' '+confirmed:'');
   }
   var preview=header+'\n\n'+line1.trim()+'\n'+line2.trim();
   document.getElementById('baro-list-preview').value=preview;
