@@ -282,7 +282,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <div class="topbar">
     <button class="ch-btn" onclick="closeBaroScreen()">← 뒤로</button>
     <div class="topbar-title" id="baro-title"></div>
-    <div class="ci-badge badge-green" id="baro-nick" style="font-size:11px;padding:4px 8px;cursor:pointer" onclick="copyBaroResNum()"></div>
+    <div style="width:60px"></div>
   </div>
   <div style="flex:1;overflow-y:auto;padding:8px;padding-bottom:70px">
     <div class="btn3-row" style="position:relative;top:0;padding:0;margin-bottom:8px">
@@ -311,6 +311,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         </div>
       </div>
       <div class="bot-box">
+        <button id="baro-resnum-btn" onclick="copyBaroResNum()" style="width:100%;background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;font-size:12px;padding:8px;border-radius:6px;cursor:pointer;margin-bottom:8px;display:none">📋 예약번호 복사</button>
         <div class="bot-title">기사정보</div>
         <div class="bot-content" id="baro-driver-content">기사 매칭 후</div>
         <div class="bot-action">
@@ -1538,8 +1539,11 @@ function openBaroScreen(card, isReb){
   baroCard=card; baroIsReb=isReb;
   baroListShared=false; baroColcardDone=false; baroDriverDone=false;
   document.getElementById('baro-title').textContent=cardLabel(card);
-  document.getElementById('baro-nick').textContent=card.resNum?'📋 '+card.resNum:'';
-  document.getElementById('baro-nick').style.display=card.resNum?'inline':'none';
+  var _brn=document.getElementById('baro-resnum-btn');
+  if(_brn){
+    if(card.resNum){ _brn.style.display='block'; _brn.textContent='📋 예약번호 '+card.resNum; }
+    else _brn.style.display='none';
+  }
   document.getElementById('baro-colcard-content').textContent=colcardText(card);
   document.getElementById('baro-driver-content').textContent='기사 매칭 후';
   document.getElementById('baro-drv-name').value='';
