@@ -1777,11 +1777,8 @@ function genBaechaList() {
     var vehType = title1Parts[0] || '';
     var isLarge = (vehType === '대' || vehType === '콜' || vehType === '쏠');
     var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜밴' : vehType === '쏠' ? '쏠라티' : '';
-
-    var dtype = '';
-    if (t1lower.indexOf('g우선') >= 0) dtype = 'G우선';
-    else if (t1lower.indexOf('eq배차') >= 0) dtype = 'EQ배차';
-    else if (t1lower.indexOf('gqe') >= 0) dtype = 'GQE';
+    // 앞 6개 토큰 제외한 나머지 키워드 전부 표시
+    var extras = title1Parts.slice(6).join(' ');
 
     var body = r.body || '';
     var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
@@ -1795,7 +1792,6 @@ function genBaechaList() {
       _bLines.some(function(l){ return l.indexOf('피켓')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
       _bLines.some(function(l){ return l.indexOf('요청사항')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; });
     var warnMark = hasSpecial ? ' ⚠️' : '';
-    var hasWaypoint = t1lower.indexOf('경유') >= 0;
 
     // 시간 title1에서 파싱 (t1p[5])
     var hhmm = title1Parts[5] || r.rideHHMM || '';
@@ -1806,8 +1802,8 @@ function genBaechaList() {
     var dir = title1.indexOf(' 입 ')>=0||title1.startsWith('중 입')||title1.startsWith('대 입')||title1.startsWith('콜 입')||title1.startsWith('쏠 입') ? 'in' : 'out';
 
     var line1 = isLarge
-      ? r.baechaNum + '. ' + (confirmed ? confirmed + ' ' : '') + warnMark + ' ' + vehLabel + (hasWaypoint ? ' 경유' : '')
-      : r.baechaNum + '. ' + (dtype ? dtype + ' ' : '') + (confirmed ? confirmed + ' ' : '') + warnMark + (hasWaypoint ? ' 경유' : '');
+      ? r.baechaNum + '. ' + (confirmed ? confirmed + ' ' : '') + warnMark + ' ' + vehLabel + (extras ? ' ' + extras : '')
+      : r.baechaNum + '. ' + (extras ? extras + ' ' : '') + warnMark + (confirmed ? ' ' + confirmed : '');
     var line2 = dir === 'out'
       ? timeStr + ' ' + addrShort + ' → ' + airportShort
       : timeStr + ' ' + airportShort + ' → ' + addrShort;
