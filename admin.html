@@ -670,11 +670,11 @@ function renderBaecha(container) {
       } else {
         lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
       }
-      var _custNick = r.kakaoNick || '';
-      if (_custNick) {
-        lh += '<button class="bc-kak" style="background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;cursor:pointer" onclick="event.stopPropagation();copyText(\''+_custNick.replace(/'/g,'').replace(/"/g,'')+'\'  ,this)" title="클릭시 복사">'+esc(_custNick)+'</button>';
+      var _resNum = r.resNum || '';
+      if (_resNum) {
+        lh += '<button class="bc-kak" style="background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;cursor:pointer;width:auto;padding:4px 8px" onclick="event.stopPropagation();copyText(\''+_resNum.replace(/'/g,'').replace(/"/g,'')+'\',this)" title="클릭시 예약번호 복사 (채널 검색용)">'+esc(_resNum)+'</button>';
       } else {
-        lh += '<button class="bc-kak" style="background:#f5f5f5;color:#bbb;cursor:default;border:1px solid #eee">카톡닉</button>';
+        lh += '<button class="bc-kak" style="background:#f5f5f5;color:#bbb;cursor:default;border:1px solid #eee">예약번호</button>';
       }
       lh += '</div>';
       if (_drvName) {
