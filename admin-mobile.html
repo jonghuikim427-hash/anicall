@@ -866,16 +866,26 @@ function saveEdit(){
   var warnLines=lines.slice(0,t1idx).map(function(l){ return l.trim(); }).filter(Boolean);
   var newTail=warnLines.concat([newTitle1,newTitle2]).filter(Boolean).join('\n');
 
-  db.ref('cards/'+card.id).update({
-    body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2
-  }).then(function(){
+  // 수정된 title1에서 날짜 재파싱 → rideDate 업데이트 (날짜 바뀌면 해당 날짜방으로 이동)
+  var _tp=newTitle1.split(' ');
+  var _yy=_tp[3]||'', _mmdd=_tp[4]||'';
+  var _newRideDate='';
+  if(_yy.length===2 && _mmdd.length===4){
+    _newRideDate='20'+_yy+'-'+_mmdd.slice(0,2)+'-'+_mmdd.slice(2);
+  }
+
+  var _upd={ body:newFull, tail:newTail, title1:newTitle1, title2:newTitle2 };
+  if(_newRideDate) _upd.rideDate=_newRideDate;
+  db.ref('cards/'+card.id).update(_upd).then(function(){
     // allData 즉시 업데이트
     var idx=allData.findIndex(function(r){ return r.id===card.id; });
     if(idx>=0){
       allData[idx].body=newFull; allData[idx].tail=newTail;
       allData[idx].title1=newTitle1; allData[idx].title2=newTitle2;
+      if(_newRideDate) allData[idx].rideDate=_newRideDate;
     }
     card.body=newFull; card.tail=newTail; card.title1=newTitle1; card.title2=newTitle2;
+    if(_newRideDate) card.rideDate=_newRideDate;
     closePopup('popup-edit');
     alert('✅ 수정됐어요!');
     editSelected=null;
