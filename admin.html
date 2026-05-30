@@ -662,7 +662,7 @@ function renderBaecha(container) {
       });
       lh += esc(cardLabel(r));
       if (r.edited) lh += ' <span style="background:#ff6f00;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:3px">수정됨</span>';
-      if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
+      lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
       if (_drvName) {
@@ -939,7 +939,7 @@ function renderBaechaComplete(container) {
         lh += (w.indexOf('❗')===0?'<span style="color:#b71c1c;font-weight:700">❗</span>':'<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
       lh += esc(cardLabel(r));
-      if (r.kakaoNick) lh += ' <span style="color:#1565c0;font-size:10px;font-weight:700">'+esc(r.kakaoNick)+'</span>';
+      lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
       lh += '</div>';
       if (r.driverName) {
         var _drvDisp = r.driverHistory ? esc(r.driverHistory)+' >> '+esc(r.driverName) : esc(r.driverName);
@@ -1004,7 +1004,7 @@ function renderBaechaComplete(container) {
     rh += '<div class="info-box org"><div class="info-box-title">손님 정보</div>';
     rh += '<div class="info-box-body">';
     rh += '채널: '+esc(selectedCard.channel||'-')+'<br>';
-    rh += '카톡닉: '+esc(selectedCard.kakaoNick||'-')+'<br>';
+    rh += '이름: '+esc(selectedCard.name||'-')+'<br>';
     rh += '전화번호: '+esc(selectedCard.phone||'-')+'<br>';
     rh += '예약번호: '+esc(selectedCard.resNum||'-');
     rh += '</div></div>';
