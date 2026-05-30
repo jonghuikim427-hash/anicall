@@ -905,14 +905,11 @@ function renderEditList(){
   if(!list.length) h='<div class="empty">카드 없음</div>';
   list.forEach(function(r){
     var sel=editSelected&&editSelected.id===r.id;
-    var warnIcon='';
-    var t1=r.title1||'';
-    if(t1.indexOf('❗❗❗')>=0) warnIcon='<span style="color:#d32f2f">❗❗❗</span> ';
-    else if(t1.indexOf('❗❗')>=0) warnIcon='<span style="color:#d32f2f">❗❗</span> ';
-    else if(t1.indexOf('❗')>=0) warnIcon='<span style="color:#d32f2f">❗</span> ';
-    else if((r.tail||'').indexOf('⚠️')>=0||(r.title1||'').indexOf('⚠️')>=0) warnIcon='<span style="color:#e65100">⚠️</span> ';
+    var warns=getWarnings(r);
+    var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
+    var numPrefix=r.baechaNum?r.baechaNum+'. ':'';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
-    h+='<div class="ci-title">'+warnIcon+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title">'+warnIcon+numPrefix+esc(cardLabel(r))+'</div>';
     h+='<div class="ci-sub">';
     if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
     else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
@@ -1199,7 +1196,9 @@ function renderInfoList(){
     var dm=driverMap[r.id]||{};
     var sel=infoSelected&&infoSelected.id===r.id;
     h+='<div class="info-card-item'+(sel?' sel':'')+'" onclick="selectInfoCard(\''+r.id+'\')">';
-    h+='<div class="ici-title">'+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
+    var warns=getWarnings(r);
+    var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
+    h+='<div class="ici-title">'+warnIcon+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
     if(dm.driver){ h+='<div class="ici-driver">'+esc(dm.driver)+'</div>'; h+='<span class="ci-badge badge-green" style="font-size:10px">배정</span>'; }
     else{ h+='<span class="ci-badge badge-amber" style="font-size:10px">미배차</span>'; }
     h+='</div>';
@@ -1437,10 +1436,12 @@ function renderCompList(){
     var t1=r.title1||'', t1p=t1.split(' ');
     var veh=t1p[0]||'', dir=t1p[1]||'';
     var numStr=r.baechaNum?'<span style="color:#185FA5;font-weight:700">'+r.baechaNum+'.</span> ':'';
+    var warns=getWarnings(r);
+    var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
     var isReb=r.status==='재배차완료';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectCompCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+numStr+esc(veh+' '+dir)+' '+esc(t1p.slice(2).join(' '))+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+warnIcon+numStr+esc(veh+' '+dir)+' '+esc(t1p.slice(2).join(' '))+'</div>';
     h+='<div style="display:flex;align-items:center;gap:4px">';
     if(r.driverName) h+='<span class="ci-driver">'+esc(r.driverName)+'</span>';
     if(isReb) h+='<span style="font-size:9px;background:#fff3e0;color:#e65100;padding:2px 5px;border-radius:4px;font-weight:700">재배차</span>';
