@@ -454,6 +454,16 @@ function getWarnings(r){
 function colcardText(r){
   return r.body || r.tail || '';
 }
+// driverMap(로컬) 또는 Firebase(driverName 등) 중 있는 값 반환 (PC와 동기화)
+function getDriverInfo(r){
+  var dm=driverMap[r.id]||{};
+  return {
+    driver: dm.driver || r.driverName || '',
+    phone: dm.phone || r.driverPhone || '',
+    vehicle: dm.vehicle || r.driverVehicleType || '',
+    vehicleNum: dm.vehicleNum || r.driverVehicleNum || ''
+  };
+}
 function copyText(text, label){
   var el=document.createElement('textarea'); el.value=text;
   el.style.cssText='position:fixed;top:-9999px'; document.body.appendChild(el);
@@ -527,8 +537,8 @@ function renderSidebar(){
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9;position:sticky;top:0">카드</div>';
   list.forEach(function(r){
-    var dm=driverMap[r.id]||{};
-    var hasDriver=!!(dm.driver);
+    var di=getDriverInfo(r);
+    var hasDriver=!!(di.driver);
     // 기사 배정된 카드는 사이드바에서 숨김
     if(hasDriver) return;
     var tail=r.tail||'';
@@ -604,12 +614,12 @@ function renderDispatchList(){
     var warnIcon=hasRedWarn?'<span style="color:#E24B4A;font-weight:700">❗❗ </span>':hasYellowWarn?'<span style="color:#EF9F27">⚠️ </span>':'';
     var isUrgent=tail.indexOf('❗❗ 당일')>=0||tail.indexOf('❗❗❗')>=0;
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
-    var dm=driverMap[r.id]||{};
+    var di=getDriverInfo(r);
     var sel=dispatchSelected&&dispatchSelected.id===r.id;
     h+='<div class="card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(sel?' selected':'')+'" onclick="selectDispatchCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
     h+='<div class="ci-title" style="flex:1">'+warnIcon+(r.baechaNum?r.baechaNum+'. ':'')+esc(cardLabel(r))+'</div>';
-    if(dm.driver) h+='<div class="ci-driver">'+esc(dm.driver)+'</div>';
+    if(di.driver) h+='<div class="ci-driver">'+esc(di.driver)+'</div>';
     h+='</div>';
     h+='<div class="ci-sub">';
     if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
@@ -1192,13 +1202,13 @@ function renderInfoList(){
   var h='';
   if(!list.length){ h='<div class="empty">카드 없음 (넘버링 먼저 하세요)</div>'; }
   list.forEach(function(r){
-    var dm=driverMap[r.id]||{};
+    var di=getDriverInfo(r);
     var sel=infoSelected&&infoSelected.id===r.id;
     h+='<div class="info-card-item'+(sel?' sel':'')+'" onclick="selectInfoCard(\''+r.id+'\')">';
     var warns=getWarnings(r);
     var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
     h+='<div class="ici-title">'+warnIcon+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
-    if(dm.driver){ h+='<div class="ici-driver">'+esc(dm.driver)+'</div>'; h+='<span class="ci-badge badge-green" style="font-size:10px">배정</span>'; }
+    if(di.driver){ h+='<div class="ici-driver">'+esc(di.driver)+'</div>'; h+='<span class="ci-badge badge-green" style="font-size:10px">배정</span>'; }
     else{ h+='<span class="ci-badge badge-amber" style="font-size:10px">미배차</span>'; }
     h+='</div>';
   });
@@ -1218,12 +1228,12 @@ function updateInfoDetail(){
   var has=!!infoSelected;
   document.getElementById('info-card-detail').style.display=has?'block':'none';
   if(!has) return;
-  var r=infoSelected, dm=driverMap[r.id]||{};
-  document.getElementById('info-sel-title').textContent=(r.baechaNum?r.baechaNum+'. ':'')+cardLabel(r)+(dm.driver?' · '+dm.driver:'');
+  var r=infoSelected, di=getDriverInfo(r);
+  document.getElementById('info-sel-title').textContent=(r.baechaNum?r.baechaNum+'. ':'')+cardLabel(r)+(di.driver?' · '+di.driver:'');
   document.getElementById('info-colcard').textContent=colcardText(r);
-  var drvText=dm.driver?'기사: '+dm.driver+'\n전화: '+(dm.phone||'-')+'\n차종: '+(dm.vehicle||'-')+'\n번호: '+(dm.vehicleNum||'-'):'기사 매칭 후 표시';
+  var drvText=di.driver?'기사: '+di.driver+'\n전화: '+(di.phone||'-')+'\n차종: '+(di.vehicle||'-')+'\n번호: '+(di.vehicleNum||'-'):'기사 매칭 후 표시';
   document.getElementById('info-driver').textContent=drvText;
-  var matched=!!dm.driver;
+  var matched=!!di.driver;
   var colDone=infoColcardDone[r.id];
   var drvDone=infoDriverDone[r.id];
   ['btn-colcard-share','btn-colcard-copy'].forEach(function(id){ var el=document.getElementById(id); el.classList.toggle('dis',!matched); });
@@ -1245,15 +1255,13 @@ function updateInfoDetail(){
 
 function shareColcard(){
   if(!infoSelected) return;
-  var dm=driverMap[infoSelected.id]||{};
-  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
+  if(!getDriverInfo(infoSelected).driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
   shareText(colcardText(infoSelected));
   infoColcardDone[infoSelected.id]=true; updateInfoDetail();
 }
 function copyColcard(){
   if(!infoSelected) return;
-  var dm=driverMap[infoSelected.id]||{};
-  if(!dm.driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
+  if(!getDriverInfo(infoSelected).driver){ alert('기사가 배정되지 않은 카드예요!'); return; }
   copyText(colcardText(infoSelected),'콜카드');
   infoColcardDone[infoSelected.id]=true; updateInfoDetail();
 }
@@ -1374,37 +1382,37 @@ function saveManualDrv(){
 
 function copyDriverInfo(){
   if(!infoSelected) return;
-  var dm=driverMap[infoSelected.id]||{};
-  if(!dm.driver){ alert('기사정보가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
-  if(!dm.phone){ alert('전화번호가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
-  var text='기사: '+dm.driver+'\n전화: '+(dm.phone||'-')+'\n차종: '+(dm.vehicle||'-')+'\n번호: '+(dm.vehicleNum||'-');
+  var di=getDriverInfo(infoSelected);
+  if(!di.driver){ alert('기사정보가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
+  if(!di.phone){ alert('전화번호가 없어요!\n기사카드를 붙여넣기 해주세요!'); return; }
+  var text='기사: '+di.driver+'\n전화: '+(di.phone||'-')+'\n차종: '+(di.vehicle||'-')+'\n번호: '+(di.vehicleNum||'-');
   copyText(text,'기사정보');
   infoDriverDone[infoSelected.id]=true; updateInfoDetail();
 }
 function doInfoDone(){
   if(!infoSelected) return;
-  var dm=driverMap[infoSelected.id]||{};
-  if(!dm.driver){
+  var di=getDriverInfo(infoSelected);
+  if(!di.driver){
     alert('기사가 배정되지 않은 카드예요.\n미배차 카드는 당일배차방에 남아있어요.');
     return;
   }
-  db.ref('cards/'+infoSelected.id).update({status:'배차완료',driverName:dm.driver||'',driverPhone:dm.phone||'',driverVehicleType:dm.vehicle||'',driverVehicleNum:dm.vehicleNum||'',kakaoNick:infoSelected.kakaoNick||''})
+  db.ref('cards/'+infoSelected.id).update({status:'배차완료',driverName:di.driver||'',driverPhone:di.phone||'',driverVehicleType:di.vehicle||'',driverVehicleNum:di.vehicleNum||'',kakaoNick:infoSelected.kakaoNick||''})
     .then(function(){ infoSelected=null; renderInfoList(); renderSidebar(); });
 }
 
 function doAllMatchedDone(){
   var dateV=document.getElementById('m-date').value;
-  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum&&driverMap[r.id]&&driverMap[r.id].driver; });
+  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum&&getDriverInfo(r).driver; });
   if(!list.length){ alert('배정된 카드가 없어요!'); return; }
   if(!confirm('기사 배정된 카드 '+list.length+'개를 배차완료 처리할까요?\n미배차 카드는 당일배차방에 남아요.')) return;
   var updates={};
   list.forEach(function(r){
-    var dm=driverMap[r.id]||{};
+    var di=getDriverInfo(r);
     updates['cards/'+r.id+'/status']='배차완료';
-    updates['cards/'+r.id+'/driverName']=dm.driver||'';
-    updates['cards/'+r.id+'/driverPhone']=dm.phone||'';
-    updates['cards/'+r.id+'/driverVehicleType']=dm.vehicle||'';
-    updates['cards/'+r.id+'/driverVehicleNum']=dm.vehicleNum||'';
+    updates['cards/'+r.id+'/driverName']=di.driver||'';
+    updates['cards/'+r.id+'/driverPhone']=di.phone||'';
+    updates['cards/'+r.id+'/driverVehicleType']=di.vehicle||'';
+    updates['cards/'+r.id+'/driverVehicleNum']=di.vehicleNum||'';
     updates['cards/'+r.id+'/kakaoNick']=r.kakaoNick||'';
   });
   db.ref().update(updates).then(function(){
