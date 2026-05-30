@@ -377,6 +377,18 @@ function warnBadges(r) {
 
 function cardLabel(r) { return r.title1 || r.resNum || '(카드)'; }
 
+// driverMap(Firebase 노드) 기준 기사정보 반환 (모바일과 동일 구조)
+function getDriverInfo(r) {
+  var dm = driverMap[r.id] || {};
+  return {
+    driver: dm.driver || r.driverName || '',
+    phone: dm.phone || r.driverPhone || '',
+    vehicle: dm.vehicle || r.driverVehicleType || '',
+    vehicleNum: dm.vehicleNum || r.driverVehicleNum || ''
+  };
+}
+function getDriverName(r) { return getDriverInfo(r).driver; }
+
 function fmtElapsed(ts) {
   if (!ts) return '';
   var diff = Math.floor((Date.now() - ts) / 60000);
@@ -638,7 +650,7 @@ function renderBaecha(container) {
   else {
     list.forEach(function(r, idx) {
       var num = 701 + idx;
-      var dm = driverMap[r.id] || {};
+      var _drvName = getDriverName(r);
       var isOn = selectedCard && selectedCard.id === r.id;
       lh += '<div class="bc-row'+(isOn?' on':'')+'" onclick="selBaecha(\''+r.id+'\')">';
       var _bNum = r.baechaNum || '';
@@ -653,8 +665,8 @@ function renderBaecha(container) {
       if (r.kakaoNick) lh += ' <span style="color:#2e7d32;font-size:10px;font-weight:700">· '+esc(r.kakaoNick)+'</span>';
       lh += '</div>';
       lh += '<div class="bc-row-inputs" onclick="event.stopPropagation()">';
-      if (dm.driver) {
-        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(\'' + (dm.driver||'').replace(/'/g,'') + '\',this)" title="클릭시 이름 복사">' + esc(dm.driver) + '</button>';
+      if (_drvName) {
+        lh += '<button class="bc-drv filled" style="cursor:pointer" onclick="event.stopPropagation();copyText(\'' + (_drvName||'').replace(/'/g,'') + '\',this)" title="클릭시 이름 복사">' + esc(_drvName) + '</button>';
       } else {
         lh += '<input class="bc-drv" id="drv-'+r.id+'" type="text" placeholder="기사명" value="" oninput="updDrv(\''+r.id+'\',\'driver\',this.value)">';
       }
@@ -665,7 +677,7 @@ function renderBaecha(container) {
         lh += '<button class="bc-kak" style="background:#f5f5f5;color:#bbb;cursor:default;border:1px solid #eee">카톡닉</button>';
       }
       lh += '</div>';
-      if (dm.driver) {
+      if (_drvName) {
         lh += '<button class="bc-done" style="cursor:default;opacity:0.8" onclick="event.stopPropagation()">기사배정</button>';
       }
       lh += '<button onclick="event.stopPropagation();cancelCard(\''+r.id+'\')" style="padding:3px 8px;background:#FCEBEB;color:#A32D2D;border:1px solid #F7C1C1;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;margin-left:3px">취소</button>';
@@ -762,7 +774,6 @@ function renderBaecha(container) {
   var currentEditId = selectedCard ? selectedCard.id : '';
   window.currentEditId = currentEditId;
   var Rp = document.createElement('div'); Rp.className = 't2-right';
-  var dm2 = selectedCard ? (driverMap[selectedCard.id]||{}) : {};
   var rh2 = '';
 
   // 리스트 모드일 때 카드 전체 내용 표시
@@ -811,14 +822,17 @@ function renderBaecha(container) {
     driverCard = bodyText2;
   }
 
-  // 손님에게 줄 기사정보
+  // 손님에게 줄 기사정보 (driverMap 노드 또는 Firebase 카드 필드 동기화)
   var drvInfo = '';
-  if (selectedCard && dm2.driver) {
-  var _foundDrv = allDrivers.find(function(d){ return d.name === (dm2.driver||''); });
-    var _dPhone = dm2.driverPhone || (_foundDrv && _foundDrv.phone) || '-';
-    var _dVeh = dm2.driverVehicle || (_foundDrv && _foundDrv.vehicle) || '-';
-    var _dVNum = dm2.driverVehicleNum || (_foundDrv && _foundDrv.vehicleNum) || '-';
-    drvInfo = '이름: '+(dm2.driver||'')+'\n전화: '+_dPhone+'\n차종: '+_dVeh+'\n차량번호: '+_dVNum;
+  var _di = selectedCard ? getDriverInfo(selectedCard) : {driver:'',phone:'',vehicle:'',vehicleNum:''};
+  var _drvNameR = _di.driver;
+  var _dPhone='-', _dVeh='-', _dVNum='-';
+  if (selectedCard && _drvNameR) {
+    var _foundDrv = allDrivers.find(function(d){ return d.name === _drvNameR; });
+    _dPhone = _di.phone || (_foundDrv && _foundDrv.phone) || '-';
+    _dVeh = _di.vehicle || (_foundDrv && _foundDrv.vehicle) || '-';
+    _dVNum = _di.vehicleNum || (_foundDrv && _foundDrv.vehicleNum) || '-';
+    drvInfo = '이름: '+_drvNameR+'\n전화: '+_dPhone+'\n차종: '+_dVeh+'\n차량번호: '+_dVNum;
   }
 
   var _cid = selectedCard ? selectedCard.id : '';
@@ -873,7 +887,7 @@ function renderBaecha(container) {
   }
 
   // 복사 진행상태 표시
-  if (selectedCard && dm2.driver && !_allCopied) {
+  if (selectedCard && _drvNameR && !_allCopied) {
     var _doneCount = [_cs.dc,_cs.dex,_cs.di,_cs.cu].filter(Boolean).length;
     rh2 += '<div style="text-align:center;color:#aaa;font-size:11px;margin-top:10px;padding:8px;background:#f9f9f9;border-radius:5px">복사 '+_doneCount+'/4 완료 → 모두 복사하면 배차완료 팝업이 뜹니다</div>';
   }
@@ -1542,25 +1556,33 @@ function selectDriver(id, name) {
   if (ac) ac.style.display='none';
   // 기사목록에서 정보 자동완성
   var found = allDrivers.find(function(d){ return d.name === name; });
-  if (found) {
-    if (!driverMap[id]) driverMap[id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
-    driverMap[id].driver = name;
-    driverMap[id].driverPhone = found.phone||'';
-    driverMap[id].driverVehicle = found.vehicle||'';
-    driverMap[id].driverVehicleNum = found.vehicleNum||'';
-  }
+  var entry = {driver:name, kakao:'', phone:found?found.phone||'':'', vehicle:found?found.vehicle||'':'', vehicleNum:found?found.vehicleNum||'':''};
+  driverMap[id] = entry;
+  // Firebase driverMap 노드 즉시 저장 (모바일 동기화)
+  db.ref('driverMap/'+id).set(entry);
   // 해당 카드 선택해서 오른쪽 패널에 기사정보 바로 표시
   var r = allData.find(function(x){ return x.id === id; });
   if (r) selectedCard = r;
   render();
 }
 
+var _updDrvTimer = {};
 function updDrv(id,field,val){
-  if(!driverMap[id])driverMap[id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
+  if(!driverMap[id])driverMap[id]={driver:'',kakao:'',phone:'',vehicle:'',vehicleNum:''};
   driverMap[id][field]=val;
   if(field==='driver'){
     var di=document.getElementById('drv-'+id);
     if(di)di.className='bc-drv'+(val?' filled':'');
+    // 디바운스: 입력 멈추고 0.8초 후 Firebase driverMap 노드 저장 (모바일 동기화)
+    clearTimeout(_updDrvTimer[id]);
+    _updDrvTimer[id]=setTimeout(function(){
+      var nm=(driverMap[id]&&driverMap[id].driver||'').trim();
+      if(!nm){ db.ref('driverMap/'+id).remove(); return; }
+      var found=allDrivers.find(function(d){ return d.name===nm; });
+      var entry={driver:nm, kakao:'', phone:found?found.phone||'':'', vehicle:found?found.vehicle||'':'', vehicleNum:found?found.vehicleNum||'':''};
+      driverMap[id]=entry;
+      db.ref('driverMap/'+id).set(entry);
+    },800);
   }
   if(selectedCard&&selectedCard.id===id)render();
 }
@@ -1568,19 +1590,19 @@ function updDrv(id,field,val){
 function doBaechaCard(id){
   var r=allData.find(function(x){return x.id===id;});
   if(!r)return;
-  var dm=driverMap[id]||{};
-  if(!dm.driver){alert('기사 이름을 입력해주세요.');return;}
+  var di=getDriverInfo(r);
+  var _drvNm = di.driver;
+  if(!_drvNm){alert('기사 이름을 입력해주세요.');return;}
   // 기사목록에서 전화/차종/차량번호 자동완성
-  var _foundDrvBC = allDrivers.find(function(d){ return d.name === dm.driver; });
-  var _dPhoneBC = dm.driverPhone || (_foundDrvBC && _foundDrvBC.phone) || '';
-  var _dVehBC = dm.driverVehicle || (_foundDrvBC && _foundDrvBC.vehicle) || '';
-  var _dVNumBC = dm.driverVehicleNum || (_foundDrvBC && _foundDrvBC.vehicleNum) || '';
+  var _foundDrvBC = allDrivers.find(function(d){ return d.name === _drvNm; });
+  var _dPhoneBC = di.phone || (_foundDrvBC && _foundDrvBC.phone) || '';
+  var _dVehBC = di.vehicle || (_foundDrvBC && _foundDrvBC.vehicle) || '';
+  var _dVNumBC = di.vehicleNum || (_foundDrvBC && _foundDrvBC.vehicleNum) || '';
   db.ref('cards/'+id).once('value').then(function(snap){
     var freshCard = snap.val() || {};
     db.ref('cards/'+id).update({
       status:'배차완료',
-      driverName:dm.driver||'',
-      driverKakao:dm.kakao||'',
+      driverName:_drvNm,
       driverPhone:_dPhoneBC,
       driverVehicleType:_dVehBC,
       driverVehicleNum:_dVNumBC,
@@ -1615,8 +1637,9 @@ function doAutoMatch(){
   if (overwriteList.length > 0) {
     if (!confirm('이미 배정된 기사가 있어요! ' + overwriteList.join(' | ') + ' 덮어쓰시겠어요?')) return;
   }
-  // 동명이인 체크
+  // 동명이인 체크 + Firebase driverMap 노드 저장 (모바일과 동기화)
   var duplicateWarnings = [];
+  var fbUpdates = {};
   ta.value.split('\n').forEach(function(line){
     var m=line.match(/^(\d+)[.\s]\s*(.+)/);
     if(!m)return;
@@ -1626,10 +1649,14 @@ function doAutoMatch(){
     // baechaNum 없으면 기존 701+index 방식으로 폴백
     if (!r && num>=701 && num<=700+list.length) r = list[num-701];
     if(r){
-      if(!driverMap[r.id])driverMap[r.id]={driver:'',kakao:'',driverPhone:'',driverVehicle:'',driverVehicleNum:''};
-      driverMap[r.id].driver=name;
+      var found = allDrivers.find(function(d){ return d.name === name; });
+      var entry = {driver:name, kakao:'', phone:found?found.phone||'':'', vehicle:found?found.vehicle||'':'', vehicleNum:found?found.vehicleNum||'':''};
+      fbUpdates['driverMap/'+r.id] = entry;
+      driverMap[r.id] = entry;
     }
   });
+  // Firebase driverMap 노드에 일괄 저장 → 모바일/다른 PC와 동기화
+  if(Object.keys(fbUpdates).length) db.ref().update(fbUpdates);
   // 동명이인 경고
   duplicateWarnings = [];
   Object.keys(driverMap).forEach(function(id) {
@@ -1648,7 +1675,15 @@ function doAutoMatch(){
 
 function doResetMatch(){
   if(!confirm('매칭을 초기화할까요?'))return;
-  driverMap={};baechaText='';render();
+  // Firebase driverMap 노드도 제거 (현재 날짜의 확정 카드만)
+  var upd={};
+  allData.forEach(function(r){
+    if(r.status==='확정' && (!baechaDateFilter || r.rideDate===baechaDateFilter) && driverMap[r.id]){
+      upd['driverMap/'+r.id]=null;
+    }
+  });
+  if(Object.keys(upd).length) db.ref().update(upd);
+  baechaText='';render();
 }
 
 function askReb(id){
@@ -1659,7 +1694,8 @@ function askReb(id){
 
 function doRebaecha(id){
   var r = allData.find(function(x){ return x.id === id; });
-  var prevDriver = r ? (r.driverName || '') : '';
+  var di = r ? getDriverInfo(r) : {driver:''};
+  var prevDriver = di.driver || (r ? r.driverName : '') || '';
   var _rideDate = r ? getRideDate(r) : '';
   var updates = { status:'확정' };
   if (prevDriver) {
@@ -1667,6 +1703,9 @@ function doRebaecha(id){
     updates.driverHistory = prevHistory ? prevHistory + ' >> ' + prevDriver : prevDriver;
     updates.driverName = '';
   }
+  // driverMap 노드 제거 (옛 기사 매칭 떼기) + 로컬 즉시 반영
+  if(driverMap[id]) delete driverMap[id];
+  db.ref('driverMap/'+id).remove();
   db.ref('cards/'+id).update(updates).then(function(){
     rebTarget=null; selectedCard=null;
     if(_rideDate) autoRenumber(_rideDate);
@@ -1684,7 +1723,9 @@ function doCopyBaecha(elId, key, cardId) {
     // 4개 다 복사 완료 → 배차완료 팝업
     if (cs.dc && cs.dex && cs.di && cs.cu) {
       var dm = driverMap[cardId] || {};
-      if (dm.driver) {
+      var _rc = allData.find(function(x){ return x.id === cardId; });
+      var _hasDrv = dm.driver || (_rc && _rc.driverName);
+      if (_hasDrv) {
         setTimeout(function(){
           if (confirm('✅ 4개 복사 완료!\n\n배차완료 처리 하시겠습니까?')) {
             doBaechaCard(cardId);
@@ -2082,6 +2123,12 @@ window.onload = function() {
         allDrivers.push(d);
       });
       if (currentTab === 5) render();
+    });
+
+    // driverMap 노드 실시간 수신 → 모바일/다른 PC 매칭 결과 동기화
+    db.ref('driverMap').on('value', function(snapshot) {
+      driverMap = snapshot.val() || {};
+      if (currentTab === 2) render();
     });
 
   db.ref('cards').on('value', function(snapshot) {
