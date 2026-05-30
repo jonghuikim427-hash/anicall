@@ -1007,8 +1007,10 @@ function doMGenList(){
       var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
       var vehLabel=veh==='대'?'대형':veh==='콜'?'콜밴':veh==='쏠'?'쏠라티':'';
       var t1lower=t1.toLowerCase();
-      // 앞 6개 토큰(차종/방향/지역/26/날짜/시간) 제외한 나머지 키워드 전부 표시
-      var extras=t1p.slice(6).join(' ');
+      // 앞 6개 토큰(차종/방향/지역/26/날짜/시간) 제외한 나머지 키워드 전부 표시 (차종 중복 제거)
+      var extras=t1p.slice(6).filter(function(tok){
+        return ['대형','콜밴','쏠라티','대','콜','쏠','중형','중'].indexOf(tok)<0;
+      }).join(' ');
       var dtype=t1lower.indexOf('g우선')>=0?'G우선':t1lower.indexOf('eq배차')>=0?'EQ배차':t1lower.indexOf('gqe')>=0?'GQE':'';
       var body=r.body||'', confMatch=body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
       var confirmed=confMatch?confMatch[0].replace(/\s/g,''):'';
