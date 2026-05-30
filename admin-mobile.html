@@ -208,10 +208,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <div class="sub-section" id="sub1">
     <div id="info-card-list"></div>
     <div id="info-card-detail" style="display:none">
-      <div style="padding:8px 10px;font-size:12px;font-weight:700;color:#1a2a4a;border-bottom:1px solid #eee;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:6px">
-        <span id="info-sel-title" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-        <button id="info-resnum-btn" onclick="copyInfoResNum()" style="flex-shrink:0;background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;display:none">📋 예약번호</button>
-      </div>
+      <div style="padding:8px 10px;font-size:12px;font-weight:700;color:#1a2a4a;border-bottom:1px solid #eee;background:#fff" id="info-sel-title"></div>
       <div class="bot-grid">
         <div class="bot-box">
           <div class="bot-title">콜카드</div>
@@ -222,6 +219,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
           </div>
         </div>
         <div class="bot-box">
+          <button id="info-resnum-btn" onclick="copyInfoResNum()" style="width:100%;background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;font-size:12px;padding:8px;border-radius:6px;cursor:pointer;margin-bottom:8px;display:none">📋 예약번호 복사</button>
           <div class="bot-title">기사정보</div>
           <div class="bot-content" id="info-driver">카드 선택 후</div>
           <div class="bot-action">
@@ -1243,7 +1241,7 @@ function updateInfoDetail(){
   document.getElementById('info-sel-title').textContent=(r.baechaNum?r.baechaNum+'. ':'')+cardLabel(r)+(di.driver?' · '+di.driver:'');
   var _rnBtn=document.getElementById('info-resnum-btn');
   if(_rnBtn){
-    if(r.resNum){ _rnBtn.style.display='inline-block'; _rnBtn.textContent='📋 '+r.resNum; }
+    if(r.resNum){ _rnBtn.style.display='block'; _rnBtn.textContent='📋 예약번호 '+r.resNum; }
     else _rnBtn.style.display='none';
   }
   document.getElementById('info-colcard').textContent=colcardText(r);
