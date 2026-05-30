@@ -208,7 +208,10 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <div class="sub-section" id="sub1">
     <div id="info-card-list"></div>
     <div id="info-card-detail" style="display:none">
-      <div style="padding:8px 10px;font-size:12px;font-weight:700;color:#1a2a4a;border-bottom:1px solid #eee;background:#fff" id="info-sel-title"></div>
+      <div style="padding:8px 10px;font-size:12px;font-weight:700;color:#1a2a4a;border-bottom:1px solid #eee;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:6px">
+        <span id="info-sel-title" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button id="info-resnum-btn" onclick="copyInfoResNum()" style="flex-shrink:0;background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;font-weight:700;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;display:none">📋 예약번호</button>
+      </div>
       <div class="bot-grid">
         <div class="bot-box">
           <div class="bot-title">콜카드</div>
@@ -281,7 +284,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <div class="topbar">
     <button class="ch-btn" onclick="closeBaroScreen()">← 뒤로</button>
     <div class="topbar-title" id="baro-title"></div>
-    <div class="ci-badge badge-red" id="baro-nick" style="font-size:11px;padding:4px 8px"></div>
+    <div class="ci-badge badge-green" id="baro-nick" style="font-size:11px;padding:4px 8px;cursor:pointer" onclick="copyBaroResNum()"></div>
   </div>
   <div style="flex:1;overflow-y:auto;padding:8px;padding-bottom:70px">
     <div class="btn3-row" style="position:relative;top:0;padding:0;margin-bottom:8px">
@@ -1238,6 +1241,11 @@ function updateInfoDetail(){
   if(!has) return;
   var r=infoSelected, di=getDriverInfo(r);
   document.getElementById('info-sel-title').textContent=(r.baechaNum?r.baechaNum+'. ':'')+cardLabel(r)+(di.driver?' · '+di.driver:'');
+  var _rnBtn=document.getElementById('info-resnum-btn');
+  if(_rnBtn){
+    if(r.resNum){ _rnBtn.style.display='inline-block'; _rnBtn.textContent='📋 '+r.resNum; }
+    else _rnBtn.style.display='none';
+  }
   document.getElementById('info-colcard').textContent=colcardText(r);
   var drvText=di.driver?'기사: '+di.driver+'\n전화: '+(di.phone||'-')+'\n차종: '+(di.vehicle||'-')+'\n번호: '+(di.vehicleNum||'-'):'기사 매칭 후 표시';
   document.getElementById('info-driver').textContent=drvText;
@@ -1388,6 +1396,10 @@ function saveManualDrv(){
   });
 }
 
+function copyInfoResNum(){
+  if(!infoSelected||!infoSelected.resNum){ alert('예약번호가 없어요!'); return; }
+  copyText(infoSelected.resNum, '예약번호');
+}
 function copyDriverInfo(){
   if(!infoSelected) return;
   var di=getDriverInfo(infoSelected);
@@ -1528,8 +1540,8 @@ function openBaroScreen(card, isReb){
   baroCard=card; baroIsReb=isReb;
   baroListShared=false; baroColcardDone=false; baroDriverDone=false;
   document.getElementById('baro-title').textContent=cardLabel(card);
-  document.getElementById('baro-nick').textContent=card.kakaoNick||'';
-  document.getElementById('baro-nick').style.display=card.kakaoNick?'inline':'none';
+  document.getElementById('baro-nick').textContent=card.resNum?'📋 '+card.resNum:'';
+  document.getElementById('baro-nick').style.display=card.resNum?'inline':'none';
   document.getElementById('baro-colcard-content').textContent=colcardText(card);
   document.getElementById('baro-driver-content').textContent='기사 매칭 후';
   document.getElementById('baro-drv-name').value='';
@@ -1543,6 +1555,10 @@ function openBaroScreen(card, isReb){
 function closeBaroScreen(){
   document.getElementById('baro-screen').style.display='none';
   baroCard=null;
+}
+function copyBaroResNum(){
+  if(!baroCard||!baroCard.resNum){ alert('예약번호가 없어요!'); return; }
+  copyText(baroCard.resNum, '예약번호');
 }
 function switchBaroTab(t){
   currentBaroTab=t;
