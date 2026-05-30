@@ -1784,14 +1784,9 @@ function genBaechaList() {
     var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
     var confirmed = confMatch ? confMatch[0].replace(/\s/g,'') : '';
 
+    // 경고 표시 기준 = 꼬리(tail)에 경고줄이 있냐 없냐 (수정으로 떼면 사라짐)
     var warns = getWarnings(r);
-    var _bLines = body.split('\n');
-    var hasSpecial = warns.length > 0 ||
-      _bLines.some(function(l){ return l.indexOf('카시트')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
-      _bLines.some(function(l){ return l.indexOf('경유지')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
-      _bLines.some(function(l){ return l.indexOf('피켓')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; }) ||
-      _bLines.some(function(l){ return l.indexOf('요청사항')>=0&&l.split(':').length>1&&l.split(':')[1].trim().length>0; });
-    var warnMark = hasSpecial ? ' ⚠️' : '';
+    var warnMark = warns.length > 0 ? ' ⚠️' : '';
 
     // 시간 title1에서 파싱 (t1p[5])
     var hhmm = title1Parts[5] || r.rideHHMM || '';
