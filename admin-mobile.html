@@ -190,11 +190,14 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
         <button class="btn-sm btn-dark" onclick="doMNumbering()">넘버링</button>
         <button class="btn-sm btn-green" onclick="doMGenList()">리스트생성</button>
       </div>
-      <textarea class="list-preview" id="m-list-preview" style="width:100%;resize:none;font-family:'Malgun Gothic',sans-serif;outline:none">리스트 생성 후 표시됩니다</textarea>
+      <div class="list-tab-row" style="display:flex;gap:5px;margin-top:6px">
+        <button class="list-tab on" id="list-tab-mid" onclick="switchListTab('mid')" style="flex:1;padding:8px;border:none;border-radius:7px;font-size:12px;font-weight:700;background:#185FA5;color:#fff;cursor:pointer">중형</button>
+        <button class="list-tab" id="list-tab-lg" onclick="switchListTab('lg')" style="flex:1;padding:8px;border:1px solid #ccc;border-radius:7px;font-size:12px;font-weight:700;background:#fff;color:#888;cursor:pointer">대형/콜밴/쏠라티</button>
+      </div>
+      <textarea class="list-preview" id="m-list-preview" style="width:100%;resize:none;font-family:'Malgun Gothic',sans-serif;outline:none;margin-top:6px" oninput="onListEdit()">리스트 생성 후 표시됩니다</textarea>
       <div class="share-row">
-        <button class="share-btn share-mid" onclick="shareList('mid')">중형 공유</button>
-        <button class="share-btn share-lg" onclick="shareList('lg')">대형/콜밴 공유</button>
-        <button class="share-btn" style="background:#EAF3DE;color:#3B6D11" onclick="shareList('num')">번호 공유</button>
+        <button class="share-btn share-mid" id="list-share-btn" onclick="shareCurrentList()">중형 공유</button>
+        <button class="share-btn" id="list-num-btn" style="background:#EAF3DE;color:#3B6D11" onclick="shareCurrentNum()">중형 번호</button>
       </div>
       <textarea class="match-ta" id="m-match-ta" placeholder="31. 김종희&#10;32. 조재현&#10;33. 홍기조&#10;..."></textarea>
       <div class="match-row">
@@ -289,8 +292,8 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
       <div class="btn3 on" id="baro-tab0" onclick="switchBaroTab(0)">배차리스트</div>
       <div class="btn3" id="baro-tab1" onclick="switchBaroTab(1)">급좌표</div>
     </div>
-    <div id="baro-list-box" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;gap:8px;align-items:center">
-      <div style="flex:1;font-size:11px;color:#555;line-height:1.7" id="baro-list-preview">리스트 생성 중...</div>
+    <div id="baro-list-box" style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px;display:flex;gap:8px;align-items:flex-start">
+      <textarea id="baro-list-preview" style="flex:1;font-size:12px;color:#333;line-height:1.7;border:1px solid #eee;border-radius:6px;padding:8px;font-family:'Malgun Gothic',sans-serif;resize:vertical;min-height:90px;outline:none">리스트 생성 중...</textarea>
       <button style="padding:8px 12px;background:#f5b800;border:none;border-radius:8px;font-size:11px;font-weight:700;color:#1a2a4a;cursor:pointer;white-space:nowrap" onclick="shareBaroList()">공유</button>
     </div>
     <div style="background:#fff;border-radius:10px;padding:10px;margin-bottom:8px">
@@ -436,6 +439,8 @@ function setWaitMode(mode){
 }
 var waitSelected = null, editSelected = null, compSelected = null, infoSelected = null;
 var mListText = '', mListLarge = '', mListHeader = '', mMatchBackup = {}, mListLocked = {};
+var curListTab = 'mid';          // 현재 선택된 탭 ('mid' / 'lg')
+var listEditMid = '', listEditLg = '';  // 사용자가 수정한 중형/대형 내용 (수정본 보존)
 var baroCard = null, baroIsReb = false;
 var baroListShared = false, baroColcardDone = false, baroDriverDone = false;
 var infoListShared = false, infoColcardDone = {}, infoDriverDone = {};
@@ -949,6 +954,7 @@ function selectEditCard(id){
 function onMDateChange(){
   var d=document.getElementById('m-date').value;
   mListText=''; mListLarge=''; mListHeader='';
+  listEditMid=''; listEditLg='';
   var ta=document.getElementById('m-list-preview');
   if(ta){ ta.value='날짜 선택 후 리스트 생성하세요'; ta.style.height=''; }
 }
@@ -1022,11 +1028,10 @@ function doMGenList(){
     mListLarge=addLargeSeparators(linesLg).join('\n');
     var maxNum=Math.max.apply(null, list.map(function(r){ return r.baechaNum||0; }).concat([30]));
     mListLocked[dateV]=maxNum;
-    var ta=document.getElementById('m-list-preview');
-    if(ta){
-      ta.value=mListHeader+'\n\n'+mListText+(mListLarge?'\n\n〓〓〓대형/콜밴/쏠라티〓〓〓\n\n'+mListLarge:'');
-      ta.style.height=''; ta.style.minHeight='';
-    }
+    // 중형/대형 각각 헤더 포함 전체 텍스트로 수정본 변수 초기화
+    listEditMid = mListText ? (mListHeader+'\n\n'+mListText) : '';
+    listEditLg = mListLarge ? (mListHeader+'\n\n'+mListLarge) : '';
+    renderListTab();
   });
 }
 
@@ -1111,34 +1116,76 @@ function addLargeSeparators(arr){
   return result;
 }
 
-function genNumList(){
+function genNumList(tab){
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
     .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  if(tab){
+    list=list.filter(function(r){
+      var veh=(r.title1||'').trim().split(' ')[0]||'';
+      var isLg=(veh==='대'||veh==='콜'||veh==='쏠');
+      return tab==='lg' ? isLg : !isLg;
+    });
+  }
   if(!list.length) return '';
   return list.map(function(r){ return r.baechaNum+'.'; }).join('\n');
 }
 
-function shareList(type){
-  var ta = document.getElementById('m-list-preview');
-  if(type==='num'){
-    var numText = genNumList();
-    if(!numText){ alert('먼저 넘버링을 해주세요!'); return; }
-    shareText(numText);
-    return;
-  }
-  if(!mListText&&!mListLarge){ alert('먼저 리스트를 생성하세요!'); return; }
-  var text;
-  if(type==='lg'){
-    if(!mListLarge){ alert('대형/콜밴/쏠라티 카드가 없어요!'); return; }
-    text=(mListHeader?mListHeader+'\n\n':'')+mListLarge;
+function switchListTab(tab){
+  // 현재 보던 내용 저장 후 탭 전환
+  saveCurrentListEdit();
+  curListTab = tab;
+  renderListTab();
+}
+
+function saveCurrentListEdit(){
+  var ta=document.getElementById('m-list-preview');
+  if(!ta) return;
+  if(curListTab==='mid') listEditMid=ta.value;
+  else listEditLg=ta.value;
+}
+
+function onListEdit(){
+  // 입력될 때마다 현재 탭 수정본 갱신 (수정 유지)
+  saveCurrentListEdit();
+}
+
+function renderListTab(){
+  var ta=document.getElementById('m-list-preview');
+  var midBtn=document.getElementById('list-tab-mid');
+  var lgBtn=document.getElementById('list-tab-lg');
+  var shareBtn=document.getElementById('list-share-btn');
+  var numBtn=document.getElementById('list-num-btn');
+  if(curListTab==='mid'){
+    if(midBtn){ midBtn.style.background='#185FA5'; midBtn.style.color='#fff'; midBtn.style.border='none'; }
+    if(lgBtn){ lgBtn.style.background='#fff'; lgBtn.style.color='#888'; lgBtn.style.border='1px solid #ccc'; }
+    if(ta) ta.value = listEditMid || '중형 리스트 없음 (리스트생성 먼저)';
+    if(shareBtn) shareBtn.textContent='중형 공유';
+    if(numBtn) numBtn.textContent='중형 번호';
   } else {
-    if(!mListText){ alert('중형 카드가 없어요!'); return; }
-    text=(mListHeader?mListHeader+'\n\n':'')+mListText;
+    if(lgBtn){ lgBtn.style.background='#185FA5'; lgBtn.style.color='#fff'; lgBtn.style.border='none'; }
+    if(midBtn){ midBtn.style.background='#fff'; midBtn.style.color='#888'; midBtn.style.border='1px solid #ccc'; }
+    if(ta) ta.value = listEditLg || '대형/콜밴/쏠라티 리스트 없음 (리스트생성 먼저)';
+    if(shareBtn) shareBtn.textContent='대형콜밴 공유';
+    if(numBtn) numBtn.textContent='대형콜밴 번호';
   }
-  if(!text||!text.trim()){ alert('리스트가 비어있어요!'); return; }
+  if(ta){ ta.style.height=''; ta.style.minHeight=''; }
+}
+
+function shareCurrentList(){
+  saveCurrentListEdit();
+  var text = curListTab==='mid' ? listEditMid : listEditLg;
+  if(!text || !text.trim() || text.indexOf('리스트 없음')>=0){
+    alert('공유할 리스트가 없어요!\n먼저 리스트생성을 해주세요.'); return;
+  }
   shareText(text);
-  if(type==='mid') infoListShared=true;
+  if(curListTab==='mid') infoListShared=true;
+}
+
+function shareCurrentNum(){
+  var numText = genNumList(curListTab);
+  if(!numText){ alert('먼저 넘버링을 해주세요!'); return; }
+  shareText(numText);
 }
 
 function doMAutoMatch(){
@@ -1611,11 +1658,11 @@ function genBaroList(){
       : (dtype?dtype+' ':'')+(confirmed?confirmed+' ':'')+(hasWaypoint?' 경유':'');
   }
   var preview=header+'\n\n'+line1.trim()+'\n'+line2.trim();
-  document.getElementById('baro-list-preview').textContent=preview;
+  document.getElementById('baro-list-preview').value=preview;
 }
 
 function shareBaroList(){
-  var text=document.getElementById('baro-list-preview').textContent;
+  var text=document.getElementById('baro-list-preview').value;
   shareText(text);
   baroListShared=true; updateBaroBtns();
 }
