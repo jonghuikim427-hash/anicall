@@ -1808,8 +1808,10 @@ function genBaechaList() {
     var vehType = title1Parts[0] || '';
     var isLarge = (vehType === '대' || vehType === '콜' || vehType === '쏠');
     var vehLabel = vehType === '대' ? '대형' : vehType === '콜' ? '콜밴' : vehType === '쏠' ? '쏠라티' : '';
-    // 앞 6개 토큰 제외한 나머지 키워드 전부 표시
-    var extras = title1Parts.slice(6).join(' ');
+    // 앞 6개 토큰 제외한 나머지 키워드 전부 표시 (차종 중복 토큰 제거)
+    var extras = title1Parts.slice(6).filter(function(tok){
+      return ['대형','콜밴','쏠라티','대','콜','쏠','중형','중'].indexOf(tok)<0;
+    }).join(' ');
 
     var body = r.body || '';
     var confMatch = body.match(/확정\s*[\d,]+원|확정\s*\d+만/);
