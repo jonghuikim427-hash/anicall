@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콜카드 자동 생성기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+body{background:#f0f2f5;min-height:100vh;padding:20px}
+.wrap{max-width:800px;margin:0 auto}
+.hdr{background:#1a2a4a;color:#FFD700;padding:14px 20px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.hdr h1{font-size:16px;font-weight:700}
+.card{background:#fff;border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.card-title{font-size:12px;font-weight:700;color:#888;margin-bottom:10px}
+.input-area{width:100%;height:140px;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;line-height:1.7}
+.input-area:focus{border-color:#1a2a4a}
+.img-area{border:2px dashed #ddd;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.img-area:hover{border-color:#1a2a4a;background:#f5f7ff}
+.img-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.img-area.has-img{border-color:#2e7d32;background:#f1f8e9}
+.img-preview{max-width:100%;max-height:200px;border-radius:6px;margin-top:10px}
+.btn-row{display:flex;gap:10px;margin-top:12px}
+.btn{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary{background:#1a2a4a;color:#FFD700}
+.btn-primary:hover{background:#243d6b}
+.btn-primary:disabled{background:#ccc;color:#fff;cursor:not-allowed}
+.btn-secondary{background:#f0f0f0;color:#555;border:1px solid #ddd}
+.btn-secondary:hover{background:#e0e0e0}
+.result-box{background:#f8f9fa;border:2px solid #1a2a4a;border-radius:8px;padding:14px;font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-all;min-height:80px}
+.result-box.loading{text-align:center;color:#888;padding:30px}
+.result-box.error{border-color:#e53935;background:#fff5f5;color:#e53935}
+.copy-btn{margin-top:10px;padding:8px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.copy-btn:hover{background:#1b5e20}
+.tag{display:inline-block;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:4px}
+.tag.warn{background:#fff3e0;color:#e65100}
+.divider{text-align:center;color:#bbb;font-size:12px;margin:8px 0}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #eee;border-top-color:#1a2a4a;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <span style="font-size:22px">🚖</span>
+    <h1>콜카드 자동 생성기 (테스트)</h1>
+  </div>
+
+  <!-- 텍스트 입력 -->
+  <div class="card">
+    <div class="card-title">📝 대화내용 / 자유형식 텍스트 붙여넣기</div>
+    <textarea class="input-area" id="text-input" placeholder="예시) 6월4일 오후 4시 3명 가방2 마포구청역 10번출구 인천공항 2터미널&#10;&#10;또는 카톡 대화내용 전체를 붙여넣기 하세요"></textarea>
+  </div>
+
+  <div class="divider">── 또는 ──</div>
+
+  <!-- 이미지 업로드 -->
+  <div class="card">
+    <div class="card-title">📸 카톡 대화 캡처 이미지 업로드</div>
+    <div class="img-area" id="img-area">
+      <input type="file" accept="image/*" id="img-input" onchange="handleImg(this)">
+      <div id="img-placeholder">
+        <div style="font-size:32px;margin-bottom:8px">📷</div>
+        <div style="font-size:14px;color:#888">이미지를 클릭하거나 드래그해서 업로드</div>
+        <div style="font-size:12px;color:#bbb;margin-top:4px">카톡 대화 캡처, 예약 메시지 등</div>
+      </div>
+      <img id="img-preview" class="img-preview" style="display:none">
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="parse-btn" onclick="parseCard()">🔍 콜카드 자동 생성</button>
+    <button class="btn btn-secondary" onclick="clearAll()">↺ 초기화</button>
+  </div>
+
+  <!-- 결과 -->
+  <div class="card" id="result-card" style="display:none;margin-top:14px">
+    <div class="card-title">✅ 파싱 결과 확인 및 수정</div>
+
+    <!-- 필드별 입력 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px" id="fields-grid">
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">차종</div>
+        <input id="f-veh" placeholder="중/대/버" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">방향</div>
+        <input id="f-dir" placeholder="출/입" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">지역</div>
+        <input id="f-region" placeholder="마포, 강동..." style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">날짜 (4자리)</div>
+        <input id="f-date" placeholder="0604" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">시간 (4자리)</div>
+        <input id="f-time" placeholder="1600" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">배차타입</div>
+        <input id="f-dtype" placeholder="G우선/EQ배차" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+      <div style="grid-column:1/-1">
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700">채널 닉네임</div>
+        <input id="f-nick" placeholder="채널>애니>손님닉" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
+      </div>
+    </div>
+
+    <!-- 생성된 콜카드 미리보기 -->
+    <div class="card-title">📋 생성된 콜카드</div>
+    <div class="result-box" id="result-box"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="copy-btn" onclick="copyResult()">📋 복사하기</button>
+      <button class="copy-btn" style="background:#1a2a4a" onclick="rebuildCard()">🔄 카드 재생성</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var imgBase64 = null;
+var imgMime = 'image/jpeg';
+
+function handleImg(input) {
+  var file = input.files[0];
+  if (!file) return;
+  imgMime = file.type || 'image/jpeg';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    imgBase64 = e.target.result.split(',')[1];
+    var preview = document.getElementById('img-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('img-placeholder').style.display = 'none';
+    document.getElementById('img-area').classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearAll() {
+  document.getElementById('text-input').value = '';
+  imgBase64 = null;
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-area').classList.remove('has-img');
+  document.getElementById('img-input').value = '';
+  document.getElementById('result-card').style.display = 'none';
+}
+
+async function parseCard() {
+  var text = document.getElementById('text-input').value.trim();
+  if (!text && !imgBase64) {
+    alert('텍스트를 입력하거나 이미지를 업로드해주세요!');
+    return;
+  }
+
+  var btn = document.getElementById('parse-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>분석 중...';
+  document.getElementById('result-card').style.display = 'block';
+  document.getElementById('result-box').className = 'result-box loading';
+  document.getElementById('result-box').textContent = '카드 생성 중...';
+
+  var today = new Date();
+  var todayStr = today.getFullYear() + '년 ' + (today.getMonth()+1) + '월 ' + today.getDate() + '일';
+
+  var systemPrompt = `당신은 인천공항 택시 예약 콜카드를 생성하는 도우미입니다.
+대화내용이나 이미지에서 예약 정보를 파싱해서 아래 형식의 콜카드를 만들어주세요.
+
+콜카드 형식:
+[차종] [방향] [지역] 26 [월일4자리] [시간4자리] [배차타입]
+채널>애니>[손님닉네임 또는 이름]
+
+차종: 중(1~4명), 대(5~7명), 버(8명 이상)
+방향: 출(공항 가는 방향), 입(공항에서 오는 방향)
+지역: 출발지 또는 도착지의 구/시 단위 (예: 마포, 강동, 수원)
+월일: 4자리 (예: 6월4일 → 0604)
+시간: 4자리 24시간 (예: 오후4시 → 1600, 17시 → 1700)
+배차타입: G우선 또는 EQ배차 (대부분 G우선)
+
+오늘 날짜: ${todayStr}
+
+파싱이 불확실한 부분은 [확인필요: 내용] 형식으로 표시해주세요.
+콜카드만 출력하고 다른 설명은 하지 마세요.`;
+
+  try {
+    var messages = [];
+    if (imgBase64) {
+      var content = [];
+      content.push({type: 'image', source: {type: 'base64', media_type: imgMime, data: imgBase64}});
+      if (text) content.push({type: 'text', text: text});
+      else content.push({type: 'text', text: '이 이미지에서 예약 정보를 파싱해서 콜카드를 만들어주세요.'});
+      messages.push({role: 'user', content: content});
+    } else {
+      messages.push({role: 'user', content: text});
+    }
+
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: messages
+      })
+    });
+
+    var data = await resp.json();
+    var result = data.content && data.content[0] && data.content[0].text || '결과 없음';
+
+    document.getElementById('result-box').className = 'result-box';
+    document.getElementById('result-box').textContent = result;
+
+    // 필드 자동 채우기
+    fillFields(result);
+
+  } catch(e) {
+    document.getElementById('result-box').className = 'result-box error';
+    document.getElementById('result-box').textContent = '오류: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔍 콜카드 자동 생성';
+}
+
+function fillFields(text) {
+  var lines = text.trim().split('\n');
+  var line1 = lines[0] || '';
+  var line2 = lines[1] || '';
+
+  var parts = line1.trim().split(/\s+/);
+  // 차종
+  var veh = parts[0] || '';
+  if(veh && !/확인필요/.test(veh)) setField('f-veh', veh);
+  // 방향
+  var dir = parts[1] || '';
+  if(dir && !/확인필요/.test(dir)) setField('f-dir', dir);
+  // 지역
+  var region = parts[2] || '';
+  if(region && !/확인필요/.test(region)) setField('f-region', region);
+  // 날짜 (parts[4])
+  var date = parts[4] || '';
+  if(date && !/확인필요/.test(date)) setField('f-date', date);
+  // 시간 (parts[5])
+  var time = parts[5] || '';
+  if(time && !/확인필요/.test(time)) setField('f-time', time);
+  // 배차타입 (parts[6])
+  var dtype = parts[6] || '';
+  if(dtype && !/확인필요/.test(dtype)) setField('f-dtype', dtype);
+  // 닉네임 (line2)
+  if(line2 && !/확인필요/.test(line2)) setField('f-nick', line2.trim());
+
+  // 빈칸 강조 (빨간 테두리)
+  ['f-veh','f-dir','f-region','f-date','f-time','f-dtype','f-nick'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.borderColor = el.value ? '#2e7d32' : '#e53935';
+  });
+}
+
+function setField(id, val) {
+  var el = document.getElementById(id);
+  if(el) el.value = val;
+}
+
+function rebuildCard() {
+  var veh = document.getElementById('f-veh').value.trim();
+  var dir = document.getElementById('f-dir').value.trim();
+  var region = document.getElementById('f-region').value.trim();
+  var date = document.getElementById('f-date').value.trim();
+  var time = document.getElementById('f-time').value.trim();
+  var dtype = document.getElementById('f-dtype').value.trim();
+  var nick = document.getElementById('f-nick').value.trim();
+
+  var today = new Date();
+  var yy = String(today.getFullYear()).slice(2);
+
+  var line1 = [veh, dir, region, yy, date, time, dtype].filter(Boolean).join(' ');
+  var line2 = nick || '채널>애니>';
+  var card = line1 + '\n' + line2;
+
+  document.getElementById('result-box').textContent = card;
+
+  // 빈칸 강조 업데이트
+  ['f-veh','f-dir','f-region','f-date','f-time','f-dtype','f-nick'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.borderColor = el.value ? '#2e7d32' : '#e53935';
+  });
+}
+
+function copyResult() {
+  var text = document.getElementById('result-box').textContent;
+  var el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  alert('✅ 복사됐어요!');
+}
+</script>
+</body>
+</html>
