@@ -622,9 +622,8 @@ function renderDispatchList(){
     if(di.driver) h+='<div class="ci-driver">'+esc(di.driver)+'</div>';
     h+='</div>';
     h+='<div class="ci-sub">';
-    if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
-    else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
-    if(r.phone) h+=' · '+esc(r.phone);
+    h+='<span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>';
+    if(r.resNum) h+=' <span style="color:#888">· '+esc(r.resNum)+'</span>';
     h+='</div>';
     h+='</div>';
   });
@@ -930,9 +929,8 @@ function renderEditList(){
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
     h+='<div class="ci-title">'+warnIcon+numPrefix+esc(cardLabel(r))+'</div>';
     h+='<div class="ci-sub">';
-    if(r.kakaoNick) h+='<span style="color:#185FA5;font-weight:700">'+esc(r.kakaoNick)+'</span>';
-    else h+='<span style="color:#999">'+esc(r.name||'')+'</span>';
-    if(r.phone) h+=' · '+esc(r.phone);
+    h+='<span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>';
+    if(r.resNum) h+=' <span style="color:#888">· '+esc(r.resNum)+'</span>';
     h+='</div>';
     h+='</div>';
   });
@@ -1464,7 +1462,7 @@ function renderCompList(){
     if(isReb) h+='<span style="font-size:9px;background:#fff3e0;color:#e65100;padding:2px 5px;border-radius:4px;font-weight:700">재배차</span>';
     h+='</div></div>';
     h+='<div style="display:flex;justify-content:space-between;align-items:center">';
-    h+='<span style="font-size:11px;color:#185FA5;font-weight:700">'+esc(r.kakaoNick||r.name||'')+'</span>';
+    h+='<span style="font-size:11px;color:#185FA5;font-weight:700">'+esc(r.name||'')+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</span>';
     if(r.driverHistory) h+='<span style="font-size:10px;color:#EF9F27">'+esc(r.driverHistory)+' >> '+esc(r.driverName||'')+'</span>';
     h+='</div>';
     h+='</div>';
@@ -1477,7 +1475,7 @@ function renderCompList(){
   var r=compSelected;
   var colcard=colcardText(r);
   var drvInfo=(r.driverName||'-')+'\n'+(r.driverPhone||'-')+'\n'+(r.driverVehicleType||'-')+' / '+(r.driverVehicleNum||'-');
-  var custInfo=(r.kakaoNick||r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
+  var custInfo=(r.name||'-')+'\n'+(r.phone||'-')+'\n예약번호 '+(r.resNum||'-');
   detailEl.style.display='block';
   detailEl.innerHTML=
     '<div class="card-view-wrap">'+
