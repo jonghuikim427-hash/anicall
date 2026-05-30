@@ -487,7 +487,7 @@ function renderConfirm(container) {
           : '<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
       lh += esc(cardLabel(r));
-      if (r.name) lh += ' <span style="color:#1565c0;font-size:10px;font-weight:700">· '+esc(r.name)+'</span>';
+      lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
       lh += '</div>';
       if (isNew) lh += '<span class="badge-new">NEW</span>';
       if (isOld) lh += '<span class="elapsed '+elClass(r.createdAt)+'">'+fmtElapsed(r.createdAt)+'</span>';
