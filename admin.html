@@ -714,7 +714,10 @@ function renderBaecha(container) {
       mh += '<div style="flex:1;display:flex;flex-direction:column;min-width:0">';
       mh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
       mh += '<span style="font-size:11px;font-weight:700;color:#1a2a4a">중형</span>';
+      mh += '<div style="display:flex;gap:4px">';
+      mh += '<button onclick="copyNumByType(\'mid\')" style="padding:3px 8px;background:#3B6D11;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">번호</button>';
       mh += '<button onclick="copyListByType(\'mid\')" style="padding:3px 8px;background:#1a2a4a;color:#FFD700;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">전체복사</button>';
+      mh += '</div>';
       mh += '</div>';
       mh += '<textarea id="baecha-final-ta" style="flex:1;width:100%;padding:8px;border:1px solid #ddd;outline:none;font-size:11px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box;border-radius:4px;min-height:300px">'+esc(_midText)+'</textarea>';
       mh += '</div>';
@@ -724,7 +727,10 @@ function renderBaecha(container) {
       mh += '<div style="flex:1;display:flex;flex-direction:column;min-width:0">';
       mh += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">';
       mh += '<span style="font-size:11px;font-weight:700;color:#6a1b9a">대형/콜밴/쏠라티</span>';
+      mh += '<div style="display:flex;gap:4px">';
+      mh += '<button onclick="copyNumByType(\'lg\')" style="padding:3px 8px;background:#3B6D11;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">번호</button>';
       mh += '<button onclick="copyListByType(\'lg\')" style="padding:3px 8px;background:#6a1b9a;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">전체복사</button>';
+      mh += '</div>';
       mh += '</div>';
       mh += '<textarea id="baecha-final-ta-lg" style="flex:1;width:100%;padding:8px;border:1px solid #ddd;outline:none;font-size:11px;font-family:Malgun Gothic,sans-serif;line-height:1.9;resize:none;background:#fff;box-sizing:border-box;border-radius:4px;min-height:300px">'+esc(_lgText)+'</textarea>';
       mh += '</div>';
@@ -1948,6 +1954,28 @@ function sortBaechaList() {
 
   baechaListText = result.join('\n');
   render();
+}
+
+function copyNumByType(type) {
+  var list = allData.filter(function(r){
+    return r.status==='확정' && (!baechaDateFilter || r.rideDate===baechaDateFilter) && r.baechaNum
+      && !(driverMap[r.id] && getDriverName(r));
+  });
+  list = list.filter(function(r){
+    var veh = (r.title1||'').trim().split(' ')[0] || '';
+    var isLg = (veh==='대'||veh==='콜'||veh==='쏠');
+    return type==='lg' ? isLg : !isLg;
+  }).sort(function(a,b){ return a.baechaNum-b.baechaNum; });
+  if(!list.length){ alert((type==='lg'?'대형/콜밴/쏠라티':'중형')+' 카드가 없어요!'); return; }
+  var text = list.map(function(r){ return r.baechaNum+'.'; }).join('\n');
+  var el = document.createElement('textarea');
+  el.value = text;
+  el.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(el);
+  el.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(el);
+  alert((type==='lg'?'대형/콜밴/쏠라티':'중형')+' 번호 복사됐어요!');
 }
 
 function copyListByType(type) {
