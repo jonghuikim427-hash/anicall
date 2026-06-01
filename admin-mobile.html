@@ -1602,10 +1602,38 @@ function renderMCalendar(){
 function mCalPrev(){ mCalMonth--; if(mCalMonth<0){ mCalMonth=11; mCalYear--; } renderMCalendar(); }
 function mCalNext(){ mCalMonth++; if(mCalMonth>11){ mCalMonth=0; mCalYear++; } renderMCalendar(); }
 function mCalDayClick(dateStr){
-  // 해당 날짜로 당일배차방 이동
-  switchTab(0);
-  var md=document.getElementById('m-date'); if(md){ md.value=dateStr; onMDateChange(); }
-  renderSidebar();
+  var old=document.getElementById('m-cal-popup'); if(old) old.remove();
+  var dayCards=allData.filter(function(r){ return getRideDate(r)===dateStr&&(r.status==='확정'||r.status==='배차완료'||r.status==='재배차완료'); });
+  var total=dayCards.length;
+  var done=dayCards.filter(function(r){ return r.status==='배차완료'||r.status==='재배차완료'; }).length;
+  var waiting=total-done;
+  var d=new Date(dateStr.replace(/-/g,'/'));
+  var dateLabel=(d.getMonth()+1)+'월 '+d.getDate()+'일';
+  var p=document.createElement('div');
+  p.id='m-cal-popup';
+  p.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #1a2a4a;border-radius:12px;padding:18px 20px;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.25);text-align:center;min-width:240px';
+  p.innerHTML='<div style="font-size:15px;font-weight:700;color:#1a2a4a;margin-bottom:8px">'+dateLabel+'</div>'
+    +'<div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.8">총 <b>'+total+'</b>개 | <span style="color:#1565c0">미배차 <b>'+waiting+'</b></span> | <span style="color:#2e7d32">완료 <b>'+done+'</b></span></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="mGoDateTab(0,\''+dateStr+'\')" style="flex:1;padding:11px;background:#1a2a4a;color:#FFD700;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📋 당일배차</button>'
+    +'<button onclick="mGoDateTab(2,\''+dateStr+'\')" style="flex:1;padding:11px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✅ 배차완료</button>'
+    +'</div>'
+    +'<button onclick="document.getElementById(\'m-cal-popup\').remove()" style="margin-top:8px;width:100%;padding:8px;background:#f0f0f0;border:none;border-radius:6px;cursor:pointer;font-size:12px">닫기</button>';
+  document.body.appendChild(p);
+}
+function mGoDateTab(tab,dateStr){
+  var pop=document.getElementById('m-cal-popup'); if(pop) pop.remove();
+  if(tab===0){
+    switchTab(0);
+    var md=document.getElementById('m-date'); if(md){ md.value=dateStr; onMDateChange(); }
+    renderSidebar();
+  } else {
+    compSub='done';
+    switchCompSub('done');
+    var cd=document.getElementById('comp-date'); if(cd){ cd.value=dateStr; }
+    switchTab(2);
+    renderCompList();
+  }
 }
 
 // ── 모바일 기사목록 ──
@@ -1685,6 +1713,9 @@ function confirmAddMDriver(){
 function editMDriver(id){
   var d=allDrivers.find(function(x){ return x.id===id; });
   if(!d) return;
+  var pw=prompt('⚠️ 기사정보 수정\n비밀번호를 입력해주세요:');
+  if(pw===null) return;
+  if(pw!=='1111'){ alert('비밀번호가 틀렸어요!'); return; }
   var name=prompt('이름:',d.name||''); if(name===null) return;
   var phone=prompt('전화번호:',d.phone||''); if(phone===null) return;
   var vehicle=prompt('차종:',d.vehicle||''); if(vehicle===null) return;
@@ -1692,6 +1723,9 @@ function editMDriver(id){
   db.ref('drivers/'+id).update({name:name.trim(),phone:phone.trim(),vehicle:vehicle.trim(),vehicleNum:vnum.trim()}).then(function(){ alert('✅ 수정 완료!'); });
 }
 function delMDriver(id){
+  var pw=prompt('⚠️ 기사 삭제\n비밀번호를 입력해주세요:');
+  if(pw===null) return;
+  if(pw!=='1111'){ alert('비밀번호가 틀렸어요!'); return; }
   if(!confirm('이 기사를 삭제할까요?')) return;
   db.ref('drivers/'+id).remove();
 }
