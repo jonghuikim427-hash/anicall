@@ -1551,7 +1551,23 @@ function renderCompList(){
     '<div class="action-grid">'+
     '<div class="action-btn primary" onclick="openEditPopup(\'comp\')">카드 수정</div>'+
     '<div class="action-btn yellow" onclick="goDirectReb()">재배차</div>'+
+    '<div class="action-btn" style="background:#e53935;color:#fff" onclick="deleteCompCard()">삭제</div>'+
     '</div>';
+}
+function deleteCompCard(){
+  if(!compSelected){ alert('카드를 먼저 선택하세요!'); return; }
+  var pw=prompt('⚠️ 카드 삭제\n비밀번호를 입력해주세요:');
+  if(pw===null) return;
+  if(pw!=='1111'){ alert('비밀번호가 틀렸어요!'); return; }
+  var cardName=compSelected.title1||'';
+  if(!confirm((cardName?'['+cardName+'] \n':'')+'카드를 삭제할까요?')) return;
+  var id=compSelected.id;
+  db.ref('cards/'+id).remove().then(function(){
+    if(driverMap[id]) delete driverMap[id];
+    db.ref('driverMap/'+id).remove();
+    compSelected=null;
+    alert('✅ 삭제됐어요!');
+  });
 }
 function selectCompCard(id){
   compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
