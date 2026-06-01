@@ -1615,7 +1615,7 @@ function mCalDayClick(dateStr){
   p.innerHTML='<div style="font-size:15px;font-weight:700;color:#1a2a4a;margin-bottom:8px">'+dateLabel+'</div>'
     +'<div style="font-size:12px;color:#555;margin-bottom:14px;line-height:1.8">총 <b>'+total+'</b>개 | <span style="color:#1565c0">미배차 <b>'+waiting+'</b></span> | <span style="color:#2e7d32">완료 <b>'+done+'</b></span></div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="mGoDateTab(0,\''+dateStr+'\')" style="flex:1;padding:11px;background:#1a2a4a;color:#FFD700;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📋 당일배차</button>'
+    +'<button onclick="mGoDateTab(1,\''+dateStr+'\')" style="flex:1;padding:11px;background:#1a2a4a;color:#FFD700;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📋 당일배차</button>'
     +'<button onclick="mGoDateTab(2,\''+dateStr+'\')" style="flex:1;padding:11px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✅ 배차완료</button>'
     +'</div>'
     +'<button onclick="document.getElementById(\'m-cal-popup\').remove()" style="margin-top:8px;width:100%;padding:8px;background:#f0f0f0;border:none;border-radius:6px;cursor:pointer;font-size:12px">닫기</button>';
@@ -1623,15 +1623,16 @@ function mCalDayClick(dateStr){
 }
 function mGoDateTab(tab,dateStr){
   var pop=document.getElementById('m-cal-popup'); if(pop) pop.remove();
-  if(tab===0){
-    switchTab(0);
+  if(tab===1){
+    switchTab(1);
+    if(typeof switchSub==='function') switchSub(0);
     var md=document.getElementById('m-date'); if(md){ md.value=dateStr; onMDateChange(); }
     renderSidebar();
   } else {
     compSub='done';
+    switchTab(2);
     switchCompSub('done');
     var cd=document.getElementById('comp-date'); if(cd){ cd.value=dateStr; }
-    switchTab(2);
     renderCompList();
   }
 }
