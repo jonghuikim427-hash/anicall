@@ -2077,7 +2077,12 @@ function extractRegion(addr){
   // 서울 → 구 단위
   const seoulGu = addr.match(/서울[^시]*?([가-힣]+구)/);
   if(seoulGu) return seoulGu[1].replace('구','');
-  // 경기/지방 → 시 단위
+  // 광역시(인천/부산/대구/대전/광주/울산/세종) → 시 이름만 (구 무시)
+  const metros = ['인천','부산','대구','대전','광주','울산','세종'];
+  for(const m of metros){
+    if(addr.includes(m)) return m;
+  }
+  // 경기/지방 → 시 단위 (청주/고양/수원 등)
   const si = addr.match(/([가-힣]+시)/);
   if(si) return si[1].replace('시','');
   // 구 단위
