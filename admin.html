@@ -313,7 +313,7 @@ function applyChannelBarColor(){
       btn.style.border='none';
     } else {
       var bb=getChannelBadge(channelFilter);
-      btn.textContent=bb.letter+' ▼';
+      btn.textContent=bb.name+' ▼';
       btn.style.background='#fff';
       btn.style.color=bb.bg;
       btn.style.border='2px solid '+(channelFilter==='애니'?'#5a4500':'#fff');
@@ -2085,21 +2085,22 @@ function doNumbering() {
   var list = allData.filter(function(r) {
     if (r.status !== '확정') return false;
     if (r.rideDate !== baechaDateFilter) return false;
-    if (r.baechaNum) return false; // 이미 번호 있는 건 제외
+    if (r.baechaNum) return false;
+    if (!chFilterPass(r)) return false;
     return true;
   }).sort(function(a,b) {
     return (a.rideHHMM||'').localeCompare(b.rideHHMM||'');
   });
 
-  if (list.length === 0) { alert('넘버링할 카드가 없어요 (이미 다 번호가 있거나 해당 날짜 카드 없음)'); return; }
-
+  if (list.length === 0) { alert('넘버링할 카드가 없어요'); return; }
+  var chLabel = channelFilter==='all' ? '전체' : getChannelBadge(channelFilter).name;
   var updates = {};
   list.forEach(function(r, i) {
     updates['cards/' + r.id + '/baechaNum'] = startNum + i;
   });
   db.ref().update(updates).then(function() {
     baechaNumStart = startNum + list.length;
-    alert(list.length + '개 카드에 ' + startNum + '~' + (startNum + list.length - 1) + '번 부여 완료!');
+    alert('['+chLabel+'] '+list.length + '개 카드에 ' + startNum + '~' + (startNum + list.length - 1) + '번 부여 완료!');
   });
 }
 
