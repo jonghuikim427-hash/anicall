@@ -1664,10 +1664,8 @@ function renderMCalendar(){
     if(dayCards.length){
       var waitN=dayCards.filter(function(r){ return r.status==='확정'; }).length;
       var doneN=dayCards.length-waitN;
-      var dots='';
-      if(waitN) dots+='<span class="m-cal-dot" style="background:#bbdefb;width:8px;height:8px"></span>';
-      if(doneN) dots+='<span class="m-cal-dot" style="background:#c8e6c9;width:8px;height:8px"></span>';
-      h+='<div>'+dots+'</div><div class="m-cal-cnt">'+dayCards.length+'건</div>';
+      if(waitN) h+='<div style="background:#dbeafe;color:#1d4ed8;border-radius:4px;font-size:10px;font-weight:700;text-align:center;margin-top:1px">'+waitN+'</div>';
+      if(doneN) h+='<div style="background:#dcfce7;color:#15803d;border-radius:4px;font-size:10px;font-weight:700;text-align:center;margin-top:1px">'+doneN+'</div>';
     }
     h+='</td>';
     col++;
@@ -1675,8 +1673,8 @@ function renderMCalendar(){
   }
   h+='</tr></table>';
   h+='<div style="display:flex;gap:12px;justify-content:center;padding:10px;font-size:11px;color:#666">';
-  h+='<span><span class="m-cal-dot" style="background:#bbdefb"></span> 배차대기</span>';
-  h+='<span><span class="m-cal-dot" style="background:#c8e6c9"></span> 기사매칭</span>';
+  h+='<span><span style="display:inline-block;width:10px;height:10px;background:#dbeafe;border-radius:3px;vertical-align:middle"></span> 미배차</span>';
+  h+='<span><span style="display:inline-block;width:10px;height:10px;background:#dcfce7;border-radius:3px;vertical-align:middle"></span> 배차완료</span>';
   h+='</div>';
   document.getElementById('m-calendar').innerHTML=h;
 }
