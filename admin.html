@@ -213,6 +213,7 @@ table.cal th:last-child{color:#1565c0}
   <div class="hdr">
     <h1>🚖 애니콜택시 관리자</h1>
     <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-rfs" id="ch-select-btn" onclick="openChannelPopup()" style="background:#2a3f63">채널 선택</button>
       <span class="last-up" id="last-up"></span>
       <button class="btn-rfs" onclick="manualRefresh()">↺ 새로고침</button>
     </div>
@@ -253,6 +254,62 @@ var searchQuery = '';
 var driverMap = {};   // {id: {driver, kakao, driverPhone, driverVehicle, driverVehicleNum}}
 var baechaText = '';
 var rebTarget = null;
+var channelFilter = 'all';  // 채널 필터 (all/애니/k/메가)
+// 채널 판별: channel 필드 우선, 없으면 꼬리(채널>X>)에서 파싱
+function getCardChannel(r){
+  if(r.channel) return r.channel;
+  var m=(r.tail||r.body||'').match(/채널>([^>]+)>/);
+  if(m){ var c=m[1].trim(); if(c==='애니'||c==='k'||c==='메가') return c; }
+  return '애니';
+}
+function getChannelBadge(ch){
+  if(ch==='k') return {letter:'K', color:'#fff', bg:'#1976D2', name:'k-택시'};
+  if(ch==='메가') return {letter:'M', color:'#fff', bg:'#D32F2F', name:'메가택시'};
+  return {letter:'A', color:'#5a4500', bg:'#f5b800', name:'애니콜'};
+}
+function chBadgeHTML(r){
+  var ch=getCardChannel(r), b=getChannelBadge(ch);
+  return '<span style="display:inline-block;min-width:15px;text-align:center;background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:0 3px;margin-right:3px">'+b.letter+'</span>';
+}
+function chFilterPass(r){
+  if(channelFilter==='all') return true;
+  return getCardChannel(r)===channelFilter;
+}
+function openChannelPopup(){
+  var old=document.getElementById('ch-popup'); if(old) old.remove();
+  var opts=[
+    {key:'all', label:'전체 (통합)', bg:'#1a2a4a', color:'#FFD700'},
+    {key:'애니', label:'A · 애니콜택시', bg:'#f5b800', color:'#5a4500'},
+    {key:'k', label:'K · k-택시', bg:'#1976D2', color:'#fff'},
+    {key:'메가', label:'M · 메가택시', bg:'#D32F2F', color:'#fff'}
+  ];
+  var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998" onclick="document.getElementById(\'ch-popup\').remove()"></div>';
+  h+='<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:14px;padding:20px;z-index:9999;min-width:280px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">';
+  h+='<div style="font-size:16px;font-weight:700;color:#1a2a4a;margin-bottom:16px;text-align:center">채널 선택</div>';
+  opts.forEach(function(o){
+    var sel=channelFilter===o.key;
+    h+='<button onclick="setChannelFilter(\''+o.key+'\')" style="width:100%;padding:14px;margin-bottom:9px;border:'+(sel?'3px solid #1a2a4a':'1px solid #ddd')+';border-radius:10px;background:'+o.bg+';color:'+o.color+';font-size:14px;font-weight:700;cursor:pointer">'+o.label+(sel?' ✓':'')+'</button>';
+  });
+  h+='<button onclick="document.getElementById(\'ch-popup\').remove()" style="width:100%;padding:11px;margin-top:4px;background:#f0f0f0;border:none;border-radius:8px;font-size:13px;cursor:pointer">닫기</button>';
+  h+='</div>';
+  var d=document.createElement('div'); d.id='ch-popup'; d.innerHTML=h;
+  document.body.appendChild(d);
+}
+function setChannelFilter(key){
+  channelFilter=key;
+  var pop=document.getElementById('ch-popup'); if(pop) pop.remove();
+  applyChannelBarColor();
+  render();
+}
+function applyChannelBarColor(){
+  var hdr=document.querySelector('.hdr');
+  var btn=document.getElementById('ch-select-btn');
+  if(hdr) hdr.style.background = channelFilter==='all' ? '' : getChannelBadge(channelFilter).bg;
+  if(btn){
+    if(channelFilter==='all') btn.textContent='채널 선택';
+    else btn.textContent=getChannelBadge(channelFilter).letter+' ▼';
+  }
+}
 var calYear = new Date().getFullYear();
 var calMonth = new Date().getMonth();
 var editingCard = null;
@@ -438,6 +495,7 @@ function renderConfirm(container) {
   var q = searchQuery.toLowerCase();
   var list = allData.filter(function(r) {
     if (r.status !== status) return false;
+    if (!chFilterPass(r)) return false;
     if (!q) return true;
     var qClean = q.replace(/[-\s]/g,'');
     return (r.resNum||'').toLowerCase().includes(q)||
@@ -486,6 +544,7 @@ function renderConfirm(container) {
           ? '<span style="color:#b71c1c;font-weight:700">❗</span>'
           : '<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
+      lh += chBadgeHTML(r);
       lh += esc(cardLabel(r));
       lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
       lh += '</div>';
@@ -608,6 +667,7 @@ function renderBaecha(container) {
   var list = allData.filter(function(r) {
     if (r.status !== '확정') return false;
     if (baechaDateFilter && r.rideDate !== baechaDateFilter) return false;
+    if (!chFilterPass(r)) return false;
     if (q) {
       var qClean = q.replace(/[-\s]/g,'');
       return (r.resNum||'').toLowerCase().includes(q)||
@@ -660,6 +720,7 @@ function renderBaecha(container) {
       _bwarn.forEach(function(w){
         lh += (w.indexOf('❗')===0 ? '<span style="color:#b71c1c;font-weight:700">❗</span>' : '<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
+      lh += chBadgeHTML(r);
       lh += esc(cardLabel(r));
       if (r.edited) lh += ' <span style="background:#ff6f00;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:3px">수정됨</span>';
       lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
@@ -910,6 +971,7 @@ function renderBaechaComplete(container) {
   var list = allData.filter(function(r) {
     if (r.status !== '배차완료' && r.status !== '재배차완료') return false;
     if (baechaCompleteDateFilter && r.rideDate !== baechaCompleteDateFilter) return false;
+    if (!chFilterPass(r)) return false;
     if (q) {
       var qClean = q.replace(/[-\s]/g,'');
       return (r.resNum||'').toLowerCase().includes(q)||
@@ -944,6 +1006,7 @@ function renderBaechaComplete(container) {
       _cw.forEach(function(w){
         lh += (w.indexOf('❗')===0?'<span style="color:#b71c1c;font-weight:700">❗</span>':'<span style="color:#e65100;font-weight:700">⚠️</span>');
       });
+      lh += chBadgeHTML(r);
       lh += esc(cardLabel(r));
       lh += '<div style="font-size:10px;font-weight:700;margin-top:2px"><span style="color:#185FA5">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
       lh += '</div>';
