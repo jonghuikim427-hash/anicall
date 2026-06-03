@@ -158,7 +158,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 <body>
 
 <div class="topbar">
-  <button class="ch-btn" onclick="alert('채널 선택 기능 준비 중')">채널 선택</button>
+  <button class="ch-btn" id="ch-select-btn" onclick="openChannelPopup()">채널 선택</button>
   <div class="topbar-title">애니콜택시 관리자</div>
   <div class="topbar-time" id="clock"></div>
 </div>
@@ -476,6 +476,25 @@ var firebaseConfig = {
 var db, allData = [], allDrivers = [], driverMap = {};
 var compSub = 'done';  // 배차완료방 서브탭
 var mCalYear, mCalMonth;  // 모바일 달력
+var channelFilter = 'all';  // 채널 필터 (all/애니/k/메가)
+// 채널 판별: channel 필드 우선, 없으면 꼬리(채널>X>)에서 파싱
+function getCardChannel(r){
+  if(r.channel) return r.channel;
+  var m=(r.tail||r.body||'').match(/채널>([^>]+)>/);
+  if(m){ var c=m[1].trim(); if(c==='애니'||c==='k'||c==='메가') return c; }
+  return '애니';
+}
+// 채널 표시 정보 {letter, color, bg}
+function getChannelBadge(ch){
+  if(ch==='k') return {letter:'K', color:'#fff', bg:'#1976D2', name:'k-택시'};
+  if(ch==='메가') return {letter:'M', color:'#fff', bg:'#D32F2F', name:'메가택시'};
+  return {letter:'A', color:'#5a4500', bg:'#f5b800', name:'애니콜'};
+}
+// 카드리스트용 채널 뱃지 HTML
+function chBadgeHTML(r){
+  var ch=getCardChannel(r), b=getChannelBadge(ch);
+  return '<span style="display:inline-block;min-width:15px;text-align:center;background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:0 3px;margin-right:3px">'+b.letter+'</span>';
+}
 var currentTab = 0, currentSub = 0, currentBaroTab = 0;
 var waitSearch = '', editSearch = '', compSearch = '';
 var waitMode = 'new';
@@ -588,7 +607,7 @@ function renderSidebar(){
   sb.style.borderRight='1px solid #eee';
   var dateV=document.getElementById('m-date').value;
   var list=allData.filter(function(r){ 
-    return r.status==='확정'&&(!dateV||r.rideDate===dateV);
+    return r.status==='확정'&&(!dateV||r.rideDate===dateV)&&chFilterPass(r);
   })
     .sort(function(a,b){ return (a.baechaNum||999)-(b.baechaNum||999)||(a.rideHHMM||'').localeCompare(b.rideHHMM||''); });
   var h='<div style="padding:3px 2px;font-size:8px;color:#aaa;text-align:center;border-bottom:1px solid #eee;background:#f9f9f9;position:sticky;top:0">카드</div>';
@@ -741,6 +760,7 @@ function renderWait(){
   var list=allData.filter(function(r){
     var statusOk = q ? (r.status==='대기'||r.status==='대기_오래됨') : (waitMode==='new'?r.status==='대기':r.status==='대기_오래됨');
     if(!statusOk) return false;
+    if(!chFilterPass(r)) return false;
     if(!q) return true;
     return (r.resNum||'').toLowerCase().includes(q)||
            (r.name||'').toLowerCase().includes(q)||
@@ -760,7 +780,7 @@ function renderWait(){
     var dupBadge=dups.length?'<span style="background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px">🔴 중복</span>':'';
     var cls='card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(waitSelected&&waitSelected.id===r.id?' selected':'');
     h+='<div class="'+cls+'" onclick="selectWaitCard(\''+r.id+'\')">';
-    h+='<div class="ci-title" style="display:flex;align-items:center;flex-wrap:wrap">'+warnStr+esc(cardLabel(r))+dupBadge+'</div>';
+    h+='<div class="ci-title" style="display:flex;align-items:center;flex-wrap:wrap">'+warnStr+chBadgeHTML(r)+esc(cardLabel(r))+dupBadge+'</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
     h+='</div>';
   });
@@ -972,6 +992,7 @@ function renderEditList(){
   var list=allData.filter(function(r){
     if(r.status!=='확정') return false;
     if(editDateFilter&&r.rideDate!==editDateFilter) return false;
+    if(!chFilterPass(r)) return false;
     if(!q) return true;
     return (r.resNum||'').toLowerCase().includes(q)||(r.name||'').toLowerCase().includes(q)||
            (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||(r.title1||'').toLowerCase().includes(q);
@@ -984,7 +1005,7 @@ function renderEditList(){
     var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
     var numPrefix=r.baechaNum?r.baechaNum+'. ':'';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
-    h+='<div class="ci-title">'+warnIcon+numPrefix+esc(cardLabel(r))+'</div>';
+    h+='<div class="ci-title">'+chBadgeHTML(r)+warnIcon+numPrefix+esc(cardLabel(r))+'</div>';
     h+='<div class="ci-sub">';
     h+='<span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>';
     if(r.resNum) h+=' <span style="color:#888">· '+esc(r.resNum)+'</span>';
@@ -1306,7 +1327,7 @@ function doMResetMatch(){
 // ───────────────────────────────────────
 function renderInfoList(){
   var dateV=document.getElementById('m-date').value;
-  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum; })
+  var list=allData.filter(function(r){ return r.status==='확정'&&getRideDate(r)===dateV&&r.baechaNum&&chFilterPass(r); })
     .sort(function(a,b){ return a.baechaNum-b.baechaNum; });
   var h='';
   if(!list.length){ h='<div class="empty">카드 없음 (넘버링 먼저 하세요)</div>'; }
@@ -1317,7 +1338,7 @@ function renderInfoList(){
     var warns=getWarnings(r);
     var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
     h+='<div style="display:flex;align-items:center;gap:6px;width:100%">';
-    h+='<div class="ici-title">'+warnIcon+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
+    h+='<div class="ici-title">'+chBadgeHTML(r)+warnIcon+r.baechaNum+'. '+esc(cardLabel(r))+'</div>';
     if(di.driver){ h+='<div class="ici-driver">'+esc(di.driver)+'</div>'; h+='<span class="ci-badge badge-green" style="font-size:10px">배정</span>'; }
     else{ h+='<span class="ci-badge badge-amber" style="font-size:10px">미배차</span>'; }
     h+='</div>';
@@ -1547,6 +1568,52 @@ function doAllMatchedDone(){
 // ───────────────────────────────────────
 // 배차완료방 서브탭 (배차완료 / 달력 / 기사목록)
 // ───────────────────────────────────────
+// ───────────────────────────────────────
+// 채널 필터 (전체/애니/k/메가)
+// ───────────────────────────────────────
+function openChannelPopup(){
+  var old=document.getElementById('ch-popup'); if(old) old.remove();
+  var opts=[
+    {key:'all', label:'전체 (통합)', bg:'#1a2a4a', color:'#f5b800'},
+    {key:'애니', label:'A · 애니콜택시', bg:'#f5b800', color:'#5a4500'},
+    {key:'k', label:'K · k-택시', bg:'#1976D2', color:'#fff'},
+    {key:'메가', label:'M · 메가택시', bg:'#D32F2F', color:'#fff'}
+  ];
+  var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998" onclick="document.getElementById(\'ch-popup\').remove()"></div>';
+  h+='<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:14px;padding:18px;z-index:9999;min-width:260px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">';
+  h+='<div style="font-size:15px;font-weight:700;color:#1a2a4a;margin-bottom:14px;text-align:center">채널 선택</div>';
+  opts.forEach(function(o){
+    var sel=channelFilter===o.key;
+    h+='<button onclick="setChannelFilter(\''+o.key+'\')" style="width:100%;padding:13px;margin-bottom:8px;border:'+(sel?'3px solid #1a2a4a':'1px solid #ddd')+';border-radius:10px;background:'+o.bg+';color:'+o.color+';font-size:14px;font-weight:700;cursor:pointer">'+o.label+(sel?' ✓':'')+'</button>';
+  });
+  h+='<button onclick="document.getElementById(\'ch-popup\').remove()" style="width:100%;padding:10px;margin-top:4px;background:#f0f0f0;border:none;border-radius:8px;font-size:13px;cursor:pointer">닫기</button>';
+  h+='</div>';
+  var d=document.createElement('div'); d.id='ch-popup'; d.innerHTML=h;
+  document.body.appendChild(d);
+}
+function setChannelFilter(key){
+  channelFilter=key;
+  var pop=document.getElementById('ch-popup'); if(pop) pop.remove();
+  applyChannelBarColor();
+  render();
+}
+function applyChannelBarColor(){
+  var bar=document.querySelector('.topbar');
+  var btn=document.getElementById('ch-select-btn');
+  var b = channelFilter==='all' ? {bg:'#1a2a4a'} : getChannelBadge(channelFilter);
+  if(bar) bar.style.background = channelFilter==='all' ? '#1a2a4a' : b.bg;
+  // 채널 선택 버튼에 현재 채널 표시
+  if(btn){
+    if(channelFilter==='all') btn.textContent='채널 선택';
+    else { var bb=getChannelBadge(channelFilter); btn.textContent=bb.letter+' ▼'; }
+  }
+}
+// 채널 필터 적용 (리스트 거르기)
+function chFilterPass(r){
+  if(channelFilter==='all') return true;
+  return getCardChannel(r)===channelFilter;
+}
+
 function switchCompSub(sub){
   compSub=sub;
   document.getElementById('comp-tab-done').classList.toggle('on',sub==='done');
@@ -1738,6 +1805,7 @@ function renderCompList(){
   var list=allData.filter(function(r){
     if(r.status!=='배차완료'&&r.status!=='재배차완료') return false;
     if(compDateFilter&&getRideDate(r)!==compDateFilter) return false;
+    if(!chFilterPass(r)) return false;
     if(!q) return true;
     return (r.resNum||'').toLowerCase().includes(q)||(r.name||'').toLowerCase().includes(q)||
            (r.phone||'').replace(/[-\s]/g,'').includes(qClean)||(r.driverName||'').toLowerCase().includes(q)||
@@ -1756,7 +1824,7 @@ function renderCompList(){
     var isReb=r.status==='재배차완료';
     h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectCompCard(\''+r.id+'\')">';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">';
-    h+='<div class="ci-title" style="flex:1">'+warnIcon+numStr+esc(veh+' '+dir)+' '+esc(t1p.slice(2).join(' '))+'</div>';
+    h+='<div class="ci-title" style="flex:1">'+chBadgeHTML(r)+warnIcon+numStr+esc(veh+' '+dir)+' '+esc(t1p.slice(2).join(' '))+'</div>';
     h+='<div style="display:flex;align-items:center;gap:4px">';
     if(r.driverName) h+='<span class="ci-driver">'+esc(r.driverName)+'</span>';
     if(isReb) h+='<span style="font-size:9px;background:#fff3e0;color:#e65100;padding:2px 5px;border-radius:4px;font-weight:700">재배차</span>';
