@@ -294,7 +294,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f5f7fa;min-height:100vh;d
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
-// ── 대형/콜밴/쏠라티 요금표 (시+동 2단계 구조) ──────────
+// ── 채널 설정 (URL 파라미터 ?ch=k / ?ch=mega 로 전환) ──────────
+const CHANNEL_CONFIG = {
+  'anicall': { name:'애니콜택시', eng:'ANICALL TAXI', code:'애니', kakao:'https://pf.kakao.com/_gVxaAX/chat' },
+  'k':       { name:'k-택시',     eng:'K-TAXI',       code:'k',    kakao:'http://pf.kakao.com/_aAtRX/chat' },
+  'mega':    { name:'메가택시',   eng:'MEGA TAXI',    code:'메가', kakao:'http://pf.kakao.com/_ftNjX/chat' }
+};
+function getChannelKey(){
+  var p = new URLSearchParams(location.search);
+  var ch = (p.get('ch')||'').toLowerCase();
+  return CHANNEL_CONFIG[ch] ? ch : 'anicall';
+}
+var CH_KEY = getChannelKey();
+var CH = CHANNEL_CONFIG[CH_KEY];
+
+
 const LARGE_FARE_BY_CITY = {
   '서울': {
     '김포공항':  [7,   7,   12],
@@ -945,7 +959,7 @@ function selectAirport(val){
         <div class="tmp-popup-title">김포공항 예약 안내</div>
         <div class="tmp-popup-sub">김포공항은 별도 배차 확인이 필요해요.<br>카톡으로 문의주시면 빠르게 안내해드릴게요!</div>
         <div class="tmp-popup-btns">
-          <button class="tmp-popup-btn-yes" onclick="document.getElementById('gmp-popup-bg').remove(); window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');">💬 카톡으로 바로 연결하기</button>
+          <button class="tmp-popup-btn-yes" onclick="document.getElementById('gmp-popup-bg').remove(); window.open(CH.kakao,'_blank');">💬 카톡으로 바로 연결하기</button>
           <button class="tmp-popup-btn-no" onclick="document.getElementById('gmp-popup-bg').remove(); selectGMP();">닫기</button>
         </div>
       </div>`;
@@ -1193,7 +1207,7 @@ function writeToFirebase(extra, dateV, tab, veh, pax, cabin, cargo, golf, totalB
       tail: tail,
       body: buildCallCard(extra),
       full: buildCallCard(extra),
-      channel: '애니',
+      channel: CH.code,
       kakaoId: extra.kakaoId||'',
       rideDate: rideDate,
       rideHHMM: rideHHMM,
@@ -1333,11 +1347,19 @@ function tmpScheduleSave(){
 // ══════════════════════════════════════════════════════
 const IS_BOOKING = new URLSearchParams(window.location.search).get('mode') === 'booking';
 
+function applyChannel(){
+  // 채널별 제목/헤더 텍스트 적용
+  var titleEl = document.querySelector('.hdr-title');
+  var subEl = document.querySelector('.hdr-sub');
+  if(subEl) subEl.textContent = CH.eng + ' · ' + CH.name;
+  document.title = CH.name + ' - 예상요금 확인하기';
+}
+
 function initBookingMode(){
   if(!IS_BOOKING) return;
 
   // 제목 변경
-  document.title = '애니콜택시 - 예약하기';
+  document.title = CH.name + ' - 예약하기';
   const titleEl = document.querySelector('.hdr-title');
   if(titleEl) titleEl.textContent = '예약하기';
 
@@ -1424,6 +1446,7 @@ function getBookingExtra(){
 }
 
 window.addEventListener('load', function(){
+  applyChannel();
   tmpLoad();
   initBookingMode();
   document.addEventListener('click', function(e){
@@ -2187,7 +2210,7 @@ function buildTail(extra, veh, pax, totalBag, addr, dateV, tab){
   if(hasExtra) warns.push('⚠️ 추가사항 확인요망');
 
   const warnStr = warns.length > 0 ? warns.join('\n') + '\n' : '';
-  return warnStr + line1 + '\n채널>애니>' + name;
+  return warnStr + line1 + '\n채널>' + CH.code + '>' + name;
 }
 
 function openExtra(){
@@ -2430,7 +2453,7 @@ function openChatInquiry(isLongDist){
   // 경고 있으면 배차타입 제거
   const dtypeStr = dtype ? ' ' + dtype : '';
   const inquiryLabel = isLongDist ? '❗요금문의 장거리' : '❗요금문의';
-  const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>애니>`;
+  const tail = warnStr + `${inquiryLabel}\n${vehCode} ${dir} ${region} ${yy} ${mmdd} ${hhmm2}${dtypeStr}\n채널>` + CH.code + '>';
 
   // 손님 표시용 (꼬리 없음) / 복사용 (꼬리 있음)
   const _wpsEmpty = getWaypointAddrs();
@@ -2595,7 +2618,7 @@ function onPasteCheck(el){
 }
 
 function gotoKakao(){
-  window.open('https://pf.kakao.com/_gVxaAX/chat','_blank');
+  window.open(CH.kakao,'_blank');
 }
 
 // ── 지도 ──────────────────────────────────────────────────
