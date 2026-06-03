@@ -1132,20 +1132,19 @@ function renderCalendar(container) {
     var cls='cal-cell'+(isToday?' today':'')+(dow===0?' sun':'')+(dow===6?' sat':'');
     h+='<td class="'+cls+'" onclick="calDayClick(\''+dateStr2+'\')" style="cursor:pointer">';
     h+='<div class="cal-day">'+d+'</div>';
-    var dayCards = allData.filter(function(r){ return r.rideDate===dateStr2 && (r.status==='확정'||r.status==='배차완료'||r.status==='재배차완료'); });
-    dayCards.slice(0,3).forEach(function(r){
-      var isDone=r.status==='배차완료'||r.status==='재배차완료';
-      h+='<div class="cal-entry '+(isDone?'done':'wait')+'">'+esc(r.title1?r.title1.split(' ').slice(0,3).join(' '):'')+'</div>';
-    });
-    if(dayCards.length>3)h+='<div class="cal-more">+'+(dayCards.length-3)+'개</div>';
+    var dayCards = allData.filter(function(r){ return r.rideDate===dateStr2 && (r.status==='확정'||r.status==='배차완료'||r.status==='재배차완료') && chFilterPass(r); });
+    var waitN = dayCards.filter(function(r){ return r.status==='확정'; }).length;
+    var doneN = dayCards.length - waitN;
+    if(waitN) h+='<div style="background:#dbeafe;color:#1d4ed8;border-radius:5px;padding:2px 6px;font-size:11px;font-weight:700;margin-bottom:2px">미배차 '+waitN+'건</div>';
+    if(doneN) h+='<div style="background:#dcfce7;color:#15803d;border-radius:5px;padding:2px 6px;font-size:11px;font-weight:700;margin-bottom:2px">완료 '+doneN+'건</div>';
     h+='</td>';
     col++;
     if(col===7&&d<lastDate){h+='</tr><tr>';col=0;}
   }
   h+='</tr></table>';
   h+='<div class="cal-legend">';
-  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#bbdefb"></div>배차대기</div>';
-  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#c8e6c9"></div>기사매칭완료</div>';
+  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#dbeafe"></div>미배차</div>';
+  h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#dcfce7"></div>배차완료</div>';
   h+='<div class="cal-leg"><div class="cal-leg-dot" style="background:#fff9e6;border:1px solid #ffe082"></div>오늘</div>';
   h+='</div>';
   wrap.innerHTML = h;
