@@ -279,9 +279,9 @@ function openChannelPopup(){
   var old=document.getElementById('ch-popup'); if(old) old.remove();
   var opts=[
     {key:'all', label:'전체 (통합)', bg:'#1a2a4a', color:'#FFD700'},
-    {key:'애니', label:'A · 애니콜택시', bg:'#f5b800', color:'#5a4500'},
-    {key:'k', label:'K · k-택시', bg:'#1976D2', color:'#fff'},
-    {key:'메가', label:'M · 메가택시', bg:'#D32F2F', color:'#fff'}
+    {key:'애니', label:'A · 애니콜택시', bg:getChannelBadge('애니').bg, color:getChannelBadge('애니').color},
+    {key:'k', label:'K · k-택시', bg:getChannelBadge('k').bg, color:getChannelBadge('k').color},
+    {key:'메가', label:'M · 메가택시', bg:getChannelBadge('메가').bg, color:getChannelBadge('메가').color}
   ];
   var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9998" onclick="document.getElementById(\'ch-popup\').remove()"></div>';
   h+='<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:14px;padding:20px;z-index:9999;min-width:280px;box-shadow:0 4px 24px rgba(0,0,0,0.25)">';
