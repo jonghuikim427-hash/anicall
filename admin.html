@@ -263,9 +263,9 @@ function getCardChannel(r){
   return '애니';
 }
 function getChannelBadge(ch){
-  if(ch==='k') return {letter:'K', color:'#fff', bg:'#1976D2', name:'k-택시'};
-  if(ch==='메가') return {letter:'M', color:'#fff', bg:'#D32F2F', name:'메가택시'};
-  return {letter:'A', color:'#5a4500', bg:'#f5b800', name:'애니콜'};
+  if(ch==='k') return {letter:'K', color:'#fff', bg:'#D32F2F', name:'k-택시'};
+  if(ch==='메가') return {letter:'M', color:'#5a4500', bg:'#f5b800', name:'메가택시'};
+  return {letter:'A', color:'#fff', bg:'#1976D2', name:'애니콜'};
 }
 function chBadgeHTML(r){
   var ch=getCardChannel(r), b=getChannelBadge(ch);
@@ -316,7 +316,7 @@ function applyChannelBarColor(){
       btn.textContent=bb.name+' ▼';
       btn.style.background='#fff';
       btn.style.color=bb.bg;
-      btn.style.border='2px solid '+(channelFilter==='애니'?'#5a4500':'#fff');
+      btn.style.border='2px solid '+(channelFilter==='메가'?'#5a4500':'#fff');
     }
   }
 }
