@@ -486,9 +486,9 @@ function getCardChannel(r){
 }
 // 채널 표시 정보 {letter, color, bg}
 function getChannelBadge(ch){
-  if(ch==='k') return {letter:'K', color:'#fff', bg:'#1976D2', name:'k-택시'};
-  if(ch==='메가') return {letter:'M', color:'#fff', bg:'#D32F2F', name:'메가택시'};
-  return {letter:'A', color:'#5a4500', bg:'#f5b800', name:'애니콜'};
+  if(ch==='k') return {letter:'K', color:'#fff', bg:'#D32F2F', name:'k-택시'};
+  if(ch==='메가') return {letter:'M', color:'#5a4500', bg:'#f5b800', name:'메가택시'};
+  return {letter:'A', color:'#fff', bg:'#1976D2', name:'애니콜'};
 }
 // 카드리스트용 채널 뱃지 HTML
 function chBadgeHTML(r){
@@ -1618,7 +1618,7 @@ function applyChannelBarColor(){
       // 채널 배경색과 대비되는 흰 버튼으로 (애니 노랑에서도 잘 보이게)
       btn.style.background='#fff';
       btn.style.color=bb.bg;
-      btn.style.border='2px solid '+(channelFilter==='애니'?'#5a4500':'#fff');
+      btn.style.border='2px solid '+(channelFilter==='메가'?'#5a4500':'#fff');
     }
   }
 }
