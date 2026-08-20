@@ -1964,6 +1964,24 @@ function showFixedFare({region, amount, isSurcharge, wpFareAdd, wpCount}, depNam
 function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nightMult,veh,surchargeKm,wpFareAdd,wpCount}){
   _lastFareText = `예상 ${totalFare.toLocaleString()}~${(totalFare+3000).toLocaleString()}원`;
   var _cb2 = document.getElementById('btn-calc'); if(_cb2) _cb2.style.display='none';
+  // 요금확인 로그 Firebase 저장
+  try {
+    if(_fbDb) {
+      var now = new Date();
+      var dateKey = now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1)+'-'+(now.getDate()<10?'0':'')+now.getDate();
+      _fbDb.ref('fareLog/'+dateKey).push({
+        channel: CH.code,
+        dir: currentTab||'출국',
+        dep: depName,
+        arr: arrName,
+        distKm: Math.round(distKm*10)/10,
+        veh: veh,
+        totalFare: totalFare,
+        createdAt: now.getTime()
+      });
+    }
+  } catch(e) {}
+
   const nightLabel = nightMult===1.4 ? '심야할증 40%' : nightMult===1.2 ? '야간할증 20%' : '';
   const surLabel   = surchargeKm > 0 ? '시계외할증 20%' : '';
   document.getElementById('result-wrap').innerHTML = `
