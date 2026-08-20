@@ -225,6 +225,7 @@ table.cal th:last-child{color:#1565c0}
     <button class="tab" onclick="go(3)">배차완료방<span class="tc" id="cnt3">0</span></button>
     <button class="tab" onclick="go(4)">달력</button>
     <button class="tab" onclick="go(5)">기사목록</button>
+    <button class="tab" onclick="go(6)">요금확인</button>
   </div>
   <div class="tab-hdr" id="tab-hdr">① 확정대기 최신방</div>
   <div class="main" id="main">
@@ -340,7 +341,8 @@ var TAB_HDRS = [
   '③ 당일 배차방',
   '④ 당일 배차완료방',
   '⑤ 달력',
-  '⑥ 기사목록'
+  '⑥ 기사목록',
+  '⑦ 요금확인 로그'
 ];
 
 var db = null;
@@ -392,7 +394,8 @@ function render() {
   else if (currentTab === 2) renderBaecha(m);
   else if (currentTab === 3) renderBaechaComplete(m);
   else if (currentTab === 4) renderCalendar(m);
-  else renderDriverList(m);
+  else if (currentTab === 5) renderDriverList(m);
+  else if (currentTab === 6) renderFareLog(m);
 }
 
 function todayStr() {
@@ -1150,6 +1153,56 @@ function renderCalendar(container) {
   wrap.innerHTML = h;
   outer.appendChild(wrap);
   container.appendChild(outer);
+}
+
+// ══════════ 탭 7: 요금확인 로그 ══════════════════════════════
+function renderFareLog(container) {
+  var today = todayStr();
+  var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티'};
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;width:100%;height:100%';
+  var h = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eee;background:#fff">';
+  h += '<span style="font-size:13px;font-weight:700;color:#1a2a4a">요금확인 로그</span>';
+  h += '<input type="date" id="fare-date-pc" value="'+today+'" onchange="loadFareLog()" style="padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px">';
+  h += '<span id="fare-log-count" style="font-size:12px;color:#888"></span></div>';
+  h += '<div id="fare-log-body" style="padding:12px;overflow-y:auto;flex:1"><div style="color:#bbb;text-align:center;padding:40px">로딩 중...</div></div>';
+  wrap.innerHTML = h;
+  container.appendChild(wrap);
+  loadFareLog();
+}
+function loadFareLog(){
+  var dateV = (document.getElementById('fare-date-pc')||{}).value || todayStr();
+  var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티'};
+  db.ref('fareLog/'+dateV).orderByChild('createdAt').once('value').then(function(snap){
+    var list = [];
+    snap.forEach(function(child){ list.push(Object.assign({id:child.key}, child.val())); });
+    list.reverse();
+    var cntEl = document.getElementById('fare-log-count');
+    if(cntEl) cntEl.textContent = '총 '+list.length+'건';
+    var body = document.getElementById('fare-log-body');
+    if(!body) return;
+    if(!list.length){ body.innerHTML='<div style="color:#bbb;text-align:center;padding:40px">요금확인 기록이 없어요</div>'; return; }
+    var lh = '';
+    list.forEach(function(r){
+      var b = getChannelBadge(r.channel||'애니');
+      var t = new Date(r.createdAt);
+      var timeStr = p2(t.getHours())+':'+p2(t.getMinutes());
+      var vname = VNAMES[r.veh]||r.veh||'-';
+      lh += '<div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:8px">';
+      lh += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+      lh += '<span style="background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:1px 6px">'+b.letter+'</span>';
+      lh += '<span style="font-size:13px;font-weight:700;color:#1a2a4a">'+esc(r.dir||'출국')+' · '+vname+'</span>';
+      lh += '<span style="margin-left:auto;font-size:12px;color:#aaa">'+timeStr+'</span>';
+      lh += '</div>';
+      lh += '<div style="font-size:12px;color:#555;margin-bottom:3px">📍 '+esc(r.dep||'-')+' → ✈️ '+esc(r.arr||'-')+'</div>';
+      lh += '<div style="font-size:12px;color:#888">'+r.distKm+'km · <span style="font-weight:700;color:#1976D2">'+Number(r.totalFare).toLocaleString()+'원 ~ '+Number(r.totalFare+3000).toLocaleString()+'원</span></div>';
+      lh += '</div>';
+    });
+    body.innerHTML = lh;
+  }).catch(function(){
+    var body = document.getElementById('fare-log-body');
+    if(body) body.innerHTML='<div style="color:#bbb;text-align:center;padding:40px">불러오기 실패</div>';
+  });
 }
 
 function renderDriverList(container) {
