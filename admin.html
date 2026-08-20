@@ -1172,11 +1172,13 @@ function renderFareLog(container) {
 }
 function loadFareLog(){
   var dateV = (document.getElementById('fare-date-pc')||{}).value || todayStr();
-  var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티'};
+  var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티', medium:'중형'};
   db.ref('fareLog/'+dateV).orderByChild('createdAt').once('value').then(function(snap){
     var list = [];
     snap.forEach(function(child){ list.push(Object.assign({id:child.key}, child.val())); });
     list.reverse();
+    fareLogCache = {}; fareLogDate = dateV;
+    list.forEach(function(r){ fareLogCache[r.id] = r; });
     var cntEl = document.getElementById('fare-log-count');
     if(cntEl) cntEl.textContent = '총 '+list.length+'건';
     var body = document.getElementById('fare-log-body');
@@ -1188,20 +1190,117 @@ function loadFareLog(){
       var t = new Date(r.createdAt);
       var timeStr = p2(t.getHours())+':'+p2(t.getMinutes());
       var vname = VNAMES[r.veh]||r.veh||'-';
-      lh += '<div style="background:#fff;border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:8px">';
+      var isOpen = fareLogOpen === r.id;
+      lh += '<div style="background:#fff;border:1px solid '+(isOpen?'#f5b800':'#eee')+';border-radius:8px;padding:12px;margin-bottom:8px">';
+      lh += '<div style="cursor:pointer" onclick="toggleFareCard(\''+r.id+'\')">';
       lh += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
       lh += '<span style="background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:1px 6px">'+b.letter+'</span>';
       lh += '<span style="font-size:13px;font-weight:700;color:#1a2a4a">'+esc(r.dir||'출국')+' · '+vname+'</span>';
+      if(r.pax&&r.pax!=='0') lh += '<span style="font-size:12px;color:#666">👤'+esc(r.pax)+'명</span>';
       lh += '<span style="margin-left:auto;font-size:12px;color:#aaa">'+timeStr+'</span>';
       lh += '</div>';
       lh += '<div style="font-size:12px;color:#555;margin-bottom:3px">📍 '+esc(r.dep||'-')+' → ✈️ '+esc(r.arr||'-')+'</div>';
       lh += '<div style="font-size:12px;color:#888">'+r.distKm+'km · <span style="font-weight:700;color:#1976D2">'+Number(r.totalFare).toLocaleString()+'원 ~ '+Number(r.totalFare+3000).toLocaleString()+'원</span></div>';
+      lh += '</div>';
+      if(isOpen){
+        lh += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd">';
+        lh += '<pre style="background:#f9f9f9;border-radius:6px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap;font-family:\'Malgun Gothic\',sans-serif;margin:0 0 10px">'+esc(buildFareCallCard(r))+'</pre>';
+        lh += '<div style="display:flex;gap:8px">';
+        lh += '<button onclick="fareToConfirm(\''+r.id+'\')" style="flex:2;padding:10px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">📤 확정대기방으로</button>';
+        lh += '<button onclick="deleteFareLog(\''+r.id+'\')" style="flex:1;padding:10px;background:#ffebee;color:#e53935;border:1px solid #ffcdd2;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🗑 삭제</button>';
+        lh += '<button onclick="copyText(buildFareCallCard(fareLogCache[\''+r.id+'\']),\'콜카드\')" style="flex:1;padding:10px;background:#fff;color:#1a2a4a;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">📋 복사</button>';
+        lh += '</div></div>';
+      }
       lh += '</div>';
     });
     body.innerHTML = lh;
   }).catch(function(){
     var body = document.getElementById('fare-log-body');
     if(body) body.innerHTML='<div style="color:#bbb;text-align:center;padding:40px">불러오기 실패</div>';
+  });
+}
+var fareLogCache = {}, fareLogOpen = null, fareLogDate = '';
+function toggleFareCard(id){
+  fareLogOpen = (fareLogOpen===id) ? null : id;
+  loadFareLog();
+}
+// 요금확인 로그 → 콜카드 텍스트
+function buildFareCallCard(r){
+  if(!r) return '';
+  var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티', medium:'중형'};
+  var dirLabel = (r.dir==='입국') ? '입국택시 예약' : '출국택시 예약';
+  var dateStr = '', timeStr = '';
+  if(r.rideDate){
+    var p = r.rideDate.split('-');
+    dateStr = parseInt(p[1])+'월 '+parseInt(p[2])+'일';
+  }
+  if(r.rideHHMM){
+    var hh = parseInt(r.rideHHMM.slice(0,2)), mm = r.rideHHMM.slice(2,4);
+    var ap = hh<12?'오전':'오후';
+    var h12 = hh%12===0?12:hh%12;
+    timeStr = ap+' '+h12+'시 '+mm+'분';
+  }
+  var fareStr = '예상 '+Number(r.totalFare).toLocaleString()+'~'+Number(r.totalFare+3000).toLocaleString()+'원';
+  var depFull = (r.dep||'') + (r.depDetail?' '+r.depDetail:'');
+  var s = fareStr+'\n🚕'+dirLabel+'\n\n';
+  s += '1️⃣ 출발일자 : '+dateStr+'\n';
+  s += '2️⃣ 택시탑승시간(오전/오후) : '+timeStr+'\n';
+  s += '3️⃣ 출발지주소 : '+depFull+'\n';
+  s += '4️⃣ 목적지(인천공항 t1,t2): '+(r.arr||'')+'\n';
+  s += '5️⃣ 탑승인원 : '+(r.pax||'')+'\n';
+  s += '6️⃣ 기내용 캐리어(개수) : '+(r.cabin||'0')+'\n';
+  s += '7️⃣ 화물용 캐리어(개수) : '+(r.cargo||'0')+'\n';
+  s += '8️⃣ 골프백 기타(개수) : '+(r.golf||'0')+'\n';
+  s += '9️⃣ 연락처 : \n';
+  s += '🔟 이름 : \n';
+  s += '❤️추가사항(※필요시기재)\n';
+  s += '◈ 카시트대여 (콜밴,대형 1만원) : \n';
+  s += '◈ 외국인 피켓 픽업 서비스요청 : \n';
+  s += '◈ 카카오톡 ID : \n';
+  s += '◈ 요청사항 : \n';
+  s += '📌예약번호';
+  return s;
+}
+// 확정대기방으로 보내기
+function fareToConfirm(id){
+  var r = fareLogCache[id];
+  if(!r){ alert('데이터를 찾을 수 없어요'); return; }
+  if(!confirm('이 요금확인 건을 확정대기방으로 보낼까요?\n(이름/연락처는 비어있으니 나중에 채워주세요)')) return;
+  var VCODE = {mid:'중', medium:'중', large:'대', solati:'쏠'};
+  var veh = VCODE[r.veh]||'중';
+  var dir = (r.dir==='입국')?'입':'출';
+  var region = (r.dep||'').split(' ').slice(0,2).join(' ');
+  var yy = r.rideDate ? r.rideDate.slice(2,4) : '';
+  var mmdd = r.rideDate ? r.rideDate.slice(5,7)+r.rideDate.slice(8,10) : '';
+  var hhmm = r.rideHHMM || '';
+  var title1 = veh+' '+dir+' '+region+' '+yy+' '+mmdd+' '+hhmm;
+  var body = buildFareCallCard(r);
+  var tail = '❗요금확인 전환\n'+title1+'\n채널>'+(r.channel||'애니')+'>';
+  db.ref('cards').push({
+    title1: title1,
+    title2: '채널>'+(r.channel||'애니')+'>',
+    tail: tail,
+    body: body,
+    full: body,
+    channel: r.channel||'애니',
+    status: '대기',
+    rideDate: r.rideDate||'',
+    rideHHMM: r.rideHHMM||'',
+    name: '',
+    phone: '',
+    resNum: '',
+    fromFareLog: true,
+    createdAt: Date.now()
+  }).then(function(){
+    alert('✅ 확정대기방으로 보냈어요!\n확정대기 최신방에서 확인하세요.');
+  }).catch(function(){ alert('전송 실패'); });
+}
+// 로그 삭제
+function deleteFareLog(id){
+  if(!confirm('이 요금확인 기록을 삭제할까요?')) return;
+  db.ref('fareLog/'+fareLogDate+'/'+id).remove().then(function(){
+    fareLogOpen = null;
+    loadFareLog();
   });
 }
 
