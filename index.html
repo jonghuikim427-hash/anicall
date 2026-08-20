@@ -1969,14 +1969,31 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
     if(_fbDb) {
       var now = new Date();
       var dateKey = now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1)+'-'+(now.getDate()<10?'0':'')+now.getDate();
+      var _dv = (document.getElementById('inp-date')||{}).value || '';
+      var _rideDate='', _rideHHMM='';
+      if(_dv){
+        var _dt=new Date(_dv);
+        if(!isNaN(_dt)){
+          _rideDate=_dt.getFullYear()+'-'+(_dt.getMonth()+1<10?'0':'')+(_dt.getMonth()+1)+'-'+(_dt.getDate()<10?'0':'')+_dt.getDate();
+          _rideHHMM=(_dt.getHours()<10?'0':'')+_dt.getHours()+(_dt.getMinutes()<10?'0':'')+_dt.getMinutes();
+        }
+      }
+      var _gv=function(id){ var e=document.getElementById(id); return e?(e.textContent||'0').trim():'0'; };
       _fbDb.ref('fareLog/'+dateKey).push({
         channel: CH.code,
         dir: currentTab||'출국',
         dep: depName,
         arr: arrName,
+        depDetail: ((document.getElementById('inp-detail')||{}).value||''),
         distKm: Math.round(distKm*10)/10,
         veh: veh,
         totalFare: totalFare,
+        pax: _gv('inp-pax'),
+        cargo: _gv('inp-cargo'),
+        cabin: _gv('inp-cabin'),
+        golf: _gv('inp-golf'),
+        rideDate: _rideDate,
+        rideHHMM: _rideHHMM,
         createdAt: now.getTime()
       });
     }
