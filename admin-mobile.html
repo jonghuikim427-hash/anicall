@@ -166,7 +166,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 <div class="main-tabs">
   <div class="main-tab on" onclick="switchTab(0)">확정대기<br><span id="cnt0" style="font-size:10px">0</span></div>
   <div class="main-tab" onclick="switchTab(1)">당일배차<br><span id="cnt1" style="font-size:10px">0</span></div>
-  <div class="main-tab" onclick="switchTab(2)">배차완료<br><span id="cnt2" style="font-size:10px">0</span></div>
+  <div class="main-tab" onclick="switchTab(2)" style="position:relative">배차완료<span id="fare-badge" style="display:none;position:absolute;top:4px;right:8px;background:#e53935;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;line-height:17px;border-radius:9px;padding:0 4px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.3)">0</span><br><span id="cnt2" style="font-size:10px">0</span></div>
 </div>
 
 <!-- ① 확정대기 -->
@@ -568,6 +568,7 @@ try{
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
   cleanOldFareLogs();
+  watchFareLog();
   db.ref('cards').on('value', function(snap){
     var data = snap.val()||{};
     checkNewCard(data);
@@ -1650,7 +1651,7 @@ function switchCompSub(sub){
   document.getElementById('comp-sub-fare').style.display=sub==='fare'?'block':'none';
   if(sub==='cal') renderMCalendar();
   if(sub==='drv') renderMDriverList();
-  if(sub==='fare'){ var fd=document.getElementById('fare-date'); if(fd&&!fd.value) fd.value=todayStr(); renderFareLog(); }
+  if(sub==='fare'){ var fd=document.getElementById('fare-date'); if(fd&&!fd.value) fd.value=todayStr(); renderFareLog(); markFareSeen(); }
 }
 
 // ── 모바일 달력 ──
@@ -1727,6 +1728,48 @@ function mGoDateTab(tab,dateStr){
     var cd=document.getElementById('comp-date'); if(cd){ cd.value=dateStr; }
     renderCompList();
   }
+}
+
+// 요금확인 로그 실시간 감시 → 배차완료 탭 빨간 배지
+var fareUnreadCount = 0;
+var fareSeenIds = {};
+try{ fareSeenIds = JSON.parse(localStorage.getItem('fareSeenIds')||'{}'); }catch(e){ fareSeenIds = {}; }
+function watchFareLog(){
+  db.ref('fareLog').on('value', function(snap){
+    var cutoff = Date.now() - 24*60*60*1000;
+    var unread = 0;
+    snap.forEach(function(dateSnap){
+      dateSnap.forEach(function(item){
+        var d = item.val();
+        if(d && d.createdAt && d.createdAt >= cutoff && !fareSeenIds[item.key]) unread++;
+      });
+    });
+    fareUnreadCount = unread;
+    updateFareBadge();
+    // 요금확인 탭이 열려있으면 리스트도 갱신
+    if(compSub==='fare' && document.getElementById('sec2') && document.getElementById('sec2').classList.contains('on')) renderFareLog();
+  });
+}
+function updateFareBadge(){
+  var el = document.getElementById('fare-badge');
+  if(!el) return;
+  if(fareUnreadCount > 0){
+    el.textContent = fareUnreadCount > 99 ? '99+' : fareUnreadCount;
+    el.style.display = 'inline-block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+// 요금확인 탭 열면 현재 로그를 '읽음' 처리
+function markFareSeen(){
+  db.ref('fareLog').once('value').then(function(snap){
+    snap.forEach(function(dateSnap){
+      dateSnap.forEach(function(item){ fareSeenIds[item.key] = 1; });
+    });
+    try{ localStorage.setItem('fareSeenIds', JSON.stringify(fareSeenIds)); }catch(e){}
+    fareUnreadCount = 0;
+    updateFareBadge();
+  });
 }
 
 // 24시간 지난 요금확인 로그 자동 정리
