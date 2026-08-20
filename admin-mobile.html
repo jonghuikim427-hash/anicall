@@ -1750,10 +1750,17 @@ function renderFareLog(){
       var timeStr=p2(t.getHours())+':'+p2(t.getMinutes());
       var vname=VNAMES[r.veh]||r.veh||'-';
       var isOpen=fareLogOpen===r.id;
+      var warnIcon='';
+      if(r.warns){
+        warnIcon = r.warns.indexOf('❗')>=0
+          ? '<span style="color:#d32f2f">❗</span>'
+          : '<span style="color:#e65100">⚠️</span>';
+      }
       h+='<div style="background:#fff;border:1px solid '+(isOpen?'#f5b800':'transparent')+';border-radius:10px;margin:0 8px 8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
       h+='<div onclick="toggleFareCard(\''+r.id+'\')">';
       h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
       h+='<span style="background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:1px 5px">'+b.letter+'</span>';
+      h+=warnIcon;
       h+='<span style="font-size:12px;font-weight:700;color:#1a2a4a">'+esc(r.dir||'출국')+' · '+vname+'</span>';
       if(r.pax&&r.pax!=='0') h+='<span style="font-size:11px;color:#666">👤'+esc(r.pax)+'</span>';
       h+='<span style="margin-left:auto;font-size:11px;color:#aaa">'+timeStr+'</span>';
@@ -1781,6 +1788,7 @@ function renderFareLog(){
 function toggleFareCard(id){ fareLogOpen=(fareLogOpen===id)?null:id; renderFareLog(); }
 function buildFareCallCard(r){
   if(!r) return '';
+  if(r.body) return r.body;  // 요금앱이 만든 예약 동일 콜카드
   var dirLabel=(r.dir==='입국')?'입국택시 예약':'출국택시 예약';
   var dateStr='', timeStr='';
   if(r.rideDate){ var p=r.rideDate.split('-'); dateStr=parseInt(p[1])+'월 '+parseInt(p[2])+'일'; }
@@ -1814,16 +1822,19 @@ function fareToConfirm(id){
   var r=fareLogCache[id];
   if(!r){ alert('데이터를 찾을 수 없어요'); return; }
   if(!confirm('확정대기방으로 보낼까요?\n(이름/연락처는 나중에 채워주세요)')) return;
-  var VCODE={mid:'중',medium:'중',large:'대',solati:'쏠'};
-  var veh=VCODE[r.veh]||'중';
-  var dir=(r.dir==='입국')?'입':'출';
-  var region=(r.dep||'').split(' ').slice(0,2).join(' ');
-  var yy=r.rideDate?r.rideDate.slice(2,4):'';
-  var mmdd=r.rideDate?r.rideDate.slice(5,7)+r.rideDate.slice(8,10):'';
-  var hhmm=r.rideHHMM||'';
-  var title1=veh+' '+dir+' '+region+' '+yy+' '+mmdd+' '+hhmm;
   var body=buildFareCallCard(r);
-  var tail='❗요금확인 전환\n'+title1+'\n채널>'+(r.channel||'애니')+'>';
+  var title1=r.title1||'';
+  var tail=r.tail||'';
+  if(!title1){
+    var VCODE={mid:'중',medium:'중',large:'대',solati:'쏠',van:'콜밴',solar:'쏠'};
+    var veh=VCODE[r.veh]||'중';
+    var dir=(r.dir==='입국')?'입':'출';
+    var region=(r.dep||'').split(' ').slice(0,2).join(' ');
+    var yy=r.rideDate?r.rideDate.slice(2,4):'';
+    var mmdd=r.rideDate?r.rideDate.slice(5,7)+r.rideDate.slice(8,10):'';
+    title1=veh+' '+dir+' '+region+' '+yy+' '+mmdd+' '+(r.rideHHMM||'');
+    tail='❗요금확인\n'+title1+'\n채널>'+(r.channel||'애니')+'>';
+  }
   db.ref('cards').push({
     title1:title1, title2:'채널>'+(r.channel||'애니')+'>', tail:tail,
     body:body, full:body, channel:r.channel||'애니', status:'대기',
