@@ -2017,7 +2017,12 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         else if(_dd.getTime()===_tm.getTime()) _fWarns.unshift(currentTab==='입국'?'❗❗ 내일입국':'❗❗ 내일출발');
       }
       var _fWarnStr = _fWarns.length ? _fWarns.join('\n')+'\n' : '';
-      var _fTitle1 = _fVehC+' '+_fDir+' '+_fRegion+' '+_fYY+' '+_fMMDD+' '+_fHHMM+(_fDtype?' '+_fDtype:'');
+      var _fWpSuffix = getWaypointAddrs().length > 0 ? ' 경유' : '';
+      var _fVehLabel = '';
+      if(veh==='large') _fVehLabel = ' 대형';
+      else if(veh==='van') _fVehLabel = ' 콜밴';
+      else if(veh==='solar') _fVehLabel = ' 쏠라티';
+      var _fTitle1 = _fVehC+' '+_fDir+' '+_fRegion+' '+_fYY+' '+_fMMDD+' '+_fHHMM+(_fDtype?' '+_fDtype:'')+_fVehLabel+_fWpSuffix;
       var _fTail = _fWarnStr+'❗요금확인\n'+_fTitle1+'\n채널>'+CH.code+'>';
       var _fWps = getWaypointAddrs();
       var _fExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:_fWps.join(', '), waypoints:_fWps, tail:_fTail };
