@@ -293,6 +293,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <button class="comp-sub-tab on" id="comp-tab-done" onclick="switchCompSub('done')">배차완료</button>
     <button class="comp-sub-tab" id="comp-tab-cal" onclick="switchCompSub('cal')">달력</button>
     <button class="comp-sub-tab" id="comp-tab-drv" onclick="switchCompSub('drv')">기사목록</button>
+    <button class="comp-sub-tab" id="comp-tab-fare" onclick="switchCompSub('fare')">요금확인</button>
   </div>
 
   <!-- 배차완료 서브 -->
@@ -323,6 +324,14 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
   <!-- 기사목록 서브 -->
   <div id="comp-sub-drv" style="display:none">
     <div id="m-driver-list"></div>
+  </div>
+
+  <!-- 요금확인 서브 -->
+  <div id="comp-sub-fare" style="display:none">
+    <div class="filter-row">
+      <input type="date" class="f-date" id="fare-date" onchange="renderFareLog()">
+    </div>
+    <div id="fare-log-list" class="card-list"></div>
   </div>
 </div>
 
@@ -1633,11 +1642,14 @@ function switchCompSub(sub){
   document.getElementById('comp-tab-done').classList.toggle('on',sub==='done');
   document.getElementById('comp-tab-cal').classList.toggle('on',sub==='cal');
   document.getElementById('comp-tab-drv').classList.toggle('on',sub==='drv');
+  document.getElementById('comp-tab-fare').classList.toggle('on',sub==='fare');
   document.getElementById('comp-sub-done').style.display=sub==='done'?'block':'none';
   document.getElementById('comp-sub-cal').style.display=sub==='cal'?'block':'none';
   document.getElementById('comp-sub-drv').style.display=sub==='drv'?'block':'none';
+  document.getElementById('comp-sub-fare').style.display=sub==='fare'?'block':'none';
   if(sub==='cal') renderMCalendar();
   if(sub==='drv') renderMDriverList();
+  if(sub==='fare'){ var fd=document.getElementById('fare-date'); if(fd&&!fd.value) fd.value=todayStr(); renderFareLog(); }
 }
 
 // ── 모바일 달력 ──
@@ -1714,6 +1726,42 @@ function mGoDateTab(tab,dateStr){
     var cd=document.getElementById('comp-date'); if(cd){ cd.value=dateStr; }
     renderCompList();
   }
+}
+
+// ── 요금확인 로그 ──
+function renderFareLog(){
+  var dateV=document.getElementById('fare-date').value;
+  if(!dateV){ document.getElementById('fare-log-list').innerHTML='<div class="empty">날짜를 선택하세요</div>'; return; }
+  var el=document.getElementById('fare-log-list');
+  el.innerHTML='<div class="empty">로딩 중...</div>';
+  db.ref('fareLog/'+dateV).orderByChild('createdAt').once('value').then(function(snap){
+    var list=[];
+    snap.forEach(function(child){ list.push(Object.assign({id:child.key},child.val())); });
+    list.reverse();
+    if(!list.length){ el.innerHTML='<div class="empty">요금확인 기록 없음</div>'; return; }
+    var VNAMES={mid:'중형',large:'대형/콜밴',solati:'쏠라티'};
+    var h='<div style="padding:8px 10px;font-size:12px;color:#888">총 '+list.length+'건</div>';
+    list.forEach(function(r){
+      var b=getChannelBadge(r.channel||'애니');
+      var t=new Date(r.createdAt);
+      var timeStr=p2(t.getHours())+':'+p2(t.getMinutes());
+      var vname=VNAMES[r.veh]||r.veh||'-';
+      h+='<div style="background:#fff;border-radius:10px;margin:0 8px 8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
+      h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
+      h+='<span style="background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:1px 5px">'+b.letter+'</span>';
+      h+='<span style="font-size:12px;font-weight:700;color:#1a2a4a">'+esc(r.dir||'출국')+' · '+vname+'</span>';
+      h+='<span style="margin-left:auto;font-size:11px;color:#aaa">'+timeStr+'</span>';
+      h+='</div>';
+      h+='<div style="font-size:11px;color:#555;margin-bottom:3px">📍 '+esc(r.dep||'-')+'</div>';
+      h+='<div style="font-size:11px;color:#555;margin-bottom:6px">✈️ '+esc(r.arr||'-')+'</div>';
+      h+='<div style="display:flex;gap:8px;font-size:11px">';
+      h+='<span style="color:#888">'+r.distKm+'km</span>';
+      h+='<span style="font-weight:700;color:#1976D2">'+Number(r.totalFare).toLocaleString()+'원 ~ '+Number(r.totalFare+3000).toLocaleString()+'원</span>';
+      h+='</div>';
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }).catch(function(){ el.innerHTML='<div class="empty">불러오기 실패</div>'; });
 }
 
 // ── 모바일 기사목록 ──
