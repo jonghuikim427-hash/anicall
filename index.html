@@ -1979,6 +1979,49 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         }
       }
       var _gv=function(id){ var e=document.getElementById(id); return e?(e.textContent||'0').trim():'0'; };
+      // ── 예약하기와 동일한 콜카드 생성 (이름/전번만 빈칸) ──
+      var _fPax   = parseInt(_gv('inp-pax'))||1;
+      var _fCabin = parseInt(_gv('inp-cabin'))||0;
+      var _fCargo = parseInt(_gv('inp-cargo'))||0;
+      var _fGolf  = parseInt(_gv('inp-golf'))||0;
+      var _fBag   = calcTotalBag(_fCabin, _fCargo, _fGolf);
+      var _fAddr  = selectedAddr ? selectedAddr.display : '';
+      var _fRegion= _fAddr ? extractRegion(_fAddr) : '미상';
+      var _fVehC  = getVehCode(veh);
+      var _fDir   = currentTab==='입국' ? '입' : '출';
+      var _fNow   = _dv ? new Date(_dv) : new Date();
+      var _fYY    = String(_fNow.getFullYear()).slice(2);
+      var _fMMDD  = String(_fNow.getMonth()+1).padStart(2,'0')+String(_fNow.getDate()).padStart(2,'0');
+      var _fHHMM  = String(_fNow.getHours()).padStart(2,'0')+String(_fNow.getMinutes()).padStart(2,'0');
+      var _fDtype = veh==='medium' ? getDispatchType(_fPax, _fBag) : '';
+      // 경고 (예약하기 동일 로직)
+      var _fWarns=[];
+      if(veh==='medium'){
+        if(_fBag>=5) _fWarns.push('⚠️ 짐 확인요망');
+        if(_fPax>=5) _fWarns.push('⚠️ 인원 확인요망 (중형선택)');
+      } else if(veh==='large'){
+        if(_fPax>=10) _fWarns.push('⚠️ 인원 확인요망');
+        else if(_fPax>=8||_fBag>=6) _fWarns.push('⚠️ 인원/짐 확인요망');
+      } else if(veh==='van'){
+        if(_fBag>=9) _fWarns.push('⚠️ 짐 확인요망');
+        if(_fPax>=5) _fWarns.push('⚠️ 인원 확인요망 (콜밴선택)');
+      } else if(veh==='solar'){
+        if(_fPax<10) _fWarns.push('⚠️ 인원 확인요망');
+      }
+      if(_dv){
+        var _dep=new Date(_dv);
+        var _td=new Date(); _td.setHours(0,0,0,0);
+        var _tm=new Date(); _tm.setDate(_tm.getDate()+1); _tm.setHours(0,0,0,0);
+        var _dd=new Date(_dep); _dd.setHours(0,0,0,0);
+        if(_dd.getTime()===_td.getTime()) _fWarns.unshift(currentTab==='입국'?'❗❗ 당일입국':'❗❗ 당일출발');
+        else if(_dd.getTime()===_tm.getTime()) _fWarns.unshift(currentTab==='입국'?'❗❗ 내일입국':'❗❗ 내일출발');
+      }
+      var _fWarnStr = _fWarns.length ? _fWarns.join('\n')+'\n' : '';
+      var _fTitle1 = _fVehC+' '+_fDir+' '+_fRegion+' '+_fYY+' '+_fMMDD+' '+_fHHMM+(_fDtype?' '+_fDtype:'');
+      var _fTail = _fWarnStr+'❗요금확인\n'+_fTitle1+'\n채널>'+CH.code+'>';
+      var _fWps = getWaypointAddrs();
+      var _fExtra = { phone:'', name:'', carseat:'', picket:'', kakaoId:'', request:'', waypoint:_fWps.join(', '), waypoints:_fWps, tail:_fTail };
+      var _fCardFull = buildCallCard(_fExtra);
       _fbDb.ref('fareLog/'+dateKey).push({
         channel: CH.code,
         dir: currentTab||'출국',
@@ -1988,12 +2031,16 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         distKm: Math.round(distKm*10)/10,
         veh: veh,
         totalFare: totalFare,
-        pax: _gv('inp-pax'),
-        cargo: _gv('inp-cargo'),
-        cabin: _gv('inp-cabin'),
-        golf: _gv('inp-golf'),
+        pax: String(_fPax),
+        cargo: String(_fCargo),
+        cabin: String(_fCabin),
+        golf: String(_fGolf),
         rideDate: _rideDate,
         rideHHMM: _rideHHMM,
+        title1: _fTitle1,
+        tail: _fTail,
+        body: _fCardFull,
+        warns: _fWarns.join('\n'),
         createdAt: now.getTime()
       });
     }
