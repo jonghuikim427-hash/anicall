@@ -567,6 +567,7 @@ setInterval(updateClock,1000); updateClock();
 try{
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
+  cleanOldFareLogs();
   db.ref('cards').on('value', function(snap){
     var data = snap.val()||{};
     checkNewCard(data);
@@ -1728,6 +1729,22 @@ function mGoDateTab(tab,dateStr){
   }
 }
 
+// 24시간 지난 요금확인 로그 자동 정리
+function cleanOldFareLogs(){
+  var cutoff=Date.now()-24*60*60*1000;
+  db.ref('fareLog').once('value').then(function(snap){
+    var updates={};
+    snap.forEach(function(dateSnap){
+      dateSnap.forEach(function(item){
+        var data=item.val();
+        if(data.createdAt&&data.createdAt<cutoff)
+          updates['fareLog/'+dateSnap.key+'/'+item.key]=null;
+      });
+    });
+    if(Object.keys(updates).length>0) db.ref().update(updates);
+  });
+}
+
 // ── 요금확인 로그 ──
 var fareLogCache={}, fareLogOpen=null, fareLogDate='';
 function renderFareLog(){
@@ -1840,8 +1857,12 @@ function fareToConfirm(id){
     body:body, full:body, channel:r.channel||'애니', status:'대기',
     rideDate:r.rideDate||'', rideHHMM:r.rideHHMM||'',
     name:'', phone:'', resNum:'', fromFareLog:true, createdAt:Date.now()
-  }).then(function(){ alert('✅ 확정대기방으로 보냈어요!'); })
-   .catch(function(){ alert('전송 실패'); });
+  }).then(function(){
+    db.ref('fareLog/'+fareLogDate+'/'+id).remove();
+    fareLogOpen=null;
+    alert('✅ 확정대기방으로 보냈어요!');
+    renderFareLog();
+  }).catch(function(){ alert('전송 실패'); });
 }
 function deleteFareLog(id){
   if(!confirm('이 기록을 삭제할까요?')) return;
