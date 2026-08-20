@@ -2043,6 +2043,17 @@ function showResult({depName,arrName,distKm,baseFare,distFare,toll,totalFare,nig
         warns: _fWarns.join('\n'),
         createdAt: now.getTime()
       });
+      // 요금확인 푸시 알림 (예약과 동일 방식)
+      var _pRoute = String(depName||'').split(' ').slice(0,2).join(' ') + ' → ' + String(arrName||'');
+      fetch('/api/push', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          action: 'send',
+          title: '💰 [' + CH.name + '] 요금확인!',
+          body: _pRoute + ' · ' + Number(totalFare||0).toLocaleString() + '원'
+        })
+      }).catch(function(){});
     }
   } catch(e) {}
 
