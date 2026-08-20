@@ -1156,6 +1156,24 @@ function renderCalendar(container) {
 }
 
 // ══════════ 탭 7: 요금확인 로그 ══════════════════════════════
+// 24시간 지난 요금확인 로그 자동 정리
+function cleanOldFareLogs(){
+  var cutoff = Date.now() - 24*60*60*1000;
+  db.ref('fareLog').once('value').then(function(snap){
+    var updates = {};
+    snap.forEach(function(dateSnap){
+      dateSnap.forEach(function(item){
+        var data = item.val();
+        if(data.createdAt && data.createdAt < cutoff){
+          updates['fareLog/'+dateSnap.key+'/'+item.key] = null;
+        }
+      });
+      // 날짜 노드가 비면 같이 삭제 (null 처리로 자동)
+    });
+    if(Object.keys(updates).length > 0) db.ref().update(updates);
+  });
+}
+
 function renderFareLog(container) {
   var today = todayStr();
   var VNAMES = {mid:'중형', large:'대형/콜밴', solati:'쏠라티'};
@@ -1303,7 +1321,10 @@ function fareToConfirm(id){
     fromFareLog: true,
     createdAt: Date.now()
   }).then(function(){
+    db.ref('fareLog/'+fareLogDate+'/'+id).remove();
+    fareLogOpen = null;
     alert('✅ 확정대기방으로 보냈어요!\n확정대기 최신방에서 확인하세요.');
+    loadFareLog();
   }).catch(function(){ alert('전송 실패'); });
 }
 // 로그 삭제
@@ -2363,6 +2384,7 @@ window.onload = function() {
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
+    cleanOldFareLogs(); // 24시간 지난 요금확인 로그 정리
 
     // 연결 상태 감지 → 끊기면 자동 재연결
     db.ref('.info/connected').on('value', function(snap) {
