@@ -1730,22 +1730,51 @@ function mGoDateTab(tab,dateStr){
   }
 }
 
-// 요금확인 로그 실시간 감시 → 배차완료 탭 빨간 배지
+// 요금확인 로그 실시간 감시 → 배차완료 탭 빨간 배지 + 푸시
 var fareUnreadCount = 0;
 var fareSeenIds = {};
+var knownFareIds = null;  // 푸시용 (첫 로드 때는 알림 안 보냄)
 try{ fareSeenIds = JSON.parse(localStorage.getItem('fareSeenIds')||'{}'); }catch(e){ fareSeenIds = {}; }
 function watchFareLog(){
   db.ref('fareLog').on('value', function(snap){
     var cutoff = Date.now() - 24*60*60*1000;
     var unread = 0;
+    var allIds = [];
+    var itemMap = {};
     snap.forEach(function(dateSnap){
       dateSnap.forEach(function(item){
         var d = item.val();
-        if(d && d.createdAt && d.createdAt >= cutoff && !fareSeenIds[item.key]) unread++;
+        if(d && d.createdAt && d.createdAt >= cutoff){
+          allIds.push(item.key);
+          itemMap[item.key] = d;
+          if(!fareSeenIds[item.key]) unread++;
+        }
       });
     });
     fareUnreadCount = unread;
     updateFareBadge();
+    // 새 요금확인 푸시 (첫 로드는 건너뜀)
+    if(knownFareIds === null){
+      knownFareIds = new Set(allIds);
+    } else {
+      allIds.forEach(function(k){
+        if(knownFareIds.has(k)) return;
+        knownFareIds.add(k);
+        var r = itemMap[k];
+        var b = getChannelBadge(r.channel||'애니');
+        var route = (r.dep||'').split(' ').slice(0,2).join(' ') + ' → ' + (r.arr||'');
+        fetch('/api/push',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            action:'send',
+            title:'💰 ['+b.name+'] 요금확인!',
+            body: route + ' · ' + Number(r.totalFare||0).toLocaleString() + '원',
+            badge: fareUnreadCount
+          })
+        });
+      });
+    }
     // 요금확인 탭이 열려있으면 리스트도 갱신
     if(compSub==='fare' && document.getElementById('sec2') && document.getElementById('sec2').classList.contains('on')) renderFareLog();
   });
