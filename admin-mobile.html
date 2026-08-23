@@ -1034,7 +1034,7 @@ function renderEditList(){
     var warns=getWarnings(r);
     var warnIcon=warns.some(function(w){ return w.indexOf('❗')===0; })?'<span style="color:#d32f2f">❗</span> ':warns.length?'<span style="color:#e65100">⚠️</span> ':'';
     var numPrefix=r.baechaNum?r.baechaNum+'. ':'';
-    h+='<div class="card-item'+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
+    h+='<div class="card-item'+chCardClass(r)+(sel?' selected':'')+'" onclick="selectEditCard(\''+r.id+'\')">';
     h+='<div class="ci-title">'+chBadgeHTML(r)+warnIcon+numPrefix+esc(cardLabel(r))+'</div>';
     h+='<div class="ci-sub">';
     h+='<span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>';
