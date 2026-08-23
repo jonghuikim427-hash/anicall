@@ -33,9 +33,13 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 /* 카드 목록 */
 .card-list{padding:8px}
 .card-item{background:#fff;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:8px;padding:10px 12px;cursor:pointer;transition:all 0.15s}
+.card-item.ch-A{background:#EEF5FD}
+.card-item.ch-K{background:#FDEFEF}
+.card-item.ch-M{background:#FEF8E7}
 .card-item.urgent{border-left:4px solid #E24B4A}
 .card-item.tomorrow{border-left:4px solid #EF9F27}
 .card-item.selected{border-color:#1a2a4a;background:#eef2ff}
+.card-item.selected.ch-A,.card-item.selected.ch-K,.card-item.selected.ch-M{background:#eef2ff}
 .ci-title{font-size:12px;font-weight:700;color:#1a2a4a;margin-bottom:3px}
 .ci-sub{font-size:11px;color:#888}
 .ci-driver{font-size:11px;color:#2e7d32;font-weight:700}
@@ -501,6 +505,13 @@ function getChannelBadge(ch){
   if(ch==='메가') return {letter:'M', color:'#5a4500', bg:'#f5b800', name:'메가택시'};
   return {letter:'A', color:'#fff', bg:'#1976D2', name:'애니콜'};
 }
+// 카드 배경용 채널 클래스 (A/K/M)
+function chCardClass(r){
+  var ch=getCardChannel(r);
+  if(ch==='k') return ' ch-K';
+  if(ch==='메가') return ' ch-M';
+  return ' ch-A';
+}
 // 카드리스트용 채널 뱃지 HTML
 function chBadgeHTML(r){
   var ch=getCardChannel(r), b=getChannelBadge(ch);
@@ -792,7 +803,7 @@ function renderWait(){
     var isTomorrow=tail.indexOf('❗❗ 내일')>=0;
     var dups=getDups(r);
     var dupBadge=dups.length?'<span style="background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px">🔴 중복</span>':'';
-    var cls='card-item'+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(waitSelected&&waitSelected.id===r.id?' selected':'');
+    var cls='card-item'+((isUrgent||isTomorrow)?'':chCardClass(r))+(isUrgent?' urgent':isTomorrow?' tomorrow':'')+(waitSelected&&waitSelected.id===r.id?' selected':'');
     h+='<div class="'+cls+'" onclick="selectWaitCard(\''+r.id+'\')">';
     h+='<div class="ci-title" style="display:flex;align-items:center;flex-wrap:wrap">'+warnStr+chBadgeHTML(r)+esc(cardLabel(r))+dupBadge+'</div>';
     h+='<div class="ci-sub"><span style="color:#185FA5;font-weight:700">'+esc(r.name||'')+'</span>'+(r.resNum?' <span style="color:#888">· '+esc(r.resNum)+'</span>':'')+'</div>';
@@ -1844,7 +1855,8 @@ function renderFareLog(){
           ? '<span style="color:#d32f2f">❗</span>'
           : '<span style="color:#e65100">⚠️</span>';
       }
-      h+='<div style="background:#fff;border:1px solid '+(isOpen?'#f5b800':'transparent')+';border-radius:10px;margin:0 8px 8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
+      var chBg = (r.channel==='k') ? '#FDEFEF' : (r.channel==='메가') ? '#FEF8E7' : '#EEF5FD';
+      h+='<div style="background:'+chBg+';border:1px solid '+(isOpen?'#f5b800':'transparent')+';border-radius:10px;margin:0 8px 8px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
       h+='<div onclick="toggleFareCard(\''+r.id+'\')">';
       h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">';
       h+='<span style="background:'+b.bg+';color:'+b.color+';font-size:10px;font-weight:800;border-radius:3px;padding:1px 5px">'+b.letter+'</span>';
@@ -1861,7 +1873,7 @@ function renderFareLog(){
       h+='</div></div>';
       if(isOpen){
         h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd">';
-        h+='<pre style="background:#f9f9f9;border-radius:6px;padding:10px;font-size:11px;line-height:1.7;white-space:pre-wrap;font-family:\'Malgun Gothic\',sans-serif;margin:0 0 10px">'+esc(buildFareCallCard(r))+'</pre>';
+        h+='<pre style="background:#fff;border:1px solid rgba(0,0,0,0.06);border-radius:6px;padding:10px;font-size:11px;line-height:1.7;white-space:pre-wrap;font-family:\'Malgun Gothic\',sans-serif;margin:0 0 10px">'+esc(buildFareCallCard(r))+'</pre>';
         h+='<div style="display:flex;gap:6px">';
         h+='<button onclick="fareToConfirm(\''+r.id+'\')" style="flex:2;padding:10px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700">📤 확정대기방</button>';
         h+='<button onclick="copyText(buildFareCallCard(fareLogCache[\''+r.id+'\']),\'콜카드\')" style="flex:1;padding:10px;background:#fff;color:#1a2a4a;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:700">📋</button>';
