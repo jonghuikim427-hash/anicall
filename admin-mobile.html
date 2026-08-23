@@ -72,7 +72,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
 .btn-green{background:#2e7d32;color:#fff}
 .list-preview{background:#f9f9f9;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:11px;line-height:1.8;height:200px;margin-bottom:8px;white-space:pre-wrap;color:#333;overflow-y:auto;resize:none}
 .share-row{display:flex;gap:6px;margin-bottom:8px}
-.share-btn{flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;border:none}
+.share-btn{flex:1;padding:8px 4px;border-radius:8px;font-size:10.5px;font-weight:700;text-align:center;cursor:pointer;border:none;white-space:nowrap}
 .share-mid{background:#E6F1FB;color:#185FA5}
 .share-lg{background:#F3E5F5;color:#6a1b9a}
 .match-ta{width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:'Malgun Gothic',sans-serif;resize:none;height:80px;margin-bottom:8px}
@@ -187,6 +187,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
     <div class="action-grid">
       <div class="action-btn" onclick="openNickPopup()" style="display:none">손님카톡닉 입력</div>
       <div class="action-btn" onclick="openEditPopup('wait')">카드수정</div>
+      <div class="action-btn" onclick="copyWaitCard()">📋 카드복사</div>
       <div class="action-btn primary" onclick="doConfirmWait()">예약확정</div>
       <div class="action-btn yellow" onclick="goBarobaecha()">바로배차</div>
     </div>
@@ -224,6 +225,7 @@ body{font-family:'Malgun Gothic',sans-serif;background:#f0f2f5;min-height:100vh;
       <textarea class="list-preview" id="m-list-preview" style="width:100%;resize:none;font-family:'Malgun Gothic',sans-serif;outline:none;margin-top:6px" oninput="onListEdit()">리스트 생성 후 표시됩니다</textarea>
       <div class="share-row">
         <button class="share-btn share-mid" id="list-share-btn" onclick="shareCurrentList()">중형 공유</button>
+        <button class="share-btn" id="list-copy-btn" style="background:#F1EFE8;color:#5F5E5A" onclick="copyCurrentList()">중형 복사</button>
         <button class="share-btn" id="list-num-btn" style="background:#EAF3DE;color:#3B6D11" onclick="shareCurrentNum()">중형 번호</button>
       </div>
       <textarea class="match-ta" id="m-match-ta" placeholder="31. 김종희&#10;32. 조재현&#10;33. 홍기조&#10;..."></textarea>
@@ -882,6 +884,11 @@ function saveNick(){
   });
 }
 
+function copyWaitCard(){
+  if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
+  copyText(colcardText(waitSelected), '콜카드');
+}
+
 function doConfirmWait(){
   if(!waitSelected){ alert('카드를 먼저 선택하세요!'); return; }
   var _rideDate=getRideDate(waitSelected);
@@ -1247,18 +1254,21 @@ function renderListTab(){
   var midBtn=document.getElementById('list-tab-mid');
   var lgBtn=document.getElementById('list-tab-lg');
   var shareBtn=document.getElementById('list-share-btn');
+  var copyBtn=document.getElementById('list-copy-btn');
   var numBtn=document.getElementById('list-num-btn');
   if(curListTab==='mid'){
     if(midBtn){ midBtn.style.background='#185FA5'; midBtn.style.color='#fff'; midBtn.style.border='none'; }
     if(lgBtn){ lgBtn.style.background='#fff'; lgBtn.style.color='#888'; lgBtn.style.border='1px solid #ccc'; }
     if(ta) ta.value = listEditMid || '중형 리스트 없음 (리스트생성 먼저)';
     if(shareBtn) shareBtn.textContent='중형 공유';
+    if(copyBtn) copyBtn.textContent='중형 복사';
     if(numBtn) numBtn.textContent='중형 번호';
   } else {
     if(lgBtn){ lgBtn.style.background='#185FA5'; lgBtn.style.color='#fff'; lgBtn.style.border='none'; }
     if(midBtn){ midBtn.style.background='#fff'; midBtn.style.color='#888'; midBtn.style.border='1px solid #ccc'; }
     if(ta) ta.value = listEditLg || '대형/콜밴/쏠라티 리스트 없음 (리스트생성 먼저)';
     if(shareBtn) shareBtn.textContent='대형콜밴 공유';
+    if(copyBtn) copyBtn.textContent='대형콜밴 복사';
     if(numBtn) numBtn.textContent='대형콜밴 번호';
   }
   if(ta){ ta.style.height=''; ta.style.minHeight=''; }
@@ -1271,6 +1281,16 @@ function shareCurrentList(){
     alert('공유할 리스트가 없어요!\n먼저 리스트생성을 해주세요.'); return;
   }
   shareText(text);
+  if(curListTab==='mid') infoListShared=true;
+}
+
+function copyCurrentList(){
+  saveCurrentListEdit();
+  var text = curListTab==='mid' ? listEditMid : listEditLg;
+  if(!text || !text.trim() || text.indexOf('리스트 없음')>=0){
+    alert('복사할 리스트가 없어요!\n먼저 리스트생성을 해주세요.'); return;
+  }
+  copyText(text, '리스트');
   if(curListTab==='mid') infoListShared=true;
 }
 
@@ -2076,6 +2096,7 @@ function renderCompList(){
     '<div class="action-btn primary" onclick="openEditPopup(\'comp\')">카드 수정</div>'+
     '<div class="action-btn yellow" onclick="goDirectReb()">재배차</div>'+
     '<div class="action-btn" style="background:#e53935;color:#fff" onclick="deleteCompCard()">취소</div>'+
+    '<div class="action-btn" onclick="compBackToDispatch()">↩ 당일 배차방으로</div>'+
     '</div>';
 }
 function deleteCompCard(){
@@ -2093,6 +2114,27 @@ function deleteCompCard(){
     alert('✅ 삭제됐어요!');
   });
 }
+function compBackToDispatch(){
+  if(!compSelected){ alert('카드를 먼저 선택하세요!'); return; }
+  var cardName=compSelected.title1||'';
+  var drv=compSelected.driverName||'';
+  var msg=(cardName?'['+cardName+']\n':'')+'이 카드를 당일 배차방으로 되돌릴까요?';
+  if(drv) msg+='\n\n※ 배정된 기사('+drv+') 정보가 해제돼요.';
+  if(!confirm(msg)) return;
+  var id=compSelected.id;
+  db.ref('cards/'+id).update({
+    status:'확정',
+    driverName:null, driverPhone:null, driverVehicleType:null, driverVehicleNum:null
+  }).then(function(){
+    if(driverMap[id]) delete driverMap[id];
+    db.ref('driverMap/'+id).remove();
+    compSelected=null;
+    document.getElementById('comp-card-view').style.display='none';
+    alert('✅ 당일 배차방으로 되돌렸어요!');
+    renderCompList();
+  }).catch(function(){ alert('처리 실패'); });
+}
+
 function selectCompCard(id){
   compSelected=compSelected&&compSelected.id===id?null:(allData.find(function(x){ return x.id===id; })||null);
   renderCompList();
